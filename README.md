@@ -3,6 +3,8 @@
 > **Surgical Precision, Implicit Constraints & Atomic Working Memory for AI Coding Agents.**  
 > *Stop AI agents from hallucinating line numbers, breaking UI-to-DB connections, and repeating past production mistakes.*
 
+**[English](README.md)** | [Tiếng Việt](README.vi.md)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)]()
@@ -140,14 +142,21 @@ python living_map.py update --auto-commit
 ```
 *Updates line numbers and immediately commits `PROJECT_MAP.md` to git.*
 
-### 3. Record a Newly Discovered Constraint
+### 3. Fast Blast Radius & Impact Analysis
+Before modifying any symbol, trace its 6-tier cross-layer impact in 0.05 seconds:
+```bash
+python living_map.py impact <symbol_or_keyword>
+```
+*Instantly scans and groups related Code Definitions, UI DOM `#id` Triggers, API Contracts, Database Tables, Applicable Implicit Constraints (`[Cx]`), and Linked Features.*
+
+### 4. Record a Newly Discovered Constraint
 When an agent or developer discovers an unexpected edge case or implicit constraint:
 ```bash
 python living_map.py add-constraint "Mobile bottom bar must maintain 64px padding-bottom to avoid obscuring fixed buttons"
 ```
 *Automatically assigns ID (e.g. `[C8]`) and injects it into Module 4.*
 
-### 4. Register a Completed Feature
+### 5. Register a Completed Feature
 Add an end-to-end trace from UI to Database:
 ```bash
 python living_map.py add-feature \
@@ -160,7 +169,7 @@ python living_map.py add-feature \
   --constraints "C2,C4"
 ```
 
-### 5. CI/CD Drift Linting (Block PR if Map drifts)
+### 6. CI/CD Drift Linting (Block PR if Map drifts)
 Verify that all symbol locations in `PROJECT_MAP.md` match actual code lines:
 ```bash
 python living_map.py check
@@ -170,14 +179,14 @@ python living_map.py check
 python living_map.py check --fix
 ```
 
-### 6. Install Git Pre-Commit Hook (Automatic Guard)
+### 7. Install Git Pre-Commit Hook (Automatic Guard)
 Install a pre-commit or pre-push hook directly into `.git/hooks/` with one command:
 ```bash
 python living_map.py install-hook --hook pre-commit
 ```
 *Prevents developers or AI agents from committing changes if `PROJECT_MAP.md` is out of sync.*
 
-### 7. GitHub Actions CI/CD Integration
+### 8. GitHub Actions CI/CD Integration
 Copy [.github/workflows/map-lint.yml](.github/workflows/map-lint.yml) to your repository. Every Pull Request will automatically be checked:
 ```yaml
 name: Living Codebase Map Lint
@@ -192,7 +201,7 @@ jobs:
       - run: python scripts/living_map.py check
 ```
 
-### 8. View History & Rollback Map
+### 9. View History & Rollback Map
 View previous map commits:
 ```bash
 python living_map.py rollback
@@ -239,14 +248,19 @@ Living Codebase Map includes modular AST & Regex extractors for modern multi-tie
 
 ```
 living-codebase-map/
-├── SKILL.md                          # Standard Agent Skill Definition
-├── README.md                         # Documentation & Quickstart
+├── .github/
+│   └── workflows/
+│       └── map-lint.yml              # CI/CD GitHub Action for pull requests
+├── SKILL.md                          # Standard Agent Skill Definition (Chat-Native)
+├── README.md                         # Documentation & Quickstart (English)
+├── README.vi.md                      # Documentation & Quickstart (Tiếng Việt)
 ├── LICENSE                           # MIT License
 ├── .gitignore                        # Standard Python ignores
 ├── scripts/
-│   └── living_map.py                 # Zero-dependency CLI engine
+│   └── living_map.py                 # Zero-dependency CLI engine (v2.2)
 └── templates/
-    └── PROJECT_MAP.template.md       # Universal Living Map template
+    ├── PROJECT_MAP.template.md       # Universal Living Map template
+    └── PROJECT_MAP.min.template.md   # AI Token-Saver mini map template
 ```
 
 ---
