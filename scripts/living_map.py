@@ -936,9 +936,11 @@ def cmd_check(args):
             print("   Or run: 'python living_map.py check --fix'")
             return 2
 
-def cmd_impact(args):
+def cmd_impact(args, is_deep=False):
     """
-    Feature 2: Quick cross-layer impact / blast radius analysis for a symbol or keyword.
+    Feature 2: Cross-layer blast radius analysis for a symbol or keyword.
+    - Default (Lean Mode): Capped at depth 2 (<15 lines) to save LLM context tokens.
+    - Deep Mode (--deep or deep-impact): Exhaustive 6-layer architecture dependency tree.
     """
     if not os.path.exists(MAP_PATH):
         print(f"[ERR] {MAP_FILENAME} not found at {MAP_PATH}")
@@ -953,73 +955,111 @@ def cmd_impact(args):
     has_constraints = bool(report['constraints'])
     risk_level = "🔴 CRITICAL" if (blast_count > 10 or has_constraints) else ("🟡 MEDIUM" if blast_count > 3 else "🟢 LOW")
 
-    is_lean = getattr(args, 'lean', False)
-    depth = getattr(args, 'depth', 0)
-    if is_lean and depth == 0:
-        depth = 2
+    # Determine if deep mode is requested
+    is_deep = is_deep or getattr(args, 'deep', False) or getattr(args, 'full', False)
 
-    # LEAN MODE (< 15 lines): Optimized for AI Agents to prevent Token Bloat
-    if is_lean:
-        print(f"🎯 IMPACT (LEAN): '{target}' | Risk: {risk_level} ({blast_count} components)")
-        print("-" * 65)
-        if report['locations']:
-            loc_sample = [l.split('->')[0].strip() for l in report['locations'][:depth]]
-            extra = f" (+{len(report['locations']) - depth} more)" if len(report['locations']) > depth else ""
-            print(f"• Code:        {', '.join(loc_sample)}{extra}")
-        if report['ui_triggers']:
-            ui_sample = [u.split(':')[0].strip() for u in report['ui_triggers'][:depth]]
-            extra = f" (+{len(report['ui_triggers']) - depth} more)" if len(report['ui_triggers']) > depth else ""
-            print(f"• UI DOM:      {', '.join(ui_sample)}{extra}")
-        if report['api_routes']:
-            extra = f" (+{len(report['api_routes']) - depth} more)" if len(report['api_routes']) > depth else ""
-            print(f"• API:         {', '.join(report['api_routes'][:depth])}{extra}")
-        if report['db_tables']:
-            extra = f" (+{len(report['db_tables']) - depth} more)" if len(report['db_tables']) > depth else ""
-            print(f"• DB:          {', '.join(report['db_tables'][:depth])}{extra}")
-        if report['constraints']:
-            c_ids = [c.split(']')[0].strip(' [') for c in report['constraints'][:depth]]
-            extra = f" (+{len(report['constraints']) - depth} more)" if len(report['constraints']) > depth else ""
-            print(f"• Constraints: {', '.join(c_ids)}{extra}")
-        if report['features']:
-            f_ids = [f.split(':')[0].strip() for f in report['features'][:depth]]
-            extra = f" (+{len(report['features']) - depth} more)" if len(report['features']) > depth else ""
-            print(f"• Features:    {', '.join(f_ids)}{extra}")
-        print(f"💡 Action:     {'Verify Module 4 constraints before editing.' if has_constraints else 'Safe to proceed with minimal blast radius.'}")
-        print("-" * 65)
+    if is_deep:
+        # DEEP MODE: Exhaustive 6-layer architecture dependency tree
+        print("=" * 75)
+        print(f"🔥 [DEEP IMPACT ACTIVE] Exhaustive cross-layer blast radius for: '{target}' | Risk: {risk_level}")
+        print("=" * 75)
+
+        layers = [
+            ("Layer 1: Code Definitions & Call Sites", report['locations'], "Code"),
+            ("Layer 2: API Contracts & Routing", report['api_routes'], "API"),
+            ("Layer 3: UI Triggers & DOM Selectors", report['ui_triggers'], "DOM"),
+            ("Layer 4: Database Tables & Models", report['db_tables'], "DB"),
+            ("Layer 5: Implicit Architectural Constraints (Module 4)", report['constraints'], "Rule"),
+            ("Layer 6: Linked Features & Cross-References (Module 5)", report['features'], "Feature")
+        ]
+
+        total_found = 0
+        active_layers = 0
+        custom_depth = getattr(args, 'depth', 0)
+
+        for title, items, layer_type in layers:
+            if not items:
+                continue
+            active_layers += 1
+            limit = custom_depth if custom_depth > 0 else len(items)
+            print(f"\n📂 [{title}] ({len(items)} found)")
+            for i, item in enumerate(items[:limit]):
+                is_last = (i == len(items[:limit]) - 1) and (len(items) <= limit)
+                branch = "└── " if is_last else "├── "
+                print(f"  {branch}[{layer_type}] {item}")
+                total_found += 1
+            if len(items) > limit:
+                print(f"  └── ... (+{len(items) - limit} more items in this layer)")
+
+        print("\n" + "=" * 75)
+        print(f"📊 SUMMARY: Detected {total_found} linked components across {active_layers} architectural layers.")
+        if blast_count > 3 or has_constraints:
+            print("⚠️  HIGH BLAST RADIUS: Verify constraints in Module 4 and run integration tests before commit.")
+        else:
+            print("✅ LOW BLAST RADIUS: Safe to proceed with minimal cross-layer dependency risk.")
+        print("=" * 75)
         return 0
 
-    # FULL MODE (or custom depth)
-    print("=" * 70)
-    print(f"🎯 BLAST RADIUS & IMPACT ANALYSIS: '{target}' | Risk: {risk_level}")
-    print("=" * 70)
+    # LEAN MODE (Default): Under 15 lines, token-saving for daily agent operation
+    depth = getattr(args, 'depth', 2)
+    if depth <= 0:
+        depth = 2
 
-    def print_section(title, items, formatter=None):
-        print(f"\n{title}")
-        if not items:
-            print("    (None detected)")
-            return
-        limit = depth if depth > 0 else len(items)
-        for it in items[:limit]:
-            print(f"    • {formatter(it) if formatter else it}")
-        if len(items) > limit:
-            print(f"    • ... (+{len(items) - limit} more items; use --depth or omit --lean for full list)")
+    print(f"🎯 IMPACT (LEAN): '{target}' | Risk: {risk_level} ({blast_count} components)")
+    print("-" * 65)
+    total_hidden = 0
 
-    print_section("[1] CODE DEFINITIONS:", report['locations'])
-    print_section("[2] UI & DOM TRIGGERS (MODULE 3):", report['ui_triggers'])
-    print_section("[3] API CONTRACTS:", report['api_routes'], lambda ep: f"Endpoint: `{ep}`")
-    print_section("[4] DATABASE TABLES & MODELS:", report['db_tables'], lambda tbl: f"Table: `{tbl}`")
-    print_section("[5] APPLICABLE IMPLICIT CONSTRAINTS (MODULE 4):", report['constraints'], lambda c: f"⚠️ {c}")
-    print_section("[6] LINKED FEATURES (MODULE 5):", report['features'])
+    if report['locations']:
+        loc_sample = [l.split('->')[0].strip() for l in report['locations'][:depth]]
+        hidden = len(report['locations']) - depth
+        if hidden > 0:
+            total_hidden += hidden
+        extra = f" (+{hidden} more)" if hidden > 0 else ""
+        print(f"• Code:        {', '.join(loc_sample)}{extra}")
+    if report['ui_triggers']:
+        ui_sample = [u.split(':')[0].strip() for u in report['ui_triggers'][:depth]]
+        hidden = len(report['ui_triggers']) - depth
+        if hidden > 0:
+            total_hidden += hidden
+        extra = f" (+{hidden} more)" if hidden > 0 else ""
+        print(f"• UI DOM:      {', '.join(ui_sample)}{extra}")
+    if report['api_routes']:
+        hidden = len(report['api_routes']) - depth
+        if hidden > 0:
+            total_hidden += hidden
+        extra = f" (+{hidden} more)" if hidden > 0 else ""
+        print(f"• API:         {', '.join(report['api_routes'][:depth])}{extra}")
+    if report['db_tables']:
+        hidden = len(report['db_tables']) - depth
+        if hidden > 0:
+            total_hidden += hidden
+        extra = f" (+{hidden} more)" if hidden > 0 else ""
+        print(f"• DB:          {', '.join(report['db_tables'][:depth])}{extra}")
+    if report['constraints']:
+        c_ids = [c.split(']')[0].strip(' [') for c in report['constraints'][:depth]]
+        hidden = len(report['constraints']) - depth
+        if hidden > 0:
+            total_hidden += hidden
+        extra = f" (+{hidden} more)" if hidden > 0 else ""
+        print(f"• Constraints: {', '.join(c_ids)}{extra}")
+    if report['features']:
+        f_ids = [f.split(':')[0].strip() for f in report['features'][:depth]]
+        hidden = len(report['features']) - depth
+        if hidden > 0:
+            total_hidden += hidden
+        extra = f" (+{hidden} more)" if hidden > 0 else ""
+        print(f"• Features:    {', '.join(f_ids)}{extra}")
 
-    print("\n" + "=" * 70)
-    print("💡 AGENT SUMMARY:")
-    if blast_count > 3 or report['constraints']:
-        print(f"   ⚠️ CAUTION: High cross-layer blast radius ({blast_count} linked components).")
-        print("   Always verify constraints in Module 4 and run integration tests before commit.")
-    else:
-        print("   ✅ Low blast radius. Minimal cross-layer dependency risk.")
-    print("=" * 70)
+    print(f"💡 Action:     {'Verify Module 4 constraints before editing.' if has_constraints else 'Safe to proceed with minimal blast radius.'}")
+    if total_hidden > 0:
+        print(f"⚠️  ... Hidden {total_hidden} deeper items to SAVE AI CONTEXT TOKENS.")
+        print(f"🤖 For exhaustive 6-layer architecture dependency tree, run: map deep-impact {target} (or --deep)")
+    print("-" * 65)
     return 0
+
+def cmd_deep_impact(args):
+    """Deep impact wrapper: runs exhaustive 6-layer architecture dependency tree."""
+    return cmd_impact(args, is_deep=True)
 
 def cmd_install_hook(args):
     """Installs a Git pre-commit or pre-push hook to guard against map drift."""
@@ -1070,7 +1110,10 @@ exit 0
     return 0
 
 def cmd_add_feature(args):
-    """Injects a new feature into the map with smart auto-detection."""
+    """
+    Injects a new feature into the map with smart natural language auto-detection.
+    Extracts ID (Fxxx), UI Selector (#id, .class, [data-testid=...]), API Route, and clean description.
+    """
     if not os.path.exists(MAP_PATH):
         print(f"[ERR] {MAP_FILENAME} not found. Run 'init' first.")
         return 1
@@ -1080,34 +1123,45 @@ def cmd_add_feature(args):
 
     raw_input = getattr(args, 'raw_text', '') or getattr(args, 'desc', '') or ''
     if not raw_input and not getattr(args, 'id', None):
-        print("❌ [ERR] Please provide feature description or raw text.")
-        print("   Usage: python living_map.py add-feature \"Export Excel using #btn-export calling GET /api/export\"")
+        print("❌ [ERR] Please provide feature description or natural language prompt.")
+        print("   Usage: python living_map.py add-feature \"Integrate button #btn-submit into API POST /api/v1/checkout\"")
         return 1
 
-    # 1. Smart Feature ID
+    # 1. Smart Feature ID (Fxxx auto-incremented based on highest existing ID)
     feature_id = getattr(args, 'id', None)
     if not feature_id:
         m_id = re.search(r'\b(F\d{2,4}|F-[A-Za-z0-9_\-]+)\b', raw_input)
         if m_id:
             feature_id = m_id.group(1).upper()
         else:
-            existing_nums = [int(n) for n in re.findall(r'\|\s*F(\d{2,4})\s*\|', content)]
+            existing_nums = [int(n) for n in re.findall(r'F(\d{2,4})', content)]
             next_num = max(existing_nums) + 1 if existing_nums else 1
             feature_id = f"F{next_num:03d}"
 
-    # 2. Smart UI DOM Selector
+    # 2. Smart UI DOM Selector (#id, .class, [data-testid=...])
     ui_sel = getattr(args, 'ui', None)
+    raw_ui_match = None
     if not ui_sel:
-        m_ui = re.search(r'([#\.][a-zA-Z0-9_\-]+)', raw_input)
-        ui_sel = m_ui.group(1) if m_ui else "-"
+        raw_ui_match = re.search(r'(#[\w-]+|\.[\w-]+|\[data-testid=.*?\])', raw_input)
+        ui_sel = raw_ui_match.group(1) if raw_ui_match else "-"
 
-    # 3. Smart API Endpoint
+    # 3. Smart API Endpoint (METHOD in UPPERCASE, path in exact casing)
     api_ep = getattr(args, 'api', None)
+    raw_api_match = None
     if not api_ep:
-        m_api = re.search(r'((?:GET|POST|PUT|DELETE|PATCH)\s+/[a-zA-Z0-9_\-/:*]+|/[a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-/]+)', raw_input, re.IGNORECASE)
-        api_ep = m_api.group(1).upper() if m_api else "-"
+        m_method_path = re.search(r'\b(GET|POST|PUT|DELETE|PATCH)\s+([\w\/\-{}*:]+)', raw_input, re.IGNORECASE)
+        if m_method_path:
+            raw_api_match = m_method_path
+            api_ep = f"{m_method_path.group(1).upper()} {m_method_path.group(2)}"
+        else:
+            m_path_only = re.search(r'(\/[\w\/\-{}*:]+)', raw_input)
+            if m_path_only:
+                raw_api_match = m_path_only
+                api_ep = m_path_only.group(1)
+            else:
+                api_ep = "-"
 
-    # 4. Smart Constraints
+    # 4. Smart Constraints (C1, C2...)
     constraints = getattr(args, 'constraints', None)
     if not constraints:
         m_c = re.findall(r'\bC\d+\b', raw_input, re.IGNORECASE)
@@ -1125,8 +1179,21 @@ def cmd_add_feature(args):
         m_db = re.search(r'(?:table|bảng|tbl)\s+([a-zA-Z0-9_]+)', raw_input, re.IGNORECASE)
         db_tbl = m_db.group(1) if m_db else "-"
 
-    # 7. Clean Description
-    desc = getattr(args, 'desc', None) or raw_input.strip()
+    # 7. Clean Description (strip parsed UI/API tokens and filler words if natural prompt was provided)
+    desc = getattr(args, 'desc', None)
+    if not desc:
+        desc = raw_input
+        if raw_ui_match:
+            desc = desc.replace(raw_ui_match.group(0), "")
+        if raw_api_match:
+            desc = desc.replace(raw_api_match.group(0), "")
+        if feature_id and feature_id in desc:
+            desc = desc.replace(feature_id, "")
+        # Remove common connective phrases
+        desc = re.sub(r'\b(at button|tại nút|ở nút|nút|via API|qua API|calling|using|into API|vào API|API)\b', '', desc, flags=re.IGNORECASE)
+        desc = re.sub(r'\s+', ' ', desc).strip()
+        if len(desc) < 3:
+            desc = raw_input.strip()
 
     commit = getattr(args, 'commit', None) or git_get_head_info()[0]
     new_content = inject_feature(
@@ -1144,21 +1211,23 @@ def cmd_add_feature(args):
     new_content = update_map_header(new_content, codebase_hash)
 
     if getattr(args, 'dry_run', False):
-        print(f"[DRY-RUN] Auto-detected feature preview for [{feature_id}]:")
-        print(f"   Desc:        {desc}")
-        print(f"   UI:          {ui_sel}")
-        print(f"   JS:          {js_func}")
-        print(f"   API:         {api_ep}")
-        print(f"   DB:          {db_tbl}")
-        print(f"   Constraints: {constraints}")
+        print(f"🤖 [DRY-RUN] Auto-parsed feature preview for [{feature_id}]:")
+        print(f"   • ID:          {feature_id}")
+        print(f"   • Description: {desc}")
+        print(f"   • UI Element:  {ui_sel}")
+        print(f"   • API Route:   {api_ep}")
+        print(f"   • JS Handler:  {js_func}")
+        print(f"   • DB Table:    {db_tbl}")
+        print(f"   • Constraints: {constraints}")
         return 0
 
     with open(MAP_PATH, 'w', encoding='utf-8') as f:
         f.write(new_content)
     print(f"✅ [OK] Auto-detected & registered feature {feature_id} into {MAP_FILENAME}:")
-    print(f"   • Desc:        {desc}")
-    print(f"   • UI:          {ui_sel} | API: {api_ep}")
-    print(f"   • DB:          {db_tbl} | Constraints: {constraints}")
+    print(f"   • ID:          {feature_id}")
+    print(f"   • Description: {desc}")
+    print(f"   • UI Element:  {ui_sel} | API: {api_ep}")
+    print(f"   • DB Table:    {db_tbl} | Constraints: {constraints}")
     generate_min_map(MAP_PATH, MIN_MAP_PATH)
 
     if getattr(args, 'auto_commit', False):
@@ -1238,11 +1307,18 @@ def main():
     p_chk.add_argument("--full", action="store_true", help="Force full AST symbol scan, bypassing MD5 check")
     p_chk.add_argument("--fix", action="store_true", help="Auto-repair map if drift is detected")
 
-    # impact (Blast Radius Analysis)
-    p_imp = subparsers.add_parser("impact", help="Quick cross-layer blast radius analysis for a symbol/id")
+    # impact (Blast Radius Analysis - Lean Mode by Default)
+    p_imp = subparsers.add_parser("impact", help="Quick cross-layer blast radius analysis (Lean mode by default)")
     p_imp.add_argument("target", help="Symbol name, DOM ID, or keyword to trace across layers")
-    p_imp.add_argument("--lean", action="store_true", help="Ultra-compact summary (<15 lines) to save AI tokens")
-    p_imp.add_argument("--depth", type=int, default=0, help="Max items per section (e.g. --depth 2)")
+    p_imp.add_argument("--deep", action="store_true", help="Exhaustive 6-layer architecture dependency tree analysis")
+    p_imp.add_argument("--full", action="store_true", help="Alias for --deep")
+    p_imp.add_argument("--lean", action="store_true", help="Lean mode (<15 lines, default behavior)")
+    p_imp.add_argument("--depth", type=int, default=2, help="Max items per layer (default: 2 for lean mode)")
+
+    # deep-impact (Dedicated command for exhaustive 6-layer dependency tree)
+    p_deep = subparsers.add_parser("deep-impact", help="Exhaustive 6-layer architecture dependency tree analysis")
+    p_deep.add_argument("target", help="Symbol name, DOM ID, or keyword to trace across layers")
+    p_deep.add_argument("--depth", type=int, default=0, help="Optional max items per layer (default: 0 = unlimited)")
 
     # install-hook
     p_hk = subparsers.add_parser("install-hook", help="Install Git hook (pre-commit / pre-push) to block drift")
@@ -1287,6 +1363,7 @@ def main():
         "update": cmd_update,
         "check": cmd_check,
         "impact": cmd_impact,
+        "deep-impact": cmd_deep_impact,
         "install-hook": cmd_install_hook,
         "add-feature": cmd_add_feature,
         "add-constraint": cmd_add_constraint,

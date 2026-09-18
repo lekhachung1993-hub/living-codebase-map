@@ -118,15 +118,21 @@ Classify every incoming user request into one of three risk categories:
 
 ---
 
-## STEP 2: CROSS-LAYER IMPACT TRACING (FAST CLI)
+## STEP 2: CROSS-LAYER IMPACT TRACING (DUAL-MODE FAST CLI)
 
 Before modifying any symbol, query its blast radius in 0.05 seconds via CLI:
 
-```bash
-python scripts/living_map.py impact <symbol_or_keyword>
-```
+- **Daily Standard (Lean Mode, <15 lines - Saves ~70% Context Tokens):**
+  ```bash
+  python scripts/living_map.py impact <symbol_or_keyword>
+  ```
+- **Architectural Surgery (Deep Mode - Exhaustive 6-Layer Dependency Tree):**
+  ```bash
+  python scripts/living_map.py deep-impact <symbol_or_keyword>
+  # Or: python scripts/living_map.py impact <symbol> --deep
+  ```
 
-This instantly traces the full dependency chain:
+This traces the multi-tier dependency chain:
 ```
 [UI Trigger: #dom-id] ➔ [Event Handler: func()] ➔ [API Endpoint: /api/...] ➔ [DB Table/Query]
                                   │
@@ -227,11 +233,15 @@ Once changes are in place and local tests pass:
 3. The map automatically increments the next `[C(n+1)]` ID and regenerates `PROJECT_MAP.min.md`.
 
 ### Recipe 4: Before Modifying High-Risk Symbols (Blast Radius Check)
-1. Before modifying any function or endpoint, query:
+1. Before modifying any function or endpoint, query the lean blast radius:
    ```bash
-   python scripts/living_map.py impact <symbol_name> --lean
+   python scripts/living_map.py impact <symbol_name>
    ```
-2. If the CLI outputs `CAUTION: High cross-layer blast radius` $\to$ warn the user and inspect all linked UI DOM IDs, API routes, and DB models before altering code.
+2. If the CLI outputs `HIGH BLAST RADIUS` or if performing major refactoring, run the exhaustive 6-layer architecture tree:
+   ```bash
+   python scripts/living_map.py deep-impact <symbol_name>
+   ```
+3. Inspect all linked UI DOM IDs, API routes, and DB models before altering code.
 
 ---
 
@@ -241,14 +251,15 @@ Once changes are in place and local tests pass:
 |---|---|
 | Initialize map for project | `python scripts/living_map.py init` |
 | Refresh line numbers & mini map | `python scripts/living_map.py update` |
-| Fast blast radius / impact check (Lean mode) | `python scripts/living_map.py impact <symbol> --lean` |
+| Fast blast radius / impact check (Lean mode by default) | `python scripts/living_map.py impact <symbol>` |
+| Exhaustive 6-layer architecture dependency tree | `python scripts/living_map.py deep-impact <symbol>` |
 | Fast Smart Drift Check (MD5) | `python scripts/living_map.py check` |
 | Auto-repair drifted line numbers | `python scripts/living_map.py check --fix` |
 | Force full AST scan check | `python scripts/living_map.py check --full` |
 | Install Git Pre-Commit Hook | `python scripts/living_map.py install-hook` |
 | Update and auto-commit to Git | `python scripts/living_map.py update --auto-commit` |
 | Add newly discovered constraint | `python scripts/living_map.py add-constraint "description"` |
-| Register feature (smart auto-detect) | `python scripts/living_map.py add-feature "<raw_text>"` |
+| Register feature (natural language auto-parsing) | `python scripts/living_map.py add-feature "<prompt>"` |
 | View commit history of map | `python scripts/living_map.py rollback` |
-| Rollback map safely (source code untouched) | `python scripts/living_map.py rollback --to <HASH>` |
+| Safe Rollback Lock (source code 100% untouched) | `python scripts/living_map.py rollback --to <HASH>` |
 

@@ -1,4 +1,4 @@
-name: Living Codebase Map Lint
+name: Living Codebase Map Guard
 
 on:
   push:
@@ -17,11 +17,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.10"
 
-      - name: Run Living Map Drift Lint
+      - name: Run Living Map Smart Drift Lint (MD5)
         run: |
-          # Automatically detects script location and runs CI/CD lint
+          echo "🔍 Checking Living Codebase Map synchronization with codebase..."
           if [ -f "scripts/living_map.py" ]; then
             python scripts/living_map.py check
           elif [ -f ".agents/skills/living-codebase-map/scripts/living_map.py" ]; then
@@ -29,6 +29,19 @@ jobs:
           elif [ -f "tools/living_map.py" ]; then
             python tools/living_map.py check
           else
-            echo "Error: living_map.py not found"
+            echo "❌ Error: living_map.py not found"
             exit 1
           fi
+
+      - name: Troubleshooting Message on Failure
+        if: failure()
+        run: |
+          echo "=========================================================================="
+          echo "❌ FAILED: PROJECT_MAP.md is out of sync or has line drift with codebase!"
+          echo "🤖 Solution for Agent / Developer:"
+          echo "   1. Open local IDE or terminal."
+          echo "   2. Run chat command: 'map update' or CLI: 'python scripts/living_map.py update'"
+          echo "   3. (Optional) Auto-repair with: 'python scripts/living_map.py check --fix'"
+          echo "   4. Commit PROJECT_MAP.md and PROJECT_MAP.min.md, then push to GitHub."
+          echo "=========================================================================="
+          exit 1
