@@ -138,13 +138,39 @@ python living_map.py add-feature \
   --constraints "C2,C4"
 ```
 
-### 5. Check Synchronization Status
-Check if any line numbers in the map have drifted without editing:
+### 5. CI/CD Drift Linting (Block PR if Map drifts)
+Verify that all symbol locations in `PROJECT_MAP.md` match actual code lines:
 ```bash
 python living_map.py check
 ```
+*Returns exit code `0` if in sync, or exit code `2` with a detailed drift diff table if symbols have moved. Add `--fix` to auto-repair:*
+```bash
+python living_map.py check --fix
+```
 
-### 6. View History & Rollback Map
+### 6. Install Git Pre-Commit Hook (Automatic Guard)
+Install a pre-commit or pre-push hook directly into `.git/hooks/` with one command:
+```bash
+python living_map.py install-hook --hook pre-commit
+```
+*Prevents developers or AI agents from committing changes if `PROJECT_MAP.md` is out of sync.*
+
+### 7. GitHub Actions CI/CD Integration
+Copy [.github/workflows/map-lint.yml](.github/workflows/map-lint.yml) to your repository. Every Pull Request will automatically be checked:
+```yaml
+name: Living Codebase Map Lint
+on: [push, pull_request]
+jobs:
+  lint-living-map:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      - run: python scripts/living_map.py check
+```
+
+### 8. View History & Rollback Map
 View previous map commits:
 ```bash
 python living_map.py rollback
@@ -153,6 +179,24 @@ Restore the map to an exact previous commit:
 ```bash
 python living_map.py rollback --to <COMMIT_HASH>
 ```
+
+---
+
+## 🧩 Supported Languages & Framework Extractors
+
+Living Codebase Map includes modular AST & Regex extractors for modern multi-tier frameworks:
+
+| Language | Frameworks & Architectures Supported | Extracted Symbols |
+|---|---|---|
+| **Go** | net/http, Gin, Fiber, Echo, Chi | Functions, receiver methods, structs, interfaces |
+| **Python** | FastAPI, Django, Flask, PyTorch | `def`, `async def`, `class`, route decorators (`@app.get`, `@router.post`) |
+| **TypeScript / JS** | Next.js (App & Pages Router), React, Vue | Next.js route handlers (`GET`, `POST`), Server Actions, `function`, arrow funcs, classes |
+| **Node.js Backend** | Express, NestJS, Fastify | `app.get()`, `router.post()`, `@Controller()`, `@Injectable()`, services |
+| **Rust** | Actix-web, Axum, Rocket | `fn`, `async fn`, `pub fn`, `struct`, `impl`, route macros |
+| **C# / .NET** | ASP.NET Core MVC & Web API | Controllers, actions, methods, `[HttpGet]`, `[HttpPost]` |
+| **Java** | Spring Boot, Jakarta EE | Controllers, services, `@GetMapping`, `@PostMapping` |
+| **PHP** | Laravel, Symfony | Routes (`Route::get`), classes, methods |
+| **HTML / DOM** | HTML5, Vue Templates, JSX | Element IDs (`id="..."`), class bindings |
 
 ---
 

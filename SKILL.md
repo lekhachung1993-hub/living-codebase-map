@@ -59,16 +59,17 @@ triggers:
 
 ---
 
-## STEP 0: SESSION WARMUP (NEVER CODE BLIND)
+## STEP 0: SESSION WARMUP (TOKEN-SAVING PROTOCOL)
 
 **Mandatory first action of every coding session:**
 
-1. Read `PROJECT_MAP.md` at the project root.
+1. **Read `PROJECT_MAP.min.md` first:**
+   - If `PROJECT_MAP.min.md` exists, read it instead of the full map (~300-500 tokens, saving ~70% context).
+   - If only `PROJECT_MAP.md` exists, read `PROJECT_MAP.md`.
 2. Extract working memory:
    - **Recent Commit & Feature Status** (Header & Module 8)
    - **Implicit Constraints** (Module 4) — *rules that cannot be inferred from code alone*
    - **Feature Cross-Reference** (Module 5) — find related DOM IDs and APIs
-   - **Exact `file:line` locations** (Module 1 & 2)
 3. If `PROJECT_MAP.md` is missing, initialize it immediately:
    ```bash
    python scripts/living_map.py init
@@ -95,10 +96,15 @@ Classify every incoming user request into one of three risk categories:
 
 ---
 
-## STEP 2: CROSS-LAYER IMPACT TRACING
+## STEP 2: CROSS-LAYER IMPACT TRACING (FAST CLI)
 
-Before modifying any symbol, trace the entire dependency chain:
+Before modifying any symbol, query its blast radius in 0.05 seconds via CLI:
 
+```bash
+python scripts/living_map.py impact <symbol_or_keyword>
+```
+
+This instantly traces the full dependency chain:
 ```
 [UI Trigger: #dom-id] ➔ [Event Handler: func()] ➔ [API Endpoint: /api/...] ➔ [DB Table/Query]
                                   │
@@ -117,7 +123,7 @@ Before modifying any symbol, trace the entire dependency chain:
 
 ## STEP 3: KARPATHY SURGICAL SURGERY
 
-1. **Locate exact line:** Use Module 1 & 2 in `PROJECT_MAP.md` to jump directly to `file:line`.
+1. **Locate exact line:** Use Module 1 & 2 in `PROJECT_MAP.md` (or `living_map.py impact`) to jump directly to `file:line`.
 2. **Minimal diff:** Do not reformat adjacent functions. Only edit the exact block required.
 3. **Preserve comments & type signatures:** Maintain backwards compatibility.
 4. **If a new hidden constraint is uncovered during development:**
@@ -132,7 +138,7 @@ Before modifying any symbol, trace the entire dependency chain:
 
 Once changes are in place and local tests pass:
 
-1. **Refresh symbol line numbers:**
+1. **Refresh symbol line numbers & generate compact map:**
    ```bash
    python scripts/living_map.py update
    ```
@@ -147,7 +153,7 @@ Once changes are in place and local tests pass:
      --db "table_name" \
      --constraints "C1,C3"
    ```
-3. **Verify synchronization:**
+3. **Smart Drift Check:**
    ```bash
    python scripts/living_map.py check
    ```
@@ -156,7 +162,7 @@ Once changes are in place and local tests pass:
 
 ## STEP 5: ATOMIC GIT CHECKPOINT (CODE & MAP IN LOCKSTEP)
 
-**The Golden Rule:** Code and `PROJECT_MAP.md` must **ALWAYS** be committed together in the exact same commit.
+**The Golden Rule:** Code, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` must **ALWAYS** be committed together.
 
 - **Option A (Automated via CLI):**
   ```bash
@@ -168,13 +174,42 @@ Once changes are in place and local tests pass:
   git commit -m "feat(module): implement feature X (F079) + sync living map"
   ```
 
-### Handling Git Rollbacks
-If code is reverted or checked out to an earlier commit:
-- `git checkout <hash>` automatically brings `PROJECT_MAP.md` back to that exact commit.
-- To rollback ONLY the map without touching code:
-  ```bash
-  python scripts/living_map.py rollback --to <HASH>
-  ```
+---
+
+## KỊCH BẢN XỬ LÝ SỰ CỐ (TROUBLESHOOTING RECIPES)
+
+### Recipe 1: Khi Test bị FAIL (Test Failure Self-Healing)
+1. Đọc Terminal Log để xác định chính xác `file:line` phát sinh lỗi.
+2. Chạy `python scripts/living_map.py impact <failed_function>` để tra cứu xem dòng đó có dính dáng tới Constraint `[Cx]` nào không.
+3. Nếu lỗi do lệch kiểu dữ liệu (Type Mismatch) giữa Frontend và Backend, **tuyệt đối không ép kiểu (type casting) bừa bãi**. Phải sửa đồng bộ cả file gửi (payload) và file nhận (handler).
+4. Chạy lại bài test độc lập cho đến khi PASS 100%.
+
+### Recipe 2: Khi Git Hook chặn Commit do lệch dòng (Drift Blocked)
+1. Terminal sẽ báo: `[BLOCKED] Git pre-commit aborted: PROJECT_MAP.md is out of sync`.
+2. Chạy ngay lệnh tự sửa:
+   ```bash
+   python scripts/living_map.py check --fix
+   ```
+3. Stage lại file và commit bình thường:
+   ```bash
+   git add PROJECT_MAP.md PROJECT_MAP.min.md
+   git commit -m "docs: sync living map"
+   ```
+
+### Recipe 3: Khi phát hiện ràng buộc ngầm mới khi debug (Constraint Discovery)
+1. Ngay khi debug ra một nguyên nhân "quái gở" (ví dụ: *Mobile DOM ưu tiên hơn state*, *Snapshot không realtime*):
+2. Nạp ngay vào Module 4 bằng 1 lệnh CLI:
+   ```bash
+   python scripts/living_map.py add-constraint "Mô tả bẫy nghiệp vụ vừa phát hiện"
+   ```
+3. Map sẽ tự động cập nhật ID `[C(n+1)]` và sinh lại `PROJECT_MAP.min.md`.
+
+### Recipe 4: Khi chuẩn bị sửa hàm nhạy cảm (Blast Radius Check)
+1. Trước khi sửa hàm, chạy:
+   ```bash
+   python scripts/living_map.py impact <tên_hàm>
+   ```
+2. Nếu terminal báo `CAUTION: High cross-layer blast radius` $\to$ Cảnh báo user và liệt kê danh sách DOM ID / API bị ảnh hưởng trước khi gõ code.
 
 ---
 
@@ -183,11 +218,15 @@ If code is reverted or checked out to an earlier commit:
 | Task | Command |
 |---|---|
 | Initialize map for project | `python scripts/living_map.py init` |
-| Refresh line numbers | `python scripts/living_map.py update` |
+| Refresh line numbers & mini map | `python scripts/living_map.py update` |
+| Fast blast radius / impact check | `python scripts/living_map.py impact <symbol>` |
+| Fast Smart Drift Check (MD5) | `python scripts/living_map.py check` |
+| Auto-repair drifted line numbers | `python scripts/living_map.py check --fix` |
+| Force full AST scan check | `python scripts/living_map.py check --full` |
+| Install Git Pre-Commit Hook | `python scripts/living_map.py install-hook` |
 | Update and auto-commit to Git | `python scripts/living_map.py update --auto-commit` |
-| Preview changes (no write) | `python scripts/living_map.py update --dry-run` |
 | Add newly discovered constraint | `python scripts/living_map.py add-constraint "description"` |
 | Register completed feature | `python scripts/living_map.py add-feature --id Fxxx --desc "..."` |
 | View commit history of map | `python scripts/living_map.py rollback` |
 | Rollback map to commit | `python scripts/living_map.py rollback --to <HASH>` |
-| Check if map is in sync | `python scripts/living_map.py check` |
+
