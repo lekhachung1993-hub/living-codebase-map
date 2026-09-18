@@ -259,7 +259,29 @@ Once changes are in place and local tests pass:
 | Install Git Pre-Commit Hook | `python scripts/living_map.py install-hook` |
 | Update and auto-commit to Git | `python scripts/living_map.py update --auto-commit` |
 | Add newly discovered constraint | `python scripts/living_map.py add-constraint "description"` |
-| Register feature (natural language auto-parsing) | `python scripts/living_map.py add-feature "<prompt>"` |
 | View commit history of map | `python scripts/living_map.py rollback` |
 | Safe Rollback Lock (source code 100% untouched) | `python scripts/living_map.py rollback --to <HASH>` |
+| Run as Model Context Protocol (MCP) Server | `python scripts/living_map.py mcp` |
+
+---
+
+## MODEL CONTEXT PROTOCOL (MCP) INTEGRATION
+
+Living Codebase Map can be connected to any MCP-compliant AI coding assistant (Antigravity IDE, Cursor, Claude Desktop, Windsurf, Cline) via Stdio transport.
+
+### Fast Setup:
+1. `pip install mcp`
+2. Add to your IDE MCP configuration:
+```json
+{
+  "mcpServers": {
+    "living-codebase-map": {
+      "command": "python",
+      "args": ["scripts/living_map.py", "mcp"]
+    }
+  }
+}
+```
+Exposes 6 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `register_feature`, `register_constraint`, `get_map_summary`.
+
 

@@ -41,10 +41,12 @@ Usage:
 
 import re
 import os
+import io
 import sys
 import hashlib
 import argparse
 import subprocess
+import contextlib
 from datetime import datetime
 
 # Reconfigure stdout/stderr for Unicode safety across Windows/Linux terminals
@@ -1284,12 +1286,146 @@ def cmd_rollback(args):
     return 0 if git_rollback_map(args.to) else 1
 
 # ─────────────────────────────────────────────────────────────
+# MODEL CONTEXT PROTOCOL (MCP) SERVER INTEGRATION
+# ─────────────────────────────────────────────────────────────
+
+def build_mcp_server():
+    """
+    Constructs an MCP Server instance exposing LCM capabilities as Native AI Tools.
+    Supports both mcp 2.x (MCPServer) and mcp 1.x (FastMCP).
+    """
+    try:
+        from mcp.server.mcpserver import MCPServer as FastMCP
+    except ImportError:
+        try:
+            from mcp.server.fastmcp import FastMCP
+        except ImportError:
+            return None
+
+    server = FastMCP("Living Codebase Map")
+
+    @server.tool()
+    def update_map(directory: str = "", auto_commit: bool = False) -> str:
+        """
+        Scan codebase, update symbol file:line coordinates in PROJECT_MAP.md,
+        and regenerate compact PROJECT_MAP.min.md (saving ~70% context tokens).
+        """
+        target_dir = os.path.abspath(directory) if directory else ROOT
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            args = argparse.Namespace(auto_commit=auto_commit, dry_run=False)
+            cmd_update(args)
+        return f.getvalue().strip()
+
+    @server.tool()
+    def check_drift(full_ast: bool = False) -> str:
+        """
+        Fast Smart Drift Lint in 0.02s using MD5 hashing.
+        Verifies whether PROJECT_MAP.md line numbers are in sync with active codebase.
+        """
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            args = argparse.Namespace(full=full_ast, fix=False)
+            code = cmd_check(args)
+        out = f.getvalue().strip()
+        if code == 0:
+            return f"✅ SYNCED: {out}"
+        else:
+            return f"❌ DRIFT DETECTED: {out}\n👉 AI should call tool `update_map` before modifying code."
+
+    @server.tool()
+    def analyze_code_impact(symbol: str, deep_mode: bool = False) -> str:
+        """
+        Analyze multi-layer blast radius before modifying any function, component, or route.
+        - deep_mode=False: Lean mode (<15 lines, ~300 tokens) for fast daily triage.
+        - deep_mode=True: Deep mode (exhaustive 6-layer architecture dependency tree).
+        """
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            args = argparse.Namespace(target=symbol, deep=deep_mode, full=deep_mode, lean=not deep_mode, depth=2 if not deep_mode else 0)
+            cmd_impact(args, is_deep=deep_mode)
+        return f.getvalue().strip()
+
+    @server.tool()
+    def register_feature(prompt: str, auto_commit: bool = False) -> str:
+        """
+        Auto-parse a feature from natural language prompt and register into Module 5.
+        Automatically extracts incremental ID (Fxxx), DOM Selector, API route, and clean description.
+        """
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            args = argparse.Namespace(
+                raw_text=prompt,
+                id=None,
+                desc=None,
+                commit=None,
+                ui=None,
+                js=None,
+                api=None,
+                db=None,
+                constraints=None,
+                auto_commit=auto_commit,
+                dry_run=False
+            )
+            cmd_add_feature(args)
+        return f.getvalue().strip()
+
+    @server.tool()
+    def register_constraint(description: str, constraint_id: str = "", auto_commit: bool = False) -> str:
+        """
+        Register a newly discovered implicit rule, domain invariant, or bug trap into Module 4.
+        Automatically assigns incremental [Cx] identifier.
+        """
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            args = argparse.Namespace(
+                desc=description,
+                id=constraint_id if constraint_id else None,
+                auto_commit=auto_commit,
+                dry_run=False
+            )
+            cmd_add_constraint(args)
+        return f.getvalue().strip()
+
+    @server.tool()
+    def get_map_summary() -> str:
+        """
+        Read the lightweight PROJECT_MAP.min.md summary for session warmup.
+        Provides high-level architecture overview in ~300 tokens.
+        """
+        if os.path.exists(MIN_MAP_PATH):
+            with open(MIN_MAP_PATH, 'r', encoding='utf-8', errors='replace') as f:
+                return f.read()
+        elif os.path.exists(MAP_PATH):
+            with open(MAP_PATH, 'r', encoding='utf-8', errors='replace') as f:
+                lines = f.readlines()
+                return "".join(lines[:120])
+        return "PROJECT_MAP.md not initialized. Please call `update_map` tool."
+
+    return server
+
+def cmd_mcp(args=None):
+    """Starts the Living Codebase Map MCP Server over stdio."""
+    server = build_mcp_server()
+    if server is None:
+        print("❌ [ERR] Python 'mcp' library is required to run in MCP Server mode.", file=sys.stderr)
+        print("👉 Please install it via: pip install mcp", file=sys.stderr)
+        return 1
+    print("🚀 Living Codebase Map MCP Server running via stdio transport...", file=sys.stderr)
+    server.run(transport='stdio')
+    return 0
+
+# ─────────────────────────────────────────────────────────────
 # MAIN DISPATCHER
 # ─────────────────────────────────────────────────────────────
 
 def main():
+    # Direct MCP launch shortcut
+    if len(sys.argv) > 1 and sys.argv[1] == "mcp":
+        sys.exit(cmd_mcp())
+
     parser = argparse.ArgumentParser(
-        description="Universal Living Codebase Map CLI (v2.2) -- Surgical Precision, Smart Drift & Impact Analysis."
+        description="Universal Living Codebase Map CLI (v2.5) -- Surgical Precision, Smart Drift & MCP Server."
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -1352,6 +1488,9 @@ def main():
     p_rb.add_argument("--limit", type=int, default=15, help="Number of history items to show")
     p_rb.add_argument("--dry-run", action="store_true", help="Dry run preview")
 
+    # mcp (Model Context Protocol Stdio Server)
+    p_mcp = subparsers.add_parser("mcp", help="Run Living Codebase Map as an MCP Server over stdio")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -1368,6 +1507,7 @@ def main():
         "add-feature": cmd_add_feature,
         "add-constraint": cmd_add_constraint,
         "rollback": cmd_rollback,
+        "mcp": cmd_mcp,
     }
 
     exit_code = dispatch[args.command](args)

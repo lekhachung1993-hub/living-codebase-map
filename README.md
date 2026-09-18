@@ -101,8 +101,50 @@ When the user sends these keywords in chat, execute the corresponding action aut
 | `python living_map.py check` | Verify line drift using MD5 hash | 0.02s execution: Zero CPU overhead, ideal for pre-commit & CI. |
 | `python living_map.py install-hook` | Auto-install Git Pre-commit guard | Zero-drift enforcement, blocks commits if map is out of sync. |
 | `python living_map.py rollback --to <hash>` | Restore map to previous checkpoint | Safe Lock: Strictly restores `PROJECT_MAP.md`; source code is never touched. |
+| `python living_map.py mcp` | Launch as Model Context Protocol (MCP) Server | Runs stdio server exposing 6 native tools to Cursor, Claude, Antigravity, Windsurf. |
 
 </details>
+
+---
+
+## 🔌 Model Context Protocol (MCP) Native Server Integration
+
+Living Codebase Map can run as an official **MCP Stdio Server**, providing 6 Native Tools to AI Agents in **Antigravity IDE, Cursor, Claude Desktop, Windsurf, and Cline**:
+
+### 1. Install MCP SDK (optional, only needed for MCP Server mode):
+```bash
+pip install mcp
+```
+*(Note: Core CLI commands remain 100% zero-dependency even without `mcp` installed).*
+
+### 2. Configure in your IDE:
+
+**Claude Desktop (`claude_desktop_config.json`):**
+```json
+{
+  "mcpServers": {
+    "living-codebase-map": {
+      "command": "python",
+      "args": ["/absolute/path/to/scripts/living_map.py", "mcp"]
+    }
+  }
+}
+```
+
+**Cursor / Antigravity IDE (`Settings -> Features -> MCP -> Add New MCP Server`):**
+- **Name:** `living-codebase-map`
+- **Type:** `stdio`
+- **Command:** `python /absolute/path/to/scripts/living_map.py mcp`
+
+### 3. Native Tools Exposed to Agents:
+| Native MCP Tool | Parameters | Operational Capability |
+|---|---|---|
+| `update_map` | `directory`, `auto_commit` | Scans workspace, updates `file:line` indexes, and generates `PROJECT_MAP.min.md`. |
+| `check_drift` | `full_ast` | 0.02s Smart Drift verification using MD5 to alert agent before code modifications. |
+| `analyze_code_impact` | `symbol`, `deep_mode` | Dual-mode blast radius: Lean mode (<15 lines) vs Deep 6-layer dependency tree. |
+| `register_feature` | `prompt`, `auto_commit` | Natural language auto-parsing: extracts `Fxxx`, DOM selector, API route into Module 5. |
+| `register_constraint` | `description`, `constraint_id` | Enforces implicit business traps & domain invariants in Module 4. |
+| `get_map_summary` | *(none)* | Instant session warmup with lightweight architecture overview in ~300 tokens. |
 
 <details>
 <summary><h3>🧩 Supported Languages & Framework Extractors (Click to expand)</h3></summary>
