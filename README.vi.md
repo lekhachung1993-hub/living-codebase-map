@@ -12,50 +12,30 @@
 
 ---
 
-## 💥 Vấn Đề Thực Tế: Nghịch Lý "Bác Sĩ Mổ Mù"
+## ✨ 5 Lợi Ích Vượt Trội Cho Lập Trình Viên & AI
 
-Các mô hình AI lập trình hiện đại (Claude 3.7 / 4.6, GPT-4o / o3, Gemini 2.5 / 3.0) rất giỏi viết hàm đơn lẻ. Nhưng trong một dự án thực tế đang vận hành, chúng thường mắc kẹt trong **Nghịch lý Bác sĩ mổ mù**:
-
-1. **Ảo tưởng số dòng (Line Hallucination):** Mã nguồn liên tục thay đổi. Agent nhớ vị trí hàm từ các prompt cũ, nhảy vào sửa nhầm dòng và xóa đè code lân cận.
-2. **Cắt đứt liên kết đa tầng (Cross-Layer Breakage):** Đổi một `#id` trong HTML làm chết event listener trong JS, làm sai format JSON gửi lên backend API, dẫn đến lỗi database.
-3. **Mất trí nhớ về "Ràng buộc ngầm" (Implicit Constraints):** Hệ thống có những quy tắc mà **không có bộ phân tích tĩnh nào tự suy ra được** — ví dụ:
-   - *"Không đọc state JS mà phải đọc trực tiếp DOM select vì thao tác chạm mobile không trigger blur."*
-   - *"Snapshot hầm đá là bất đồng bộ lúc 0h; không được query đọc ngay sau khi ghi."*
-   - *"Bottom bar trên mobile cần padding-bottom 125px để không che khuất nút điều hướng."*
-4. **Mất trí nhớ sau nén ngữ cảnh (Context Compaction Amnesia):** Khi đoạn chat quá dài bị tóm tắt/nén lại, Agent quên sạch bối cảnh kiến trúc và lặp lại đúng lỗi đã từng sửa.
+| Lợi ích | Giá trị thực tế mang lại |
+|---|---|
+| 🎯 **Chấm dứt sửa bậy, phá vỡ hệ thống** | AI biết trước chuỗi ảnh hưởng 6 tầng (DOM ➔ JS ➔ API ➔ DB) trong **0.05 giây** trước khi gõ bất kỳ dòng code nào. Không còn tình trạng "chữa chỗ này hỏng chỗ kia". |
+| 💸 **Tiết kiệm đến 70% chi phí Token** | AI đọc Mini Map (`PROJECT_MAP.min.md`) siêu nhẹ chỉ 300 token thay vì phải nạp hàng chục nghìn dòng mã nguồn ở mỗi câu hỏi. |
+| 🧠 **Bộ nhớ vĩnh cửu - Không bao giờ quên lỗi cũ** | Tự động ghi nhớ các "ràng buộc ngầm" và bài học xương máu (Module 4). Kể cả khi chat bị nén (compaction) hay sang ngày hôm sau, AI vẫn nhớ như in. |
+| 💬 **Tương tác trực tiếp trong chat (Zero-Terminal)** | Không cần mở terminal, không cần chạy lệnh python. Chỉ cần gõ `map update`, `map impact`... ngay trong ô chat của Claude, Cursor, Antigravity. |
+| 🛡️ **Bảo vệ tự động (Zero-Drift & Git Guard)** | Bản đồ luôn version-control cùng code. Tích hợp sẵn Pre-commit hook & GitHub Actions chặn nguy cơ lệch dòng trước khi tạo PR. |
 
 ---
 
-## 💡 Giải Pháp: Living Codebase Map
+### ⚖️ So Sánh Trước & Sau Khi Sử Dụng
 
-**Living Codebase Map (LCM)** trang bị cho AI Agent một chiếc la bàn kiến trúc sống (`PROJECT_MAP.md`) được đồng bộ liên tục bởi công cụ CLI thuần chuẩn (`living_map.py`), hoàn toàn không phụ thuộc thư viện ngoài.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                             PROJECT_MAP.md                                  │
-│                                                                             │
-│  MODULE 0: Meta (Stack, Entrypoint, DB, Trạng thái Test)                    │
-│  MODULE 1: Chỉ mục vị trí Backend (file:line → hàm/struct)                  │
-│  MODULE 2: Chỉ mục vị trí Frontend (file:line → function)                   │
-│  MODULE 3: Bản đồ phần tử DOM UI (#id → click → func() → /api)              │
-│  MODULE 4: Ràng buộc ngầm (Bài học xương máu: [C1]..[Cn])                   │
-│  MODULE 5: Đối soát tính năng đa tầng (UI ➔ JS ➔ API ➔ DB ➔ Constraints)    │
-│  MODULE 6: Tiêu chuẩn chất lượng & Kiểm thử                                 │
-│  MODULE 7: Mini Map tiết kiệm token (PROJECT_MAP.min.md)                    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                               ▲               ▲
-                   Đọc trước   │               │ Tự đồng bộ &
-                   khi sửa code│               │ Commit nguyên tử
-                               │               │
-┌──────────────────────────────┴───────────────┴──────────────────────────────┐
-│                            AI CODING AGENT                                  │
-│             (Claude Code / Cursor / Gemini Antigravity / Windsurf)          │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+| Tiêu chí | Khi chưa có Living Codebase Map | Khi dùng Living Codebase Map |
+|---|---|---|
+| **Độ chính xác vị trí** | AI đoán mò số dòng, thường xuyên xóa nhầm code | Nhắm trúng 100% tọa độ `file:line` thực tế |
+| **Bẫy nghiệp vụ ngầm** | AI liên tục lặp lại các lỗi cũ đã từng sửa | Ghi nhớ vĩnh viễn trong Module 4, cảnh báo ngay |
+| **Tác động đa tầng** | Đổi ID nút bấm UI làm chết API và database ngầm | Báo cáo đầy đủ chuỗi ảnh hưởng trong 0.05s |
+| **Thao tác người dùng** | Phải tự nhớ file python, mở terminal gõ lệnh | Tự động hoàn toàn qua ô chat |
 
 ---
 
-## 💬 Giao Diện Chat-Native (Tương Tác Không Cần Mở Terminal)
+## 💬 Giao Diện Chat Dùng Ngay (Không Cần Terminal)
 
 Bạn **không cần mở terminal** hay tìm file python. Chỉ cần gõ lệnh trực tiếp trong ô chat IDE, Agent sẽ tự chạy ngầm và báo cáo kết quả:
 
@@ -117,13 +97,13 @@ Khi người dùng gõ các từ khóa sau trong ô chat, hãy tự động th�
 
 ---
 
-## 🛠️ Danh Mục Lệnh CLI Đầy Đủ
+<details>
+<summary><h3>🛠️ Chi Tiết Các Lệnh CLI Chạy Bằng Terminal (Click để xem nếu muốn chạy tay)</h3></summary>
 
-### 1. Làm mới số dòng & sinh Mini Map (Chạy sau khi sửa code)
+### 1. Làm mới số dòng & sinh Mini Map
 ```bash
 python scripts/living_map.py update
 ```
-*Quét lại toàn bộ hàm, class, route, cập nhật lại tọa độ `L<num>` và xuất ra `PROJECT_MAP.min.md`.*
 
 ### 2. Cập nhật và tự động Git Commit Map
 ```bash
@@ -131,36 +111,23 @@ python scripts/living_map.py update --auto-commit
 ```
 
 ### 3. Phân tích ảnh hưởng đa tầng (Blast Radius Analysis)
-Trước khi sửa bất kỳ hàm nào, chạy trong 0.05s để xem trước toàn bộ hệ thống bị ảnh hưởng:
 ```bash
 python scripts/living_map.py impact <tên_hàm_hoặc_từ_khóa>
 ```
-*Tự gom nhóm: Code liên quan, UI DOM `#id`, API endpoint, Bảng Database, Ràng buộc ngầm `[Cx]` và Features liên quan.*
 
 ### 4. Ghi nhận ràng buộc ngầm mới phát hiện
 ```bash
-python scripts/living_map.py add-constraint "Mô tả bẫy nghiệp vụ vừa tìm thấy khi debug"
+python scripts/living_map.py add-constraint "Mô tả bẫy nghiệp vụ vừa tìm thấy"
 ```
-*Tự động cấp mã ID tiếp theo (ví dụ `[C9]`) và chèn vào Module 4.*
 
 ### 5. Đăng ký tính năng mới hoàn thành
 ```bash
-python scripts/living_map.py add-feature \
-  --id F080 \
-  --desc "Xuất dữ liệu kho đá ra Excel" \
-  --ui "#btn-export-excel" \
-  --js "exportExcel() app_cellar.js" \
-  --api "GET /api/cellar/export" \
-  --db "cellar_exports" \
-  --constraints "C2,C4"
+python scripts/living_map.py add-feature --id F080 --desc "Xuất Excel" --ui "#btn" --api "GET /api"
 ```
 
 ### 6. Kiểm tra lệch dòng CI/CD (Chặn PR nếu Map bị lệch)
 ```bash
 python scripts/living_map.py check
-```
-*Trả về exit code `0` nếu khớp 100%, hoặc exit code `2` kèm bảng sai lệch chi tiết. Dùng cờ `--fix` để tự sửa ngay:*
-```bash
 python scripts/living_map.py check --fix
 ```
 
@@ -168,32 +135,16 @@ python scripts/living_map.py check --fix
 ```bash
 python scripts/living_map.py install-hook --hook pre-commit
 ```
-*Tự động ngăn commit nếu lập trình viên hoặc AI quên cập nhật bản đồ.*
 
-### 8. Tích hợp GitHub Actions CI/CD
-Tệp mẫu workflow đã có sẵn tại [.github/workflows/map-lint.yml](.github/workflows/map-lint.yml). Mọi Pull Request sẽ được kiểm tra tự động:
-```yaml
-name: Living Codebase Map Lint
-on: [push, pull_request]
-jobs:
-  lint-living-map:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.x' }
-      - run: python scripts/living_map.py check
-```
-
-### 9. Xem lịch sử và hoàn nguyên bản đồ
+### 8. Xem lịch sử và hoàn nguyên bản đồ
 ```bash
 python scripts/living_map.py rollback
 python scripts/living_map.py rollback --to <COMMIT_HASH>
 ```
+</details>
 
----
-
-## 🧩 Danh Sách Ngôn Ngữ & Framework Được Hỗ Trợ
+<details>
+<summary><h3>🧩 Ngôn Ngữ & Framework Hỗ Trợ Tự Động (Click để xem chi tiết)</h3></summary>
 
 | Ngôn ngữ | Framework / Kiến trúc hỗ trợ | Ký hiệu trích xuất tự động |
 |---|---|---|
@@ -207,26 +158,25 @@ python scripts/living_map.py rollback --to <COMMIT_HASH>
 | **PHP** | Laravel, Symfony | Routes (`Route::get`), classes, methods |
 | **HTML / DOM** | HTML5, Vue Templates, JSX | Element ID (`id="..."`), class bindings |
 
----
+</details>
 
-## 📁 Cấu Trúc Thư Mục Repository
+<details>
+<summary><h3>📁 Cấu Trúc Thư Mục Repository</h3></summary>
 
 ```
 living-codebase-map/
-├── .github/
-│   └── workflows/
-│       └── map-lint.yml              # CI/CD GitHub Action cho pull requests
+├── .github/workflows/map-lint.yml    # CI/CD GitHub Action
 ├── SKILL.md                          # Định nghĩa Skill chuẩn Agent (hỗ trợ Chat-Native)
 ├── README.md                         # Tài liệu tiếng Anh
 ├── README.vi.md                      # Tài liệu tiếng Việt
 ├── LICENSE                           # Giấy phép MIT
-├── .gitignore                        # Cấu hình git ignore chuẩn
-├── scripts/
-│   └── living_map.py                 # Bộ xử lý CLI thuần Python (v2.2)
+├── scripts/living_map.py             # Bộ xử lý CLI thuần Python (v2.2)
 └── templates/
     ├── PROJECT_MAP.template.md       # Bản mẫu Living Map đầy đủ
     └── PROJECT_MAP.min.template.md   # Bản mẫu Mini Map tiết kiệm token
 ```
+
+</details>
 
 ---
 
