@@ -6,11 +6,21 @@ description: >
   DOM-to-DB cross-layer mappings, implicit constraints, and enforces risk-gated triage
   with automated git-backed synchronization.
 triggers:
+  - map
+  - lcm
+  - map update
+  - map check
+  - map impact
+  - map constraint
+  - map rollback
+  - quét map
+  - cập nhật map
+  - kiểm tra map
+  - ảnh hưởng của
+  - thêm ràng buộc
   - session start
   - before modifying any code
   - implementing new feature
-  - debugging cross-layer issue
-  - after completing any code change
 ---
 
 # Living Codebase Map: Surgical Precision for AI Agents
@@ -21,7 +31,23 @@ triggers:
 
 ---
 
+## 💬 CHAT-NATIVE INTERFACE (TƯƠNG TÁC TRỰC TIẾP TRONG Ô CHAT)
+
+Người dùng **KHÔNG CẦN mở terminal hay tìm file python**. Người dùng chỉ cần gõ lệnh trực tiếp trong ô chat, Agent sẽ tự động chạy script ngầm và hiển thị kết quả:
+
+| Lệnh trong ô chat | Hành động tự động của Agent |
+|---|---|
+| `map update` hoặc `cập nhật map` | Agent tự chạy `living_map.py update --auto-commit`, refresh line numbers, sinh `PROJECT_MAP.min.md` và báo cáo tóm tắt. |
+| `map impact <tên>` hoặc `ảnh hưởng của <tên>` | Agent tự chạy `living_map.py impact <tên>`, phân tích blast radius 6 tầng (Code, UI, API, DB, Constraints, Features) và hiển thị ngay. |
+| `map check` hoặc `kiểm tra map` | Agent chạy Smart Drift Check (MD5) trong 0.02s và thông báo trạng thái đồng bộ (hoặc tự sửa nếu có `--fix`). |
+| `map constraint <nội dung>` hoặc `thêm ràng buộc: <nội dung>` | Agent tự nạp ràng buộc ngầm vào Module 4, cập nhật ID `[Cx]` và sync lại mini map. |
+| `map rollback [hash]` | Agent tra cứu lịch sử commit của map và khôi phục về phiên bản mong muốn. |
+| `map init` | Agent tự động phát hiện stack công nghệ và khởi tạo `PROJECT_MAP.md` cho dự án mới. |
+
+---
+
 ## CORE PROTOCOL: 5-STEP SURGICAL LIFECYCLE
+
 
 ```
   [User Request]

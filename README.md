@@ -91,14 +91,36 @@ Add this directive to your project's agent instruction file (e.g. `.cursorrules`
 
 ```markdown
 <!-- living-codebase-map:start -->
-# Living Codebase Map Protocol
+# Living Codebase Map Protocol & Chat Interface
 Before making ANY code changes:
-1. ALWAYS read `PROJECT_MAP.md` first to understand architecture, DOM bindings, and implicit constraints.
-2. Check Module 4 (Implicit Constraints) to avoid known traps.
+1. Read `PROJECT_MAP.min.md` (or `PROJECT_MAP.md`) to understand architecture, DOM bindings, and implicit constraints.
+2. Check Module 4 (Implicit Constraints) to avoid known production traps.
 3. Locate exact code targets via Module 1 & 2 (`file:line`).
-4. After completing tests, run: `python .agents/skills/living-codebase-map/scripts/living_map.py update --auto-commit`
+
+### Chat Commands (Never make the user run python scripts):
+When the user sends these keywords in chat, execute the corresponding action automatically:
+- `map update` / `cập nhật map`: Run `python scripts/living_map.py update --auto-commit` and report summary.
+- `map impact <symbol>` / `ảnh hưởng của <symbol>`: Run `python scripts/living_map.py impact <symbol>` and display multi-tier blast radius.
+- `map check` / `kiểm tra map`: Run `python scripts/living_map.py check` to verify zero drift.
+- `map constraint <text>`: Append new implicit rule to Module 4.
+- `map rollback [commit]`: View history or rollback map.
 <!-- living-codebase-map:end -->
 ```
+
+---
+
+## 💬 Chat-Native Interface (Zero-Terminal Experience)
+
+You **do not need to open a terminal** or find the Python script. Just type conversational or shortcut commands directly in your IDE chat (Claude, Cursor, Antigravity, Windsurf, Copilot):
+
+| What you type in Chat | What the AI Agent does automatically |
+|---|---|
+| `map update` or `cập nhật map` | Runs `living_map.py update --auto-commit`, refreshes all line numbers, generates `PROJECT_MAP.min.md`, and shows a 3-bullet summary. |
+| `map impact <symbol>` or `ảnh hưởng của <symbol>` | Runs `living_map.py impact <symbol>`, analyzes 6-layer blast radius (Code, UI, API, DB, Constraints, Features) and returns impact breakdown in 0.05s. |
+| `map check` or `kiểm tra map` | Runs Smart Drift MD5 Check in 0.02s to verify if symbol lines drifted. |
+| `map constraint <text>` or `thêm ràng buộc: <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
+| `map rollback [hash]` | Checks map git commit history and rolls back to specified checkpoint. |
+| `map init` | Scans workspace and bootstraps `PROJECT_MAP.md` tailored to your stack. |
 
 ---
 
