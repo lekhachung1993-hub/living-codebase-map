@@ -40,10 +40,10 @@ You **do not need to open a terminal** or find the Python script. Just type conv
 | What you type in Chat | What the AI Agent does automatically |
 |---|---|
 | `map update` | Runs `living_map.py update --auto-commit`, refreshes all line numbers, generates `PROJECT_MAP.min.md`, and shows a 3-bullet summary. |
-| `map impact <symbol>` | Runs `living_map.py impact <symbol>`, analyzes 6-layer blast radius (Code, UI, API, DB, Constraints, Features) and returns impact breakdown in 0.05s. |
+| `map impact <symbol>` | Runs `living_map.py impact <symbol> --lean`, analyzes 6-layer blast radius in <10 lines to save AI context tokens. |
 | `map check` | Runs Smart Drift MD5 Check in 0.02s to verify if symbol lines drifted. |
 | `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
-| `map rollback [hash]` | Checks map git commit history and rolls back to specified checkpoint. |
+| `map rollback [hash]` | Inspects map git history or safely restores map checkpoint (source code is never touched). |
 | `map init` | Scans workspace and bootstraps `PROJECT_MAP.md` tailored to your stack. |
 
 ---
@@ -75,60 +75,28 @@ Before making ANY code changes:
 ### Chat Commands (Never make the user run python scripts):
 When the user sends these keywords in chat, execute the corresponding action automatically:
 - `map update`: Run `python scripts/living_map.py update --auto-commit` and report summary.
-- `map impact <symbol>`: Run `python scripts/living_map.py impact <symbol>` and display multi-tier blast radius.
+- `map impact <symbol>`: Run `python scripts/living_map.py impact <symbol> --lean` and display compact blast radius.
 - `map check`: Run `python scripts/living_map.py check` to verify zero drift.
 - `map constraint <text>`: Append new implicit rule to Module 4.
-- `map rollback [commit]`: View history or rollback map.
+- `map rollback [commit]`: View history or rollback map safely.
 <!-- living-codebase-map:end -->
 ```
 
 ---
 
 <details>
-<summary><h3>🛠️ Advanced CLI Command Reference (Click to expand if running manually)</h3></summary>
+<summary><h3>🛠️ Advanced CLI Command Reference (Optimized for AI Agents)</h3></summary>
 
-### 1. Refresh Line Numbers & Mini Map
-```bash
-python scripts/living_map.py update
-```
-
-### 2. Auto-Commit Map with Git
-```bash
-python scripts/living_map.py update --auto-commit
-```
-
-### 3. Fast Blast Radius & Impact Analysis
-Trace 6-tier cross-layer impact in 0.05 seconds:
-```bash
-python scripts/living_map.py impact <symbol_or_keyword>
-```
-
-### 4. Record a Newly Discovered Constraint
-```bash
-python scripts/living_map.py add-constraint "Mobile bottom bar must maintain 64px padding"
-```
-
-### 5. Register a Completed Feature
-```bash
-python scripts/living_map.py add-feature --id F080 --desc "Export Excel" --ui "#btn" --api "GET /api"
-```
-
-### 6. CI/CD Drift Linting (Block PR if Map drifts)
-```bash
-python scripts/living_map.py check
-python scripts/living_map.py check --fix
-```
-
-### 7. Install Git Pre-Commit Hook
-```bash
-python scripts/living_map.py install-hook --hook pre-commit
-```
-
-### 8. View History & Rollback Map
-```bash
-python scripts/living_map.py rollback
-python scripts/living_map.py rollback --to <COMMIT_HASH>
-```
+| Command Syntax | Operational Purpose | Token Saving & Safety Mechanism |
+|---|---|---|
+| `python living_map.py update` | Refresh line coordinates and generate `.min.md` | Saves ~70% tokens by stripping line clutter for AI warmup. |
+| `python living_map.py update --auto-commit` | Synchronize map state directly into Git history | Creates atomic memory checkpoint locking code and map. |
+| `python living_map.py impact <symbol> --lean` | Fast cross-layer blast radius scan | Limits output under 10 lines to prevent AI context overflow. |
+| `python living_map.py add-constraint "<text>"` | Register implicit business traps into Module 4 | Automatically assigns incremental `[Cx]` identifiers. |
+| `python living_map.py add-feature "<raw_text>"` | Register completed feature from prompt | Auto-parsing: Extracts ID, UI selector, API and constraints. |
+| `python living_map.py check` | Verify line drift using MD5 hash | 0.02s execution: Zero CPU overhead, ideal for pre-commit & CI. |
+| `python living_map.py install-hook` | Auto-install Git Pre-commit guard | Zero-drift enforcement, blocks commits if map is out of sync. |
+| `python living_map.py rollback --to <hash>` | Restore map to previous checkpoint | Safe: Strictly scoped to `PROJECT_MAP.md`; source code is never touched. |
 
 </details>
 

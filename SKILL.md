@@ -34,10 +34,10 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 | User Chat Command | Agent Autonomous Action |
 |---|---|
 | `map update` | Run `living_map.py update --auto-commit`, refresh line numbers, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. |
-| `map impact <symbol>` | Run `living_map.py impact <symbol>`, trace 6-tier blast radius (Code, UI, API, DB, Constraints, Features), and display report instantly. |
+| `map impact <symbol>` | Run `living_map.py impact <symbol> --lean`, trace 6-tier blast radius in <10 lines to prevent AI token bloat. |
 | `map check` | Run Smart Drift Check (MD5) in 0.02s to verify synchronization (or auto-repair if invoked with `--fix`). |
 | `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
-| `map rollback [hash]` | Inspect map commit history or restore the map to a previous checkpoint. |
+| `map rollback [hash]` | Inspect map commit history or safely restore map checkpoint (source code is never touched). |
 | `map init` | Autodetect workspace stack and bootstrap a new `PROJECT_MAP.md`. |
 
 ---
@@ -229,7 +229,7 @@ Once changes are in place and local tests pass:
 ### Recipe 4: Before Modifying High-Risk Symbols (Blast Radius Check)
 1. Before modifying any function or endpoint, query:
    ```bash
-   python scripts/living_map.py impact <symbol_name>
+   python scripts/living_map.py impact <symbol_name> --lean
    ```
 2. If the CLI outputs `CAUTION: High cross-layer blast radius` $\to$ warn the user and inspect all linked UI DOM IDs, API routes, and DB models before altering code.
 
@@ -241,14 +241,14 @@ Once changes are in place and local tests pass:
 |---|---|
 | Initialize map for project | `python scripts/living_map.py init` |
 | Refresh line numbers & mini map | `python scripts/living_map.py update` |
-| Fast blast radius / impact check | `python scripts/living_map.py impact <symbol>` |
+| Fast blast radius / impact check (Lean mode) | `python scripts/living_map.py impact <symbol> --lean` |
 | Fast Smart Drift Check (MD5) | `python scripts/living_map.py check` |
 | Auto-repair drifted line numbers | `python scripts/living_map.py check --fix` |
 | Force full AST scan check | `python scripts/living_map.py check --full` |
 | Install Git Pre-Commit Hook | `python scripts/living_map.py install-hook` |
 | Update and auto-commit to Git | `python scripts/living_map.py update --auto-commit` |
 | Add newly discovered constraint | `python scripts/living_map.py add-constraint "description"` |
-| Register completed feature | `python scripts/living_map.py add-feature --id Fxxx --desc "..."` |
+| Register feature (smart auto-detect) | `python scripts/living_map.py add-feature "<raw_text>"` |
 | View commit history of map | `python scripts/living_map.py rollback` |
-| Rollback map to commit | `python scripts/living_map.py rollback --to <HASH>` |
+| Rollback map safely (source code untouched) | `python scripts/living_map.py rollback --to <HASH>` |
 

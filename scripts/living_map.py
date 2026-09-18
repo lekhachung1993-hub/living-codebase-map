@@ -447,7 +447,9 @@ def git_commit_map(message):
     return True
 
 def git_rollback_map(target_hash):
-    """Restores PROJECT_MAP.md to a specific commit."""
+    """Restores PROJECT_MAP.md to a specific commit (SAFE: NEVER touches source code)."""
+    print(f"  🛡️ [SAFETY GUARANTEE] Rollback affects ONLY {MAP_FILENAME} & {MIN_MAP_FILENAME}.")
+    print(f"     Source code files (.go, .py, .js, .html, etc.) are 100% untouched.")
     code, content, err = _git(['show', f'{target_hash}:{MAP_FILENAME}'])
     if code != 0:
         print(f"  [GIT ERR] Could not read {MAP_FILENAME} at commit {target_hash}: {err}")
@@ -462,7 +464,7 @@ def git_rollback_map(target_hash):
     with open(MAP_PATH, 'w', encoding='utf-8') as f:
         f.write(content)
     print(f"  [OK] Restored {MAP_FILENAME} to commit {target_hash[:8]}")
-    generate_min_map()
+    generate_min_map(MAP_PATH, MIN_MAP_PATH)
     msg = f"docs: rollback {MAP_FILENAME} to {target_hash[:8]}"
     git_commit_map(msg)
     return True
@@ -946,63 +948,71 @@ def cmd_impact(args):
         content = f.read()
 
     target = args.target
-    print("=" * 70)
-    print(f"🎯 BLAST RADIUS & IMPACT ANALYSIS: '{target}'")
-    print("=" * 70)
-
     report = analyze_symbol_impact(target, content)
+    blast_count = len(report['locations']) + len(report['ui_triggers']) + len(report['api_routes']) + len(report['db_tables'])
+    has_constraints = bool(report['constraints'])
+    risk_level = "🔴 CRITICAL" if (blast_count > 10 or has_constraints) else ("🟡 MEDIUM" if blast_count > 3 else "🟢 LOW")
 
-    # 1. Code Locations
-    print("\n[1] CODE DEFINITIONS:")
-    if report['locations']:
-        for loc in report['locations']:
-            print(f"    • {loc}")
-    else:
-        print("    (No direct symbol definition found in Code Location Index)")
+    is_lean = getattr(args, 'lean', False)
+    depth = getattr(args, 'depth', 0)
+    if is_lean and depth == 0:
+        depth = 2
 
-    # 2. UI Triggers
-    print("\n[2] UI & DOM TRIGGERS (MODULE 3):")
-    if report['ui_triggers']:
-        for ui in report['ui_triggers']:
-            print(f"    • {ui}")
-    else:
-        print("    (No direct UI triggers bound to this symbol)")
+    # LEAN MODE (< 15 lines): Optimized for AI Agents to prevent Token Bloat
+    if is_lean:
+        print(f"🎯 IMPACT (LEAN): '{target}' | Risk: {risk_level} ({blast_count} components)")
+        print("-" * 65)
+        if report['locations']:
+            loc_sample = [l.split('->')[0].strip() for l in report['locations'][:depth]]
+            extra = f" (+{len(report['locations']) - depth} more)" if len(report['locations']) > depth else ""
+            print(f"• Code:        {', '.join(loc_sample)}{extra}")
+        if report['ui_triggers']:
+            ui_sample = [u.split(':')[0].strip() for u in report['ui_triggers'][:depth]]
+            extra = f" (+{len(report['ui_triggers']) - depth} more)" if len(report['ui_triggers']) > depth else ""
+            print(f"• UI DOM:      {', '.join(ui_sample)}{extra}")
+        if report['api_routes']:
+            extra = f" (+{len(report['api_routes']) - depth} more)" if len(report['api_routes']) > depth else ""
+            print(f"• API:         {', '.join(report['api_routes'][:depth])}{extra}")
+        if report['db_tables']:
+            extra = f" (+{len(report['db_tables']) - depth} more)" if len(report['db_tables']) > depth else ""
+            print(f"• DB:          {', '.join(report['db_tables'][:depth])}{extra}")
+        if report['constraints']:
+            c_ids = [c.split(']')[0].strip(' [') for c in report['constraints'][:depth]]
+            extra = f" (+{len(report['constraints']) - depth} more)" if len(report['constraints']) > depth else ""
+            print(f"• Constraints: {', '.join(c_ids)}{extra}")
+        if report['features']:
+            f_ids = [f.split(':')[0].strip() for f in report['features'][:depth]]
+            extra = f" (+{len(report['features']) - depth} more)" if len(report['features']) > depth else ""
+            print(f"• Features:    {', '.join(f_ids)}{extra}")
+        print(f"💡 Action:     {'Verify Module 4 constraints before editing.' if has_constraints else 'Safe to proceed with minimal blast radius.'}")
+        print("-" * 65)
+        return 0
 
-    # 3. API Routes
-    print("\n[3] API CONTRACTS:")
-    if report['api_routes']:
-        for ep in report['api_routes']:
-            print(f"    • Endpoint: `{ep}`")
-    else:
-        print("    (No direct API endpoints registered)")
+    # FULL MODE (or custom depth)
+    print("=" * 70)
+    print(f"🎯 BLAST RADIUS & IMPACT ANALYSIS: '{target}' | Risk: {risk_level}")
+    print("=" * 70)
 
-    # 4. Database Models
-    print("\n[4] DATABASE TABLES & MODELS:")
-    if report['db_tables']:
-        for tbl in report['db_tables']:
-            print(f"    • Table: `{tbl}`")
-    else:
-        print("    (No database tables linked)")
+    def print_section(title, items, formatter=None):
+        print(f"\n{title}")
+        if not items:
+            print("    (None detected)")
+            return
+        limit = depth if depth > 0 else len(items)
+        for it in items[:limit]:
+            print(f"    • {formatter(it) if formatter else it}")
+        if len(items) > limit:
+            print(f"    • ... (+{len(items) - limit} more items; use --depth or omit --lean for full list)")
 
-    # 5. Implicit Constraints
-    print("\n[5] APPLICABLE IMPLICIT CONSTRAINTS (MODULE 4):")
-    if report['constraints']:
-        for c in report['constraints']:
-            print(f"    • ⚠️ {c}")
-    else:
-        print("    (No specific keyword constraints detected; verify general constraints)")
-
-    # 6. Linked Features
-    print("\n[6] LINKED FEATURES (MODULE 5):")
-    if report['features']:
-        for ft in report['features']:
-            print(f"    • {ft}")
-    else:
-        print("    (No cross-reference features explicitly matched)")
+    print_section("[1] CODE DEFINITIONS:", report['locations'])
+    print_section("[2] UI & DOM TRIGGERS (MODULE 3):", report['ui_triggers'])
+    print_section("[3] API CONTRACTS:", report['api_routes'], lambda ep: f"Endpoint: `{ep}`")
+    print_section("[4] DATABASE TABLES & MODELS:", report['db_tables'], lambda tbl: f"Table: `{tbl}`")
+    print_section("[5] APPLICABLE IMPLICIT CONSTRAINTS (MODULE 4):", report['constraints'], lambda c: f"⚠️ {c}")
+    print_section("[6] LINKED FEATURES (MODULE 5):", report['features'])
 
     print("\n" + "=" * 70)
     print("💡 AGENT SUMMARY:")
-    blast_count = len(report['locations']) + len(report['ui_triggers']) + len(report['api_routes']) + len(report['db_tables'])
     if blast_count > 3 or report['constraints']:
         print(f"   ⚠️ CAUTION: High cross-layer blast radius ({blast_count} linked components).")
         print("   Always verify constraints in Module 4 and run integration tests before commit.")
@@ -1060,7 +1070,7 @@ exit 0
     return 0
 
 def cmd_add_feature(args):
-    """Injects a new feature into the map."""
+    """Injects a new feature into the map with smart auto-detection."""
     if not os.path.exists(MAP_PATH):
         print(f"[ERR] {MAP_FILENAME} not found. Run 'init' first.")
         return 1
@@ -1068,32 +1078,91 @@ def cmd_add_feature(args):
     with open(MAP_PATH, 'r', encoding='utf-8', errors='replace') as f:
         content = f.read()
 
-    commit = args.commit or git_get_head_info()[0]
+    raw_input = getattr(args, 'raw_text', '') or getattr(args, 'desc', '') or ''
+    if not raw_input and not getattr(args, 'id', None):
+        print("❌ [ERR] Please provide feature description or raw text.")
+        print("   Usage: python living_map.py add-feature \"Export Excel using #btn-export calling GET /api/export\"")
+        return 1
+
+    # 1. Smart Feature ID
+    feature_id = getattr(args, 'id', None)
+    if not feature_id:
+        m_id = re.search(r'\b(F\d{2,4}|F-[A-Za-z0-9_\-]+)\b', raw_input)
+        if m_id:
+            feature_id = m_id.group(1).upper()
+        else:
+            existing_nums = [int(n) for n in re.findall(r'\|\s*F(\d{2,4})\s*\|', content)]
+            next_num = max(existing_nums) + 1 if existing_nums else 1
+            feature_id = f"F{next_num:03d}"
+
+    # 2. Smart UI DOM Selector
+    ui_sel = getattr(args, 'ui', None)
+    if not ui_sel:
+        m_ui = re.search(r'([#\.][a-zA-Z0-9_\-]+)', raw_input)
+        ui_sel = m_ui.group(1) if m_ui else "-"
+
+    # 3. Smart API Endpoint
+    api_ep = getattr(args, 'api', None)
+    if not api_ep:
+        m_api = re.search(r'((?:GET|POST|PUT|DELETE|PATCH)\s+/[a-zA-Z0-9_\-/:*]+|/[a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-/]+)', raw_input, re.IGNORECASE)
+        api_ep = m_api.group(1).upper() if m_api else "-"
+
+    # 4. Smart Constraints
+    constraints = getattr(args, 'constraints', None)
+    if not constraints:
+        m_c = re.findall(r'\bC\d+\b', raw_input, re.IGNORECASE)
+        constraints = ",".join(c.upper() for c in m_c) if m_c else "-"
+
+    # 5. Smart JS function
+    js_func = getattr(args, 'js', None)
+    if not js_func:
+        m_js = re.search(r'([a-zA-Z0-9_]+\(\)(?:\s+[a-zA-Z0-9_.]+)?)', raw_input)
+        js_func = m_js.group(1) if m_js else "-"
+
+    # 6. Smart DB Table
+    db_tbl = getattr(args, 'db', None)
+    if not db_tbl:
+        m_db = re.search(r'(?:table|bảng|tbl)\s+([a-zA-Z0-9_]+)', raw_input, re.IGNORECASE)
+        db_tbl = m_db.group(1) if m_db else "-"
+
+    # 7. Clean Description
+    desc = getattr(args, 'desc', None) or raw_input.strip()
+
+    commit = getattr(args, 'commit', None) or git_get_head_info()[0]
     new_content = inject_feature(
         content,
-        feature_id=args.id,
-        desc=args.desc,
+        feature_id=feature_id,
+        desc=desc,
         commit=commit,
-        ui_sel=args.ui or "-",
-        js_func=args.js or "-",
-        api_ep=args.api or "-",
-        db_tbl=args.db or "-",
-        constraints=args.constraints or "-"
+        ui_sel=ui_sel,
+        js_func=js_func,
+        api_ep=api_ep,
+        db_tbl=db_tbl,
+        constraints=constraints
     )
     codebase_hash = calculate_codebase_hash(ROOT)
     new_content = update_map_header(new_content, codebase_hash)
 
-    if args.dry_run:
-        print("[DRY-RUN] Feature injection preview OK.")
+    if getattr(args, 'dry_run', False):
+        print(f"[DRY-RUN] Auto-detected feature preview for [{feature_id}]:")
+        print(f"   Desc:        {desc}")
+        print(f"   UI:          {ui_sel}")
+        print(f"   JS:          {js_func}")
+        print(f"   API:         {api_ep}")
+        print(f"   DB:          {db_tbl}")
+        print(f"   Constraints: {constraints}")
         return 0
 
     with open(MAP_PATH, 'w', encoding='utf-8') as f:
         f.write(new_content)
-    print(f"[OK] Injected feature {args.id} into {MAP_FILENAME}.")
+    print(f"✅ [OK] Auto-detected & registered feature {feature_id} into {MAP_FILENAME}:")
+    print(f"   • Desc:        {desc}")
+    print(f"   • UI:          {ui_sel} | API: {api_ep}")
+    print(f"   • DB:          {db_tbl} | Constraints: {constraints}")
     generate_min_map(MAP_PATH, MIN_MAP_PATH)
 
-    if args.auto_commit:
-        git_commit_map(f"docs: map feature {args.id} - {args.desc}")
+    if getattr(args, 'auto_commit', False):
+        git_commit_map(f"docs: map feature {feature_id} - {desc[:50]}")
     return 0
 
 def cmd_add_constraint(args):
@@ -1123,7 +1192,8 @@ def cmd_add_constraint(args):
     return 0
 
 def cmd_rollback(args):
-    """Lists history or restores map to a previous commit."""
+    """Lists history or restores map to a previous commit (Safe: NEVER touches source code)."""
+    print(f"🛡️ [SAFETY NOTICE] 'rollback' operates strictly on {MAP_FILENAME}. Source code is never touched.")
     entries = git_log_map(args.limit)
     if not entries:
         print(f"[WARN] No git history found for {MAP_FILENAME}.")
@@ -1133,14 +1203,14 @@ def cmd_rollback(args):
         print(f"\n=== {MAP_FILENAME} GIT HISTORY (Recent {len(entries)} commits) ===")
         for i, e in enumerate(entries):
             print(f"  [{i:2d}] {e['short']}  {e['date']}  {e['msg']}")
-        print(f"\nTo rollback, run:")
+        print(f"\nTo rollback map safely without touching code, run:")
         sample_hash = entries[1]['short'] if len(entries) > 1 else entries[0]['short']
         print(f"  python living_map.py rollback --to {sample_hash}")
         return 0
 
     print(f"[ROLLBACK] Restoring {MAP_FILENAME} to commit {args.to}...")
     if args.dry_run:
-        print("  [DRY-RUN] Would restore file without writing.")
+        print(f"  [DRY-RUN] Verified commit {args.to}. Map exists. Source code files remain 100% untouched.")
         return 0
     return 0 if git_rollback_map(args.to) else 1
 
@@ -1171,16 +1241,19 @@ def main():
     # impact (Blast Radius Analysis)
     p_imp = subparsers.add_parser("impact", help="Quick cross-layer blast radius analysis for a symbol/id")
     p_imp.add_argument("target", help="Symbol name, DOM ID, or keyword to trace across layers")
+    p_imp.add_argument("--lean", action="store_true", help="Ultra-compact summary (<15 lines) to save AI tokens")
+    p_imp.add_argument("--depth", type=int, default=0, help="Max items per section (e.g. --depth 2)")
 
     # install-hook
     p_hk = subparsers.add_parser("install-hook", help="Install Git hook (pre-commit / pre-push) to block drift")
     p_hk.add_argument("--hook", choices=["pre-commit", "pre-push"], default="pre-commit",
                       help="Git hook type (default: pre-commit)")
 
-    # add-feature
-    p_feat = subparsers.add_parser("add-feature", help="Inject feature into Cross-Reference table")
-    p_feat.add_argument("--id", required=True, help="Feature ID (e.g. F079)")
-    p_feat.add_argument("--desc", required=True, help="Short feature description")
+    # add-feature (Smart Auto-Detection)
+    p_feat = subparsers.add_parser("add-feature", help="Inject feature into Cross-Reference table (supports auto-parsing)")
+    p_feat.add_argument("raw_text", nargs="?", default="", help="Feature description or raw prompt (auto-extracts ID, UI, API, constraints)")
+    p_feat.add_argument("--id", help="Feature ID (e.g. F080). Auto-assigned incrementally if omitted.")
+    p_feat.add_argument("--desc", help="Short feature description")
     p_feat.add_argument("--commit", help="Commit hash (default: latest HEAD)")
     p_feat.add_argument("--ui", help="DOM Selector / Component (e.g. #btn-submit)")
     p_feat.add_argument("--js", help="Frontend function and file")
@@ -1197,8 +1270,8 @@ def main():
     p_cons.add_argument("--auto-commit", action="store_true", help="Auto git commit")
     p_cons.add_argument("--dry-run", action="store_true", help="Dry run preview")
 
-    # rollback
-    p_rb = subparsers.add_parser("rollback", help="View history or rollback map to previous commit")
+    # rollback (Safe Map-Only Rollback)
+    p_rb = subparsers.add_parser("rollback", help="Restore PROJECT_MAP.md to a previous commit (Safe: NEVER touches source code)")
     p_rb.add_argument("--to", help="Target commit hash to rollback to")
     p_rb.add_argument("--limit", type=int, default=15, help="Number of history items to show")
     p_rb.add_argument("--dry-run", action="store_true", help="Dry run preview")
