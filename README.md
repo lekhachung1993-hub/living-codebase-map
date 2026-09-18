@@ -3,8 +3,6 @@
 > **Surgical Precision, Implicit Constraints & Atomic Working Memory for AI Coding Agents.**  
 > *Stop AI agents from hallucinating line numbers, breaking UI-to-DB connections, and repeating past production mistakes.*
 
-**[English](README.md)** | [Tiếng Việt](README.vi.md)
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)]()
@@ -41,10 +39,10 @@ You **do not need to open a terminal** or find the Python script. Just type conv
 
 | What you type in Chat | What the AI Agent does automatically |
 |---|---|
-| `map update` or `cập nhật map` | Runs `living_map.py update --auto-commit`, refreshes all line numbers, generates `PROJECT_MAP.min.md`, and shows a 3-bullet summary. |
-| `map impact <symbol>` or `ảnh hưởng của <symbol>` | Runs `living_map.py impact <symbol>`, analyzes 6-layer blast radius (Code, UI, API, DB, Constraints, Features) and returns impact breakdown in 0.05s. |
-| `map check` or `kiểm tra map` | Runs Smart Drift MD5 Check in 0.02s to verify if symbol lines drifted. |
-| `map constraint <text>` or `thêm ràng buộc: <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
+| `map update` | Runs `living_map.py update --auto-commit`, refreshes all line numbers, generates `PROJECT_MAP.min.md`, and shows a 3-bullet summary. |
+| `map impact <symbol>` | Runs `living_map.py impact <symbol>`, analyzes 6-layer blast radius (Code, UI, API, DB, Constraints, Features) and returns impact breakdown in 0.05s. |
+| `map check` | Runs Smart Drift MD5 Check in 0.02s to verify if symbol lines drifted. |
+| `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
 | `map rollback [hash]` | Checks map git commit history and rolls back to specified checkpoint. |
 | `map init` | Scans workspace and bootstraps `PROJECT_MAP.md` tailored to your stack. |
 
@@ -76,9 +74,9 @@ Before making ANY code changes:
 
 ### Chat Commands (Never make the user run python scripts):
 When the user sends these keywords in chat, execute the corresponding action automatically:
-- `map update` / `cập nhật map`: Run `python scripts/living_map.py update --auto-commit` and report summary.
-- `map impact <symbol>` / `ảnh hưởng của <symbol>`: Run `python scripts/living_map.py impact <symbol>` and display multi-tier blast radius.
-- `map check` / `kiểm tra map`: Run `python scripts/living_map.py check` to verify zero drift.
+- `map update`: Run `python scripts/living_map.py update --auto-commit` and report summary.
+- `map impact <symbol>`: Run `python scripts/living_map.py impact <symbol>` and display multi-tier blast radius.
+- `map check`: Run `python scripts/living_map.py check` to verify zero drift.
 - `map constraint <text>`: Append new implicit rule to Module 4.
 - `map rollback [commit]`: View history or rollback map.
 <!-- living-codebase-map:end -->
@@ -158,8 +156,7 @@ python scripts/living_map.py rollback --to <COMMIT_HASH>
 living-codebase-map/
 ├── .github/workflows/map-lint.yml    # CI/CD GitHub Action for pull requests
 ├── SKILL.md                          # Standard Agent Skill Definition (Chat-Native)
-├── README.md                         # Documentation & Quickstart (English)
-├── README.vi.md                      # Documentation & Quickstart (Tiếng Việt)
+├── README.md                         # Documentation & Quickstart
 ├── LICENSE                           # MIT License
 ├── scripts/living_map.py             # Zero-dependency CLI engine (v2.2)
 └── templates/

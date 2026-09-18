@@ -13,11 +13,7 @@ triggers:
   - map impact
   - map constraint
   - map rollback
-  - quét map
-  - cập nhật map
-  - kiểm tra map
-  - ảnh hưởng của
-  - thêm ràng buộc
+  - map init
   - session start
   - before modifying any code
   - implementing new feature
@@ -31,18 +27,18 @@ triggers:
 
 ---
 
-## 💬 CHAT-NATIVE INTERFACE (TƯƠNG TÁC TRỰC TIẾP TRONG Ô CHAT)
+## 💬 CHAT-NATIVE INTERFACE (ZERO-TERMINAL CHAT COMMANDS)
 
-Người dùng **KHÔNG CẦN mở terminal hay tìm file python**. Người dùng chỉ cần gõ lệnh trực tiếp trong ô chat, Agent sẽ tự động chạy script ngầm và hiển thị kết quả:
+Users **DO NOT NEED to open a terminal or locate python files**. When a user types any of these commands directly in chat, the AI Agent must autonomously execute the underlying script and return structured results:
 
-| Lệnh trong ô chat | Hành động tự động của Agent |
+| User Chat Command | Agent Autonomous Action |
 |---|---|
-| `map update` hoặc `cập nhật map` | Agent tự chạy `living_map.py update --auto-commit`, refresh line numbers, sinh `PROJECT_MAP.min.md` và báo cáo tóm tắt. |
-| `map impact <tên>` hoặc `ảnh hưởng của <tên>` | Agent tự chạy `living_map.py impact <tên>`, phân tích blast radius 6 tầng (Code, UI, API, DB, Constraints, Features) và hiển thị ngay. |
-| `map check` hoặc `kiểm tra map` | Agent chạy Smart Drift Check (MD5) trong 0.02s và thông báo trạng thái đồng bộ (hoặc tự sửa nếu có `--fix`). |
-| `map constraint <nội dung>` hoặc `thêm ràng buộc: <nội dung>` | Agent tự nạp ràng buộc ngầm vào Module 4, cập nhật ID `[Cx]` và sync lại mini map. |
-| `map rollback [hash]` | Agent tra cứu lịch sử commit của map và khôi phục về phiên bản mong muốn. |
-| `map init` | Agent tự động phát hiện stack công nghệ và khởi tạo `PROJECT_MAP.md` cho dự án mới. |
+| `map update` | Run `living_map.py update --auto-commit`, refresh line numbers, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. |
+| `map impact <symbol>` | Run `living_map.py impact <symbol>`, trace 6-tier blast radius (Code, UI, API, DB, Constraints, Features), and display report instantly. |
+| `map check` | Run Smart Drift Check (MD5) in 0.02s to verify synchronization (or auto-repair if invoked with `--fix`). |
+| `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
+| `map rollback [hash]` | Inspect map commit history or restore the map to a previous checkpoint. |
+| `map init` | Autodetect workspace stack and bootstrap a new `PROJECT_MAP.md`. |
 
 ---
 
@@ -202,40 +198,40 @@ Once changes are in place and local tests pass:
 
 ---
 
-## KỊCH BẢN XỬ LÝ SỰ CỐ (TROUBLESHOOTING RECIPES)
+## TROUBLESHOOTING RECIPES
 
-### Recipe 1: Khi Test bị FAIL (Test Failure Self-Healing)
-1. Đọc Terminal Log để xác định chính xác `file:line` phát sinh lỗi.
-2. Chạy `python scripts/living_map.py impact <failed_function>` để tra cứu xem dòng đó có dính dáng tới Constraint `[Cx]` nào không.
-3. Nếu lỗi do lệch kiểu dữ liệu (Type Mismatch) giữa Frontend và Backend, **tuyệt đối không ép kiểu (type casting) bừa bãi**. Phải sửa đồng bộ cả file gửi (payload) và file nhận (handler).
-4. Chạy lại bài test độc lập cho đến khi PASS 100%.
+### Recipe 1: When Tests Fail (Test Failure Self-Healing)
+1. Read the terminal error log to pinpoint the exact `file:line` target.
+2. Query `python scripts/living_map.py impact <failed_function>` to inspect linked constraints (`[Cx]`).
+3. If the failure stems from a payload/type mismatch between Frontend and Backend, **never apply arbitrary type casting**. Fix both the caller (payload sender) and receiver (API handler) in lockstep.
+4. Re-run targeted tests until 100% green.
 
-### Recipe 2: Khi Git Hook chặn Commit do lệch dòng (Drift Blocked)
-1. Terminal sẽ báo: `[BLOCKED] Git pre-commit aborted: PROJECT_MAP.md is out of sync`.
-2. Chạy ngay lệnh tự sửa:
+### Recipe 2: When Git Hook Blocks Commit due to Drift
+1. The terminal reports: `[BLOCKED] Git pre-commit aborted: PROJECT_MAP.md is out of sync`.
+2. Run the automatic repair command immediately:
    ```bash
    python scripts/living_map.py check --fix
    ```
-3. Stage lại file và commit bình thường:
+3. Stage the refreshed map and commit normally:
    ```bash
    git add PROJECT_MAP.md PROJECT_MAP.min.md
    git commit -m "docs: sync living map"
    ```
 
-### Recipe 3: Khi phát hiện ràng buộc ngầm mới khi debug (Constraint Discovery)
-1. Ngay khi debug ra một nguyên nhân "quái gở" (ví dụ: *Mobile DOM ưu tiên hơn state*, *Snapshot không realtime*):
-2. Nạp ngay vào Module 4 bằng 1 lệnh CLI:
+### Recipe 3: When an Implicit Constraint is Discovered During Debugging
+1. As soon as you discover an unexpected trap or domain invariant (e.g., *Mobile DOM priority*, *Snapshot async delay*):
+2. Register it immediately via CLI:
    ```bash
-   python scripts/living_map.py add-constraint "Mô tả bẫy nghiệp vụ vừa phát hiện"
+   python scripts/living_map.py add-constraint "Description of newly discovered invariant"
    ```
-3. Map sẽ tự động cập nhật ID `[C(n+1)]` và sinh lại `PROJECT_MAP.min.md`.
+3. The map automatically increments the next `[C(n+1)]` ID and regenerates `PROJECT_MAP.min.md`.
 
-### Recipe 4: Khi chuẩn bị sửa hàm nhạy cảm (Blast Radius Check)
-1. Trước khi sửa hàm, chạy:
+### Recipe 4: Before Modifying High-Risk Symbols (Blast Radius Check)
+1. Before modifying any function or endpoint, query:
    ```bash
-   python scripts/living_map.py impact <tên_hàm>
+   python scripts/living_map.py impact <symbol_name>
    ```
-2. Nếu terminal báo `CAUTION: High cross-layer blast radius` $\to$ Cảnh báo user và liệt kê danh sách DOM ID / API bị ảnh hưởng trước khi gõ code.
+2. If the CLI outputs `CAUTION: High cross-layer blast radius` $\to$ warn the user and inspect all linked UI DOM IDs, API routes, and DB models before altering code.
 
 ---
 
