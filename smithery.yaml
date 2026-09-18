@@ -1,0 +1,9 @@
+# Smithery MCP Server Configuration
+# https://smithery.ai/docs/config
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction:
+    python: "scripts/living_map.py mcp"

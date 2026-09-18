@@ -1405,14 +1405,23 @@ def build_mcp_server():
     return server
 
 def cmd_mcp(args=None):
-    """Starts the Living Codebase Map MCP Server over stdio."""
+    """Starts the Living Codebase Map MCP Server over stdio or SSE."""
     server = build_mcp_server()
     if server is None:
         print("❌ [ERR] Python 'mcp' library is required to run in MCP Server mode.", file=sys.stderr)
         print("👉 Please install it via: pip install mcp", file=sys.stderr)
         return 1
-    print("🚀 Living Codebase Map MCP Server running via stdio transport...", file=sys.stderr)
-    server.run(transport='stdio')
+
+    transport = getattr(args, 'transport', 'stdio') if args else 'stdio'
+    port = getattr(args, 'port', 8000) if args else 8000
+    host = getattr(args, 'host', '127.0.0.1') if args else '127.0.0.1'
+
+    if transport == 'sse':
+        print(f"🚀 Living Codebase Map MCP Server running via SSE at http://{host}:{port}...", file=sys.stderr)
+        server.run(transport='sse')
+    else:
+        print("🚀 Living Codebase Map MCP Server running via stdio transport...", file=sys.stderr)
+        server.run(transport='stdio')
     return 0
 
 # ─────────────────────────────────────────────────────────────
@@ -1421,7 +1430,7 @@ def cmd_mcp(args=None):
 
 def main():
     # Direct MCP launch shortcut
-    if len(sys.argv) > 1 and sys.argv[1] == "mcp":
+    if len(sys.argv) > 1 and sys.argv[1] == "mcp" and len(sys.argv) == 2:
         sys.exit(cmd_mcp())
 
     parser = argparse.ArgumentParser(
@@ -1488,8 +1497,11 @@ def main():
     p_rb.add_argument("--limit", type=int, default=15, help="Number of history items to show")
     p_rb.add_argument("--dry-run", action="store_true", help="Dry run preview")
 
-    # mcp (Model Context Protocol Stdio Server)
-    p_mcp = subparsers.add_parser("mcp", help="Run Living Codebase Map as an MCP Server over stdio")
+    # mcp (Model Context Protocol Server)
+    p_mcp = subparsers.add_parser("mcp", help="Run Living Codebase Map as an MCP Server over stdio or SSE")
+    p_mcp.add_argument("--transport", choices=["stdio", "sse"], default="stdio", help="MCP transport protocol (default: stdio)")
+    p_mcp.add_argument("--host", default="127.0.0.1", help="Host address for SSE server (default: 127.0.0.1)")
+    p_mcp.add_argument("--port", type=int, default=8000, help="Port for SSE server (default: 8000)")
 
     args = parser.parse_args()
 

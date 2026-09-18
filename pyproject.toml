@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "living-codebase-map"
+version = "2.5.0"
+description = "Universal Living Codebase Map & MCP Server for AI Coding Agents."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "lekhachung1993-hub" }]
+keywords = ["mcp", "model-context-protocol", "ai-agents", "codebase-map", "ast-indexer", "claude", "cursor", "antigravity"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "mcp>=1.0.0"
+]
+
+[project.scripts]
+living-codebase-map = "scripts.living_map:main"
+living-map = "scripts.living_map:main"
+
+[project.urls]
+Homepage = "https://github.com/lekhachung1993-hub/living-codebase-map"
+Repository = "https://github.com/lekhachung1993-hub/living-codebase-map.git"
