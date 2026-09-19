@@ -321,6 +321,16 @@ class StableSymbolIndexTests(unittest.TestCase):
         self.assertIn('Risk:', result['text'])
         self.assertTrue(result['plan']['seeds'])
 
+    def test_parse_symbol_git_history(self):
+        raw = (
+            'a' * 40 + '\x1faaaaaaa\x1f2026-01-02\x1fFix retry race\x1e'
+            + 'b' * 40 + '\x1fbbbbbbb\x1f2025-12-01\x1fAdd worker\x1e'
+        )
+        entries = living_map.parse_symbol_git_history(raw)
+        self.assertEqual(entries[0]['short'], 'aaaaaaa')
+        self.assertEqual(entries[0]['subject'], 'Fix retry race')
+        self.assertEqual(entries[1]['date'], '2025-12-01')
+
 
 if __name__ == '__main__':
     unittest.main()

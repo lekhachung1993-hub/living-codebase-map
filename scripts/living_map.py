@@ -1245,6 +1245,42 @@ def compile_task_context(task, graph, budget=500):
     text = '\n'.join(selected)
     return {'text': text, 'estimated_tokens': (len(text) + 3) // 4, 'omitted_lines': omitted, 'plan': plan}
 
+
+def parse_symbol_git_history(raw_log):
+    """Parse delimiter-safe git log output into temporal-memory entries."""
+    entries = []
+    for record in raw_log.split('\x1e'):
+        parts = record.strip().split('\x1f', 3)
+        if len(parts) == 4:
+            entries.append({'hash': parts[0], 'short': parts[1], 'date': parts[2], 'subject': parts[3]})
+    return entries
+
+
+def get_symbol_history(query, graph, limit=10):
+    """Resolve a symbol and query Git pickaxe history for its name and file."""
+    explanation = explain_graph_symbol(query, graph)
+    if explanation['match'] is None:
+        return {'symbol': None, 'candidates': explanation['candidates'], 'commits': [], 'constraints': []}
+    node = explanation['match']
+    path = node.get('path')
+    name = node.get('name') or node.get('qualified_name', '').rsplit('.', 1)[-1]
+    commits = []
+    if path and name:
+        code, out, _ = _git([
+            'log', '--follow', f'-S{name}',
+            '--format=%H%x1f%h%x1f%cs%x1f%s%x1e', '--', path,
+        ])
+        if code == 0:
+            commits = parse_symbol_git_history(out)[:max(1, limit)]
+    constraints = []
+    nodes = {item['id']: item for item in graph.get('nodes', [])}
+    for edge in explanation.get('outgoing', []):
+        if edge.get('relation') == 'CONSTRAINED_BY':
+            target = nodes.get(edge.get('target'))
+            if target:
+                constraints.append(target)
+    return {'symbol': node, 'candidates': [], 'commits': commits, 'constraints': constraints}
+
 def build_symbol_database(root_dir=ROOT):
     """
     Traverses the codebase and builds:
@@ -2133,6 +2169,38 @@ def cmd_explain(args):
         print(f"  - {edge['relation']} to {edge['target']} ({edge['confidence']:.2f})")
     return 0
 
+
+def cmd_why(args):
+    """Explain why a symbol exists using Git history and active constraints."""
+    if not os.path.exists(GRAPH_PATH):
+        print(f"[ERR] {LCM_DIRNAME}/{GRAPH_FILENAME} not found. Run 'update' first.")
+        return 1
+    with open(GRAPH_PATH, 'r', encoding='utf-8') as f:
+        result = get_symbol_history(args.symbol, json.load(f), args.limit)
+    if result['symbol'] is None:
+        if result['candidates']:
+            print("[ERR] Ambiguous symbol. Use one full Stable Symbol ID:")
+            for candidate in result['candidates']:
+                print(f"  - {candidate}")
+        else:
+            print(f"[ERR] Symbol not found: {args.symbol}")
+        return 2
+    node = result['symbol']
+    print(f"WHY: {node['id']}")
+    if result['commits']:
+        introduced = result['commits'][-1]
+        print(f"Introduced/oldest match: {introduced['short']} {introduced['date']} {introduced['subject']}")
+        print("Relevant changes:")
+        for commit in result['commits']:
+            print(f"  - {commit['short']} {commit['date']} {commit['subject']}")
+    else:
+        print("Git history: no pickaxe match found for this symbol name.")
+    if result['constraints']:
+        print("Constraints:")
+        for constraint in result['constraints']:
+            print(f"  - {constraint['name']} [{constraint['severity']}] {constraint['rule']}")
+    return 0
+
 def cmd_rollback(args):
     """Lists history or restores map to a previous commit (Safe: NEVER touches source code)."""
     print(f"🛡️ [SAFETY NOTICE] 'rollback' operates strictly on {MAP_FILENAME}. Source code is never touched.")
@@ -2381,6 +2449,10 @@ def main():
     p_explain = subparsers.add_parser("explain", help="Explain one symbol and its one-hop relationships")
     p_explain.add_argument("symbol", help="Symbol name, qualified name, or Stable Symbol ID")
 
+    p_why = subparsers.add_parser("why", help="Explain symbol history and architectural reasons")
+    p_why.add_argument("symbol", help="Symbol name, qualified name, or Stable Symbol ID")
+    p_why.add_argument("--limit", type=int, default=10, help="Maximum relevant commits")
+
     # rollback (Safe Map-Only Rollback)
     p_rb = subparsers.add_parser("rollback", help="Restore PROJECT_MAP.md to a previous commit (Safe: NEVER touches source code)")
     p_rb.add_argument("--to", help="Target commit hash to rollback to")
@@ -2412,6 +2484,7 @@ def main():
         "verify-change": cmd_verify_change,
         "context": cmd_context,
         "explain": cmd_explain,
+        "why": cmd_why,
         "rollback": cmd_rollback,
         "mcp": cmd_mcp,
     }
