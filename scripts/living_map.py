@@ -513,7 +513,7 @@ RE_NEXT_PAGE  = re.compile(r'^[ \t]*export\s+(?:async\s+)?function\s+(getServerS
 RE_RS_FN      = re.compile(r'^[ \t]*(?:pub(?:\([^)]+\))?\s+)?(?:async\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.MULTILINE)
 RE_RS_STRUCT  = re.compile(r'^[ \t]*(?:pub(?:\([^)]+\))?\s+)?(?:struct|enum|trait)\s+([A-Za-z_][A-Za-z0-9_]*)\b', re.MULTILINE)
 RE_RS_IMPL    = re.compile(r'^[ \t]*impl(?:\s*<[^>{}]+>)?\s+(?:[^\n{}]+\s+for\s+)?([A-Za-z_][A-Za-z0-9_:<>]*)\s*\{', re.MULTILINE)
-RE_CS_METHOD  = re.compile(r'^[ \t]*(?:public|private|protected|internal)\s+(?:static\s+)?(?:async\s+)?(?:[A-Za-z0-9_<>[\]]+)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.MULTILINE)
+RE_CS_METHOD  = re.compile(r'^[ \t]*(?:public|private|protected|internal)\s+(?:(?:static|async|virtual|override|sealed|partial)\s+)*(?:[A-Za-z_][A-Za-z0-9_<>[\],.?]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.MULTILINE)
 RE_CS_CLS     = re.compile(r'^[ \t]*(?:public|private|protected|internal)\s+(?:abstract\s+|sealed\s+)?(?:class|interface|record)\s+([A-Za-z_][A-Za-z0-9_]*)\b', re.MULTILINE)
 RE_JAVA_MTH   = re.compile(r'^[ \t]*(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(?:[A-Za-z0-9_<>[\]]+)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.MULTILINE)
 RE_JAVA_CLS   = re.compile(r'^[ \t]*(?:public|private|protected)\s+(?:abstract\s+)?(?:class|interface|enum)\s+([A-Za-z_][A-Za-z0-9_]*)\b', re.MULTILINE)
@@ -898,6 +898,59 @@ def _rust_symbol_records(file_path):
     return sorted(records, key=lambda item: (item['line'], item['qualified_name']))
 
 
+def _csharp_symbol_records(file_path):
+    """Extract ranged C# methods and class-qualified stable symbol IDs."""
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            source = f.read()
+    except OSError:
+        return []
+    masked = _strip_javascript_noncode(source)
+    source_lines = source.splitlines()
+    class_ranges = []
+    records = []
+    for match in RE_CS_CLS.finditer(masked):
+        body = masked.find('{', match.end())
+        end = _matching_delimiter(masked, body, '{', '}')
+        name = match.group(1)
+        line = masked.count('\n', 0, match.start()) + 1
+        end_line = masked.count('\n', 0, end) + 1 if end >= 0 else line
+        class_ranges.append((body, end, name))
+        declaration = source_lines[line - 1] if line <= len(source_lines) else name
+        records.append({
+            'name': name, 'qualified_name': name, 'kind': 'class',
+            'line': line, 'end_line': end_line,
+            'fingerprint': _symbol_fingerprint('class', name, declaration),
+        })
+    for match in RE_CS_METHOD.finditer(masked):
+        name = match.group(1)
+        line = masked.count('\n', 0, match.start()) + 1
+        parameters = masked.find('(', match.start(), match.end() + 1)
+        parameters_end = _matching_delimiter(masked, parameters, '(', ')')
+        body = masked.find('{', parameters_end + 1) if parameters_end >= 0 else -1
+        arrow = masked.find('=>', parameters_end + 1) if parameters_end >= 0 else -1
+        semicolon = masked.find(';', parameters_end + 1) if parameters_end >= 0 else -1
+        if arrow >= 0 and semicolon >= 0 and (body < 0 or arrow < body):
+            end = semicolon
+        elif body >= 0 and (semicolon < 0 or body < semicolon):
+            end = _matching_delimiter(masked, body, '{', '}')
+        else:
+            end = match.end()
+        end_line = masked.count('\n', 0, end) + 1 if end >= 0 else line
+        owner = next(
+            (class_name for start, stop, class_name in class_ranges if start < match.start() < stop),
+            None,
+        )
+        qualified = f'{owner}.{name}' if owner else name
+        declaration = source_lines[line - 1] if line <= len(source_lines) else name
+        records.append({
+            'name': name, 'qualified_name': qualified, 'kind': 'method',
+            'line': line, 'end_line': end_line,
+            'fingerprint': _symbol_fingerprint('method', qualified, declaration),
+        })
+    return sorted(records, key=lambda item: (item['line'], item['qualified_name']))
+
+
 def scan_file_symbol_records(file_path, rel_path=None):
     """Return structured symbols used by the v3 index.
 
@@ -914,6 +967,8 @@ def scan_file_symbol_records(file_path, rel_path=None):
         records = _go_symbol_records(file_path)
     elif ext == '.rs':
         records = _rust_symbol_records(file_path)
+    elif ext == '.cs':
+        records = _csharp_symbol_records(file_path)
     elif ext in ('.js', '.ts', '.jsx', '.tsx', '.vue'):
         records = _javascript_symbol_records(file_path)
     else:
@@ -1326,10 +1381,108 @@ def build_dependency_graph(index, root_dir=ROOT):
 
     for file_info in index.get('files', []):
         language = file_info.get('language')
-        if language not in {'py', 'js', 'ts', 'vue', 'go', 'rust'}:
+        if language not in {'py', 'js', 'ts', 'vue', 'go', 'rust', 'csharp'}:
             continue
         rel_path = file_info['path']
         full_path = os.path.join(root_dir, rel_path)
+        if language == 'csharp':
+            try:
+                with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                    source = f.read()
+            except OSError:
+                continue
+            masked = _strip_javascript_noncode(source)
+            directory = posixpath.dirname(rel_path)
+            file_symbols = [
+                symbol for symbol in symbols
+                if symbol['path'] == rel_path and symbol.get('kind') == 'method'
+            ]
+
+            def csharp_owner(line):
+                owners = [
+                    symbol for symbol in file_symbols
+                    if symbol['line'] <= line <= symbol['end_line']
+                ]
+                return min(owners, key=lambda item: item['end_line'] - item['line']) if owners else None
+
+            def csharp_target(name, class_name=None):
+                candidates = [
+                    symbol for symbol in by_dir_name.get((directory, name), [])
+                    if symbol.get('kind') == 'method'
+                    and (not class_name or symbol.get('qualified_name') == f'{class_name}.{name}')
+                ]
+                return candidates[0] if len(candidates) == 1 else None
+
+            test_symbols = set()
+            lines = source.splitlines()
+            for symbol in file_symbols:
+                prefix = '\n'.join(lines[max(0, symbol['line'] - 5):symbol['line'] - 1])
+                if _is_test_path(rel_path) or re.search(
+                    r'\[\s*(?:Fact|Theory|Test|TestCase|TestMethod)\b', prefix,
+                ):
+                    test_symbols.add(symbol['id'])
+
+            call_pattern = re.compile(r'(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_]*)\s*\(')
+            ignored = {'if', 'for', 'foreach', 'while', 'switch', 'catch', 'using', 'lock', 'nameof', 'typeof', 'sizeof'}
+            for match in call_pattern.finditer(masked):
+                called = match.group(1)
+                if called in ignored:
+                    continue
+                line = masked.count('\n', 0, match.start()) + 1
+                caller = csharp_owner(line)
+                target = csharp_target(called)
+                if not caller or not target:
+                    continue
+                relation = 'TESTED_BY' if caller['id'] in test_symbols else 'CALLS'
+                source_id, target_id = caller['id'], target['id']
+                if relation == 'TESTED_BY':
+                    source_id, target_id = target_id, source_id
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'csharp_static')
+
+            member_pattern = re.compile(
+                r'(?<![A-Za-z0-9_])([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\('
+            )
+            for match in member_pattern.finditer(masked):
+                line = masked.count('\n', 0, match.start()) + 1
+                caller = csharp_owner(line)
+                if not caller:
+                    continue
+                owner_class = caller['qualified_name'].rsplit('.', 1)[0]
+                class_name = owner_class if match.group(1) == 'this' else match.group(1)
+                target = csharp_target(match.group(2), class_name)
+                if not target:
+                    continue
+                relation = 'TESTED_BY' if caller['id'] in test_symbols else 'CALLS'
+                source_id, target_id = caller['id'], target['id']
+                if relation == 'TESTED_BY':
+                    source_id, target_id = target_id, source_id
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'csharp_static')
+
+            route_pattern = re.compile(
+                r'\[\s*Http(Get|Post|Put|Delete|Patch|Head)\s*(?:\(\s*"([^"]+)"[^)]*\))?\s*\]'
+                r'\s*(?:\[[^]]+\]\s*)*(?:public|private|protected|internal)\s+'
+                r'(?:(?:static|async)\s+)*(?:[A-Za-z_][A-Za-z0-9_<>[\],.?]*)\s+'
+                r'([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.IGNORECASE,
+            )
+            minimal_pattern = re.compile(
+                r'\bapp\.Map(Get|Post|Put|Delete|Patch)\s*\(\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*)'
+            )
+            for pattern in (route_pattern, minimal_pattern):
+                for match in pattern.finditer(source):
+                    if not masked[match.start():match.start() + 1].strip():
+                        continue
+                    method, route, handler_name = match.group(1).upper(), match.group(2) or '/', match.group(3)
+                    handler = csharp_target(handler_name)
+                    if not handler:
+                        continue
+                    route_id = f'api:{method} {route}'
+                    line = source.count('\n', 0, match.start()) + 1
+                    if route_id not in node_ids:
+                        node_ids.add(route_id)
+                        nodes.append({'id': route_id, 'type': 'api', 'name': f'{method} {route}', 'method': method, 'route': route, 'path': rel_path, 'line': line})
+                    add_edge(route_id, handler['id'], 'HANDLES', 1.0, rel_path, line, 'csharp_static')
+            continue
+
         if language == 'rust':
             try:
                 with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
