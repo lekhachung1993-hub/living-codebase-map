@@ -260,6 +260,39 @@ class StableSymbolIndexTests(unittest.TestCase):
         self.assertEqual(result['edges'][0]['relation'], 'CONSTRAINED_BY')
         self.assertEqual(result['edges'][0]['confidence'], 1.0)
 
+    def test_change_plan_produces_explainable_risk(self):
+        graph = {
+            'nodes': [
+                {'id': 'api:POST /orders', 'type': 'api', 'name': 'POST /orders', 'path': 'api.py'},
+                {'id': 'py:service.py::create_order', 'type': 'symbol', 'name': 'create_order', 'qualified_name': 'create_order', 'path': 'service.py'},
+                {'id': 'constraint:C1', 'type': 'constraint', 'name': 'C1', 'severity': 'critical'},
+            ],
+            'edges': [
+                {'source': 'api:POST /orders', 'target': 'py:service.py::create_order', 'relation': 'HANDLES', 'confidence': 1.0},
+                {'source': 'py:service.py::create_order', 'target': 'constraint:C1', 'relation': 'CONSTRAINED_BY', 'confidence': 1.0},
+            ],
+        }
+        plan = living_map.build_change_plan('change create order API', graph)
+        self.assertEqual(plan['risk_level'], 'RED')
+        self.assertGreaterEqual(plan['risk_score'], 60)
+        self.assertIn(('+25', 'public API or route'), plan['reasons'])
+        self.assertIn(('+25', 'critical constraint'), plan['reasons'])
+
+    def test_verify_change_reports_linked_test_not_changed(self):
+        graph = {
+            'nodes': [
+                {'id': 'py:service.py::create', 'type': 'symbol', 'path': 'service.py'},
+                {'id': 'py:tests/test_service.py::test_create', 'type': 'symbol', 'path': 'tests/test_service.py'},
+            ],
+            'edges': [{
+                'source': 'py:service.py::create',
+                'target': 'py:tests/test_service.py::test_create',
+                'relation': 'TESTED_BY', 'confidence': 1.0,
+            }],
+        }
+        report = living_map.verify_changed_files(['service.py'], graph)
+        self.assertEqual(report['missing_tests'], ['tests/test_service.py'])
+
 
 if __name__ == '__main__':
     unittest.main()
