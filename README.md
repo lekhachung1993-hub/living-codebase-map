@@ -1,7 +1,7 @@
 # Living Codebase Map (LCM)
 
-> **Surgical Precision, Implicit Constraints & Atomic Working Memory for AI Coding Agents.**  
-> *Stop AI agents from hallucinating line numbers, breaking UI-to-DB connections, and repeating past production mistakes.*
+> **Stable Symbol Identity, Implicit Constraints & Persistent Working Memory for AI Coding Agents.**
+> *Treat line numbers as navigation hints—not identity—while preserving cross-layer knowledge and production constraints.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
@@ -14,8 +14,8 @@
 
 | Benefit | Real-World Impact |
 |---|---|
-| 🎯 **Zero Broken Code** | AI analyzes 6-tier cross-layer impact (DOM ➔ JS ➔ API ➔ DB) in **0.05 seconds** before touching code. Eliminates collateral bugs and broken contracts. |
-| 💸 **Save up to 70% Token Costs** | AI reads the ultra-lean Mini Map (`PROJECT_MAP.min.md`, ~300 tokens) instead of swallowing thousands of source code lines on every turn. |
+| 🎯 **Stable Symbol Index** | `.lcm/index.json` identifies symbols by language, repository path, and qualified name; line ranges remain refreshable navigation metadata. |
+| 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
 | 🛡️ **Zero-Drift Git Guard** | The map versions in lockstep with your codebase. Includes pre-commit hooks and GitHub Actions CI/CD to block drifted PRs automatically. |
@@ -26,9 +26,9 @@
 
 | Dimension | Standard AI Agent (Zero Context) | With Living Codebase Map (LCM) |
 |---|---|---|
-| **Surgical Precision** | Hallucinates lines, overwrites adjacent code | Targets exact 100% verified `file:line` |
+| **Surgical Precision** | Treats stale line numbers as identity | Resolves a stable Symbol ID, then uses current `file:line` as a cache |
 | **Hidden Business Traps** | Repeats previously solved production bugs | Permanently anchored in Module 4 constraints |
-| **Cross-Layer Awareness** | Renaming UI button silently breaks API & DB | Instant 6-tier blast radius report in 0.05s |
+| **Cross-Layer Awareness** | Renaming UI button can silently break API & DB | Map-assisted 6-tier blast-radius report |
 | **Developer Effort** | Remember CLI syntax, juggle terminal windows | Conversational commands directly in IDE chat |
 
 ---
@@ -39,10 +39,10 @@ You **do not need to open a terminal** or find the Python script. Just type conv
 
 | What you type in Chat | What the AI Agent does automatically |
 |---|---|
-| `map update` | Runs `living_map.py update --auto-commit`, refreshes all line numbers, generates `PROJECT_MAP.min.md`, and shows a 3-bullet summary. |
-| `map impact <symbol>` | Runs `living_map.py impact <symbol>`, default **Lean Mode** (<15 lines) analyzing 6-layer blast radius while saving ~70% context tokens. |
+| `map update` | Runs `living_map.py update`, refreshes locations, writes `.lcm/index.json`, generates `PROJECT_MAP.min.md`, and leaves commits under developer control. |
+| `map impact <symbol>` | Runs `living_map.py impact <symbol>` in concise Lean Mode (<15 lines) across the documented map layers. |
 | `map deep-impact <symbol>` | Runs `living_map.py deep-impact <symbol>`, **Deep Mode** generating an exhaustive 6-layer tree view (`├──`, `└──`) for complex refactoring. |
-| `map check` | Runs Smart Drift MD5 Check in 0.02s to verify if symbol lines drifted. |
+| `map check` | Runs the Smart Drift MD5 Check and falls back to symbol verification when needed. |
 | `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
 | `map add-feature "<prompt>"` | Natural language auto-parsing: extracts feature ID (`Fxxx`), DOM selector, API route, and registers into Module 5. |
 | `map rollback [hash]` | Safe Rollback Lock: Inspects map history or restores map checkpoint (**source code is 100% untouched**). |
@@ -72,11 +72,11 @@ Add this directive to your project's agent instruction file (e.g. `.cursorrules`
 Before making ANY code changes:
 1. Read `PROJECT_MAP.min.md` (or `PROJECT_MAP.md`) to understand architecture, DOM bindings, and implicit constraints.
 2. Check Module 4 (Implicit Constraints) to avoid known production traps.
-3. Locate exact code targets via Module 1 & 2 (`file:line`).
+3. Resolve code targets by Symbol ID; use Module 1 & 2 `file:line` values only for navigation.
 
 ### Chat Commands (Never make the user run python scripts):
 When the user sends these keywords in chat, execute the corresponding action automatically:
-- `map update`: Run `python scripts/living_map.py update --auto-commit` and report summary.
+- `map update`: Run `python scripts/living_map.py update` and report summary; do not commit unless explicitly requested.
 - `map impact <symbol>`: Run `python scripts/living_map.py impact <symbol>` (default Lean mode, <15 lines).
 - `map deep-impact <symbol>`: Run `python scripts/living_map.py deep-impact <symbol>` (exhaustive 6-layer tree).
 - `map check`: Run `python scripts/living_map.py check` to verify zero drift.
@@ -92,13 +92,13 @@ When the user sends these keywords in chat, execute the corresponding action aut
 
 | Command Syntax | Operational Purpose | Token Saving & Safety Mechanism |
 |---|---|---|
-| `python living_map.py update` | Refresh line coordinates and generate `.min.md` | Saves ~70% tokens by stripping line clutter for AI warmup. |
+| `python living_map.py update` | Write `.lcm/index.json`, refresh line coordinates, and generate `.min.md` | Keeps machine identity separate from human/LLM projections. |
 | `python living_map.py update --auto-commit` | Synchronize map state directly into Git history | Creates atomic memory checkpoint locking code and map. |
 | `python living_map.py impact <symbol>` | Quick cross-layer blast radius scan (Lean Mode) | Default: limits output under 15 lines to prevent AI context overflow. |
 | `python living_map.py deep-impact <symbol>` | Exhaustive 6-layer architecture dependency tree | Full tree analysis (`├──`, `└──`) for high-stakes refactoring. |
 | `python living_map.py add-feature "<prompt>"` | Auto-parse feature from natural language | Extracts ID, UI selector (`#id`, `.class`), API, and cleans description. |
 | `python living_map.py add-constraint "<text>"` | Register implicit business traps into Module 4 | Automatically assigns incremental `[Cx]` identifiers. |
-| `python living_map.py check` | Verify line drift using MD5 hash | 0.02s execution: Zero CPU overhead, ideal for pre-commit & CI. |
+| `python living_map.py check` | Verify drift using MD5 and symbol locations | Fast path for pre-commit and CI; performance depends on repository size and storage. |
 | `python living_map.py install-hook` | Auto-install Git Pre-commit guard | Zero-drift enforcement, blocks commits if map is out of sync. |
 | `python living_map.py rollback --to <hash>` | Restore map to previous checkpoint | Safe Lock: Strictly restores `PROJECT_MAP.md`; source code is never touched. |
 | `python living_map.py mcp` | Launch as Model Context Protocol (MCP) Server | Runs stdio server exposing 6 native tools to Cursor, Claude, Antigravity, Windsurf. |
@@ -113,7 +113,7 @@ Living Codebase Map can run as an official **MCP Stdio Server**, providing 6 Nat
 
 ### 1. Install MCP SDK (optional, only needed for MCP Server mode):
 ```bash
-pip install mcp
+pip install 'living-codebase-map[mcp]'
 ```
 *(Note: Core CLI commands remain 100% zero-dependency even without `mcp` installed).*
 
@@ -139,8 +139,8 @@ pip install mcp
 ### 3. Native Tools Exposed to Agents:
 | Native MCP Tool | Parameters | Operational Capability |
 |---|---|---|
-| `update_map` | `directory`, `auto_commit` | Scans workspace, updates `file:line` indexes, and generates `PROJECT_MAP.min.md`. |
-| `check_drift` | `full_ast` | 0.02s Smart Drift verification using MD5 to alert agent before code modifications. |
+| `update_map` | `directory`, `auto_commit` | Scans workspace, writes the stable symbol index, updates location caches, and generates `PROJECT_MAP.min.md`. |
+| `check_drift` | `full_ast` | Smart Drift verification using MD5, with optional full symbol scanning. |
 | `analyze_code_impact` | `symbol`, `deep_mode` | Dual-mode blast radius: Lean mode (<15 lines) vs Deep 6-layer dependency tree. |
 | `register_feature` | `prompt`, `auto_commit` | Natural language auto-parsing: extracts `Fxxx`, DOM selector, API route into Module 5. |
 | `register_constraint` | `description`, `constraint_id` | Enforces implicit business traps & domain invariants in Module 4. |
@@ -172,7 +172,9 @@ living-codebase-map/
 ├── SKILL.md                          # Standard Agent Skill Definition (Chat-Native)
 ├── README.md                         # Documentation & Quickstart
 ├── LICENSE                           # MIT License
-├── scripts/living_map.py             # Zero-dependency CLI engine (v2.2)
+├── scripts/living_map.py             # Zero-dependency core CLI engine (v3)
+├── .lcm/index.json                    # Generated machine-readable stable symbol index
+├── tests/test_symbol_index.py         # Stable-ID and collision regression tests
 └── templates/
     ├── PROJECT_MAP.template.md       # Universal Living Map template
     └── PROJECT_MAP.min.template.md   # AI Token-Saver mini map template

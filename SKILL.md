@@ -2,7 +2,8 @@
 name: living-codebase-map
 description: >
   Living Codebase Map & Surgical Precision Workflow for AI Coding Agents.
-  Maintains PROJECT_MAP.md as living working memory: tracks symbol locations (file:line),
+  Maintains a stable machine symbol index plus PROJECT_MAP.md working memory; tracks
+  Symbol IDs independently from cached file:line locations,
   DOM-to-DB cross-layer mappings, implicit constraints, and enforces risk-gated triage
   with automated git-backed synchronization.
 triggers:
@@ -23,7 +24,7 @@ triggers:
 
 > **Philosophy:** AI coding models fail in production codebases not from lack of intelligence, but from **blind surgery** — missing implicit business constraints, hallucinating outdated line numbers, and severing unseen cross-layer connections between UI DOM, API contracts, and database states.
 >
-> **The Solution:** A living, version-controlled architecture compass (`PROJECT_MAP.md`) paired with a zero-dependency CLI engine (`living_map.py`) that synchronizes symbol locations, enforces atomic git commits, and anchors agent memory across chat compactions.
+> **The Solution:** A machine-readable stable symbol index (`.lcm/index.json`) plus a living architecture compass (`PROJECT_MAP.md`). The CLI refreshes navigation locations without confusing line numbers with identity; commits remain explicit.
 
 ---
 
@@ -33,9 +34,9 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 
 | User Chat Command | Agent Autonomous Action |
 |---|---|
-| `map update` | Run `living_map.py update --auto-commit`, refresh line numbers, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. |
+| `map update` | Run `living_map.py update`, write `.lcm/index.json`, refresh location caches, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. Never auto-commit unless requested. |
 | `map impact <symbol>` | Run `living_map.py impact <symbol> --lean`, trace 6-tier blast radius in <10 lines to prevent AI token bloat. |
-| `map check` | Run Smart Drift Check (MD5) in 0.02s to verify synchronization (or auto-repair if invoked with `--fix`). |
+| `map check` | Run Smart Drift Check (MD5) to verify synchronization (or auto-repair if invoked with `--fix`). |
 | `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
 | `map rollback [hash]` | Inspect map commit history or safely restore map checkpoint (source code is never touched). |
 | `map init` | Autodetect workspace stack and bootstrap a new `PROJECT_MAP.md`. |
@@ -65,7 +66,7 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
         │
         ▼
 ┌──────────────────┐
-│ STEP 3: SURGERY  │ ──► Karpathy surgical edit at exact file:line target
+│ STEP 3: SURGERY  │ ──► Resolve Symbol ID, then navigate to its current file:line
 └──────────────────┘
         │
         ▼
@@ -86,7 +87,7 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 **Mandatory first action of every coding session:**
 
 1. **Read `PROJECT_MAP.min.md` first:**
-   - If `PROJECT_MAP.min.md` exists, read it instead of the full map (~300-500 tokens, saving ~70% context).
+   - If `PROJECT_MAP.min.md` exists, read it instead of the full map to reduce repeated context.
    - If only `PROJECT_MAP.md` exists, read `PROJECT_MAP.md`.
 2. Extract working memory:
    - **Recent Commit & Feature Status** (Header & Module 8)
@@ -120,9 +121,9 @@ Classify every incoming user request into one of three risk categories:
 
 ## STEP 2: CROSS-LAYER IMPACT TRACING (DUAL-MODE FAST CLI)
 
-Before modifying any symbol, query its blast radius in 0.05 seconds via CLI:
+Before modifying any symbol, query its documented blast radius via CLI:
 
-- **Daily Standard (Lean Mode, <15 lines - Saves ~70% Context Tokens):**
+- **Daily Standard (Lean Mode, <15 lines):**
   ```bash
   python scripts/living_map.py impact <symbol_or_keyword>
   ```
@@ -151,7 +152,7 @@ This traces the multi-tier dependency chain:
 
 ## STEP 3: KARPATHY SURGICAL SURGERY
 
-1. **Locate exact line:** Use Module 1 & 2 in `PROJECT_MAP.md` (or `living_map.py impact`) to jump directly to `file:line`.
+1. **Resolve identity first:** Prefer `.lcm/index.json` Symbol IDs (`language:path::qualified.name`). Use Module 1 & 2 or `impact` only to navigate to the current `file:line`.
 2. **Minimal diff:** Do not reformat adjacent functions. Only edit the exact block required.
 3. **Preserve comments & type signatures:** Maintain backwards compatibility.
 4. **If a new hidden constraint is uncovered during development:**
@@ -166,7 +167,7 @@ This traces the multi-tier dependency chain:
 
 Once changes are in place and local tests pass:
 
-1. **Refresh symbol line numbers & generate compact map:**
+1. **Refresh the stable symbol index, location caches, and compact map:**
    ```bash
    python scripts/living_map.py update
    ```
@@ -190,7 +191,7 @@ Once changes are in place and local tests pass:
 
 ## STEP 5: ATOMIC GIT CHECKPOINT (CODE & MAP IN LOCKSTEP)
 
-**The Golden Rule:** Code, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` must **ALWAYS** be committed together.
+**The Golden Rule:** When a code change affects the map, commit code, `.lcm/index.json`, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` together. `map update` itself must not create a commit.
 
 - **Option A (Automated via CLI):**
   ```bash
@@ -220,7 +221,7 @@ Once changes are in place and local tests pass:
    ```
 3. Stage the refreshed map and commit normally:
    ```bash
-   git add PROJECT_MAP.md PROJECT_MAP.min.md
+   git add .lcm/index.json PROJECT_MAP.md PROJECT_MAP.min.md
    git commit -m "docs: sync living map"
    ```
 
@@ -283,5 +284,3 @@ Living Codebase Map can be connected to any MCP-compliant AI coding assistant (A
 }
 ```
 Exposes 6 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `register_feature`, `register_constraint`, `get_map_summary`.
-
-
