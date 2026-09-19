@@ -53,6 +53,19 @@ jobs:
             exit 1
           fi
 
+      - name: Enforce Codebase Fitness Gates
+        run: |
+          if [ -f "scripts/living_map.py" ]; then
+            python scripts/living_map.py fitness --strict
+          elif [ -f ".agents/skills/living-codebase-map/scripts/living_map.py" ]; then
+            python .agents/skills/living-codebase-map/scripts/living_map.py fitness --strict
+          elif [ -f "tools/living_map.py" ]; then
+            python tools/living_map.py fitness --strict
+          else
+            echo "❌ Error: living_map.py not found"
+            exit 1
+          fi
+
       - name: Troubleshooting Message on Failure
         if: failure()
         run: |

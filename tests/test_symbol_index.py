@@ -1041,6 +1041,47 @@ class StableSymbolIndexTests(unittest.TestCase):
         )
         self.assertEqual(result, '[ERROR exit=2]\nchecked checkout')
 
+    def test_graph_fitness_measures_coverage_confidence_hubs_and_tests(self):
+        graph = {
+            'nodes': [
+                {'id': 'a', 'type': 'symbol', 'path': 'src/a.py'},
+                {'id': 'b', 'type': 'symbol', 'path': 'src/b.py'},
+                {'id': 'c', 'type': 'symbol', 'path': 'src/c.py'},
+                {'id': 't', 'type': 'symbol', 'path': 'tests/test_c.py'},
+            ],
+            'edges': [
+                {'source': 'a', 'target': 'b', 'relation': 'CALLS', 'confidence': 1.0},
+                {'source': 'b', 'target': 'c', 'relation': 'CALLS', 'confidence': 0.8},
+                {'source': 'c', 'target': 't', 'relation': 'TESTED_BY', 'confidence': 1.0},
+            ],
+        }
+        config = {
+            'schema_version': 1, 'hub_min_incoming': 1,
+            'thresholds': {
+                'min_edge_coverage': 0.7,
+                'min_resolved_edge_ratio': 0.5,
+                'max_hub_concentration': 0.5,
+                'min_test_link_rate': 0.3,
+                'max_constraint_issues': 0,
+            },
+        }
+        report = living_map.analyze_graph_fitness(graph, [], config)
+        self.assertTrue(report['passed'])
+        self.assertEqual(report['metrics']['edge_coverage'], 0.75)
+        self.assertEqual(report['metrics']['resolved_edge_ratio'], 0.5)
+        self.assertEqual(report['metrics']['hub_concentration'], 0.5)
+        self.assertEqual(report['metrics']['test_link_rate'], 1 / 3)
+        self.assertEqual(report['metrics']['untested_hub_count'], 1)
+
+    def test_fitness_config_rejects_incomplete_thresholds(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = self._write(
+                root, 'fitness.json',
+                json.dumps({'schema_version': 1, 'hub_min_incoming': 2, 'thresholds': {}}),
+            )
+            with self.assertRaisesRegex(ValueError, 'must define exactly'):
+                living_map.load_fitness_config(path)
+
     def test_mcp_server_registers_cli_parity_tools(self):
         class FakeFastMCP:
             def __init__(self, name):
@@ -1069,7 +1110,7 @@ class StableSymbolIndexTests(unittest.TestCase):
 
         self.assertEqual(set(server.tools), {
             'update_map', 'check_drift', 'analyze_code_impact',
-            'plan_change', 'verify_change', 'compile_context',
+            'plan_change', 'fitness_report', 'verify_change', 'compile_context',
             'explain_symbol', 'explain_symbol_history',
             'register_feature', 'register_constraint', 'get_map_summary',
         })

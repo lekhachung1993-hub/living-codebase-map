@@ -1,0 +1,11 @@
+{
+  "hub_min_incoming": 3,
+  "schema_version": 1,
+  "thresholds": {
+    "max_constraint_issues": 0,
+    "max_hub_concentration": 0.15,
+    "min_edge_coverage": 0.5,
+    "min_resolved_edge_ratio": 0.7,
+    "min_test_link_rate": 0.15
+  }
+}
