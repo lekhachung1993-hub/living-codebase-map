@@ -219,6 +219,47 @@ class StableSymbolIndexTests(unittest.TestCase):
             self.assertIn('graph edge 0 has invalid confidence', issues)
             self.assertIn('graph content differs from a fresh deterministic scan', issues)
 
+    def test_constraint_validation_rejects_active_missing_symbol(self):
+        index = {'symbols': [{'id': 'py:app.py::run'}]}
+        payload = {
+            'schema_version': 1,
+            'constraints': [{
+                'id': 'C1', 'rule': 'Run must be idempotent', 'status': 'ACTIVE',
+                'severity': 'high', 'scope': ['py:app.py::missing'],
+            }],
+        }
+        issues = living_map.validate_constraints(payload, index)
+        self.assertIn('C1: ACTIVE scope references missing symbols: py:app.py::missing', issues)
+
+    def test_stale_constraint_may_retain_missing_symbol_history(self):
+        payload = {
+            'schema_version': 1,
+            'constraints': [{
+                'id': 'C1', 'rule': 'Legacy rule', 'status': 'STALE',
+                'severity': 'low', 'scope': ['py:deleted.py::old'],
+            }],
+        }
+        self.assertEqual(living_map.validate_constraints(payload, {'symbols': []}), [])
+
+    def test_constraints_become_graph_nodes_and_edges(self):
+        graph = {
+            'schema_version': 1,
+            'source_hash': 'abc',
+            'nodes': [{'id': 'py:app.py::run', 'type': 'symbol'}],
+            'edges': [],
+        }
+        payload = {
+            'schema_version': 1,
+            'constraints': [{
+                'id': 'C7', 'rule': 'Run is idempotent', 'status': 'ACTIVE',
+                'severity': 'critical', 'scope': ['py:app.py::run'],
+            }],
+        }
+        result = living_map.apply_constraints_to_graph(graph, payload)
+        self.assertEqual(result['nodes'][-1]['id'], 'constraint:C7')
+        self.assertEqual(result['edges'][0]['relation'], 'CONSTRAINED_BY')
+        self.assertEqual(result['edges'][0]['confidence'], 1.0)
+
 
 if __name__ == '__main__':
     unittest.main()

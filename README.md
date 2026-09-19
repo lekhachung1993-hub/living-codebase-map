@@ -17,6 +17,7 @@
 | 🎯 **Stable Symbol Index** | `.lcm/index.json` identifies symbols by language, repository path, and qualified name; line ranges remain refreshable navigation metadata. |
 | 🕸️ **Evidence-backed Dependency Graph** | `.lcm/graph.json` records dependency edges with confidence and source evidence; ambiguous call targets are not guessed. |
 | ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
+| 📜 **Structured Constraints** | `.lcm/constraints.json` stores lifecycle, severity, stable-symbol scope, reason, owner, and provenance; active rules become graph edges. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -175,6 +176,18 @@ Phase 2 extracts Python `CALLS`, `TESTED_BY`, and route `HANDLES` relationships 
 
 Each edge stores its extractor plus the evidence `path:line`. Other languages continue to use the stable symbol index and Markdown impact fallback until dedicated graph extractors are added.
 
+### Structured constraint lifecycle
+
+```bash
+python scripts/living_map.py add-constraint "Writes must be idempotent" \
+  --severity high \
+  --scope py:src/service.py::OrderService.create \
+  --reason "Workers retry failed jobs" \
+  --owner backend
+```
+
+Constraints use `ACTIVE`, `SUSPECT`, `STALE`, or `SUPERSEDED`. Active constraints with missing Symbol IDs fail `map check`; stale constraints may retain deleted scope as historical knowledge. Active and suspect scopes produce `CONSTRAINED_BY` graph edges.
+
 <details>
 <summary><h3>📁 Repository Structure</h3></summary>
 
@@ -187,6 +200,7 @@ living-codebase-map/
 ├── scripts/living_map.py             # Zero-dependency core CLI engine (v3)
 ├── .lcm/index.json                    # Generated machine-readable stable symbol index
 ├── .lcm/graph.json                    # Generated confidence-scored dependency graph
+├── .lcm/constraints.json              # Human-authored structured architectural constraints
 ├── tests/test_symbol_index.py         # Stable-ID and collision regression tests
 └── templates/
     ├── PROJECT_MAP.template.md       # Universal Living Map template

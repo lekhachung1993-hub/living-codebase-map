@@ -68,9 +68,11 @@ MAP_FILENAME = 'PROJECT_MAP.md'
 MIN_MAP_FILENAME = 'PROJECT_MAP.min.md'
 INDEX_SCHEMA_VERSION = 3
 GRAPH_SCHEMA_VERSION = 1
+CONSTRAINT_SCHEMA_VERSION = 1
 LCM_DIRNAME = '.lcm'
 INDEX_FILENAME = 'index.json'
 GRAPH_FILENAME = 'graph.json'
+CONSTRAINT_FILENAME = 'constraints.json'
 
 def find_project_root():
     """Locates the project root directory reliably."""
@@ -106,6 +108,7 @@ MAP_PATH = os.path.join(ROOT, MAP_FILENAME)
 MIN_MAP_PATH = os.path.join(ROOT, MIN_MAP_FILENAME)
 INDEX_PATH = os.path.join(ROOT, LCM_DIRNAME, INDEX_FILENAME)
 GRAPH_PATH = os.path.join(ROOT, LCM_DIRNAME, GRAPH_FILENAME)
+CONSTRAINT_PATH = os.path.join(ROOT, LCM_DIRNAME, CONSTRAINT_FILENAME)
 
 CODE_EXTENSIONS = {
     '.go': 'go',
@@ -446,6 +449,7 @@ def git_commit_map(message):
     for relative_path in (
         os.path.join(LCM_DIRNAME, INDEX_FILENAME),
         os.path.join(LCM_DIRNAME, GRAPH_FILENAME),
+        os.path.join(LCM_DIRNAME, CONSTRAINT_FILENAME),
     ):
         if os.path.exists(os.path.join(ROOT, relative_path)):
             generated_paths.append(relative_path)
@@ -897,6 +901,93 @@ def write_dependency_graph(graph, graph_path=GRAPH_PATH):
     os.replace(temp_path, graph_path)
 
 
+def load_constraints(constraint_path=CONSTRAINT_PATH):
+    """Load human-authored constraints without requiring external YAML packages."""
+    if not os.path.exists(constraint_path):
+        return {'schema_version': CONSTRAINT_SCHEMA_VERSION, 'constraints': []}
+    with open(constraint_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def write_constraints(constraints, constraint_path=CONSTRAINT_PATH):
+    os.makedirs(os.path.dirname(constraint_path), exist_ok=True)
+    temp_path = constraint_path + '.tmp'
+    with open(temp_path, 'w', encoding='utf-8') as f:
+        json.dump(constraints, f, ensure_ascii=False, indent=2, sort_keys=True)
+        f.write('\n')
+    os.replace(temp_path, constraint_path)
+
+
+def validate_constraints(payload, index):
+    """Validate constraint lifecycle and references to stable symbol IDs."""
+    issues = []
+    if payload.get('schema_version') != CONSTRAINT_SCHEMA_VERSION:
+        issues.append(f"constraint schema must be {CONSTRAINT_SCHEMA_VERSION}")
+    entries = payload.get('constraints')
+    if not isinstance(entries, list):
+        return issues + ['constraints must be a list']
+    known_symbols = {symbol['id'] for symbol in index.get('symbols', [])}
+    ids = [entry.get('id') for entry in entries if isinstance(entry, dict)]
+    known_constraints = set(ids)
+    if len(ids) != len(set(ids)):
+        issues.append('constraint IDs must be unique')
+    for entry in entries:
+        if not isinstance(entry, dict):
+            issues.append('constraint entry must be an object')
+            continue
+        cid = entry.get('id', '<missing>')
+        if not re.fullmatch(r'C\d+', str(cid)):
+            issues.append(f"{cid}: invalid constraint ID")
+        if entry.get('status') not in {'ACTIVE', 'SUSPECT', 'STALE', 'SUPERSEDED'}:
+            issues.append(f"{cid}: invalid lifecycle status")
+        if entry.get('severity') not in {'low', 'medium', 'high', 'critical'}:
+            issues.append(f"{cid}: invalid severity")
+        if not str(entry.get('rule', '')).strip():
+            issues.append(f"{cid}: rule is required")
+        scope = entry.get('scope', [])
+        if not isinstance(scope, list):
+            issues.append(f"{cid}: scope must be a list")
+            continue
+        missing = [symbol_id for symbol_id in scope if symbol_id not in known_symbols]
+        if missing and entry.get('status') == 'ACTIVE':
+            issues.append(f"{cid}: ACTIVE scope references missing symbols: {', '.join(missing)}")
+        if entry.get('status') == 'SUPERSEDED':
+            replacement = entry.get('superseded_by')
+            if replacement not in known_constraints:
+                issues.append(f"{cid}: superseded_by must reference an existing constraint")
+    return issues
+
+
+def apply_constraints_to_graph(graph, payload):
+    """Add constraint nodes and CONSTRAINED_BY edges to a graph copy in place."""
+    node_ids = {node['id'] for node in graph.get('nodes', [])}
+    for entry in payload.get('constraints', []):
+        constraint_id = f"constraint:{entry['id']}"
+        if constraint_id not in node_ids:
+            graph['nodes'].append({
+                'id': constraint_id,
+                'type': 'constraint',
+                'name': entry['id'],
+                'rule': entry['rule'],
+                'status': entry['status'],
+                'severity': entry['severity'],
+            })
+            node_ids.add(constraint_id)
+        if entry.get('status') not in {'ACTIVE', 'SUSPECT'}:
+            continue
+        for symbol_id in entry.get('scope', []):
+            if symbol_id not in node_ids:
+                continue
+            graph['edges'].append({
+                'source': symbol_id,
+                'target': constraint_id,
+                'relation': 'CONSTRAINED_BY',
+                'confidence': 1.0,
+                'evidence': {'path': f'{LCM_DIRNAME}/{CONSTRAINT_FILENAME}', 'line': 0, 'source': 'human'},
+            })
+    return graph
+
+
 def validate_machine_state(root_dir=ROOT, index_path=INDEX_PATH, graph_path=GRAPH_PATH):
     """Validate schemas and compare persisted machine state with fresh analysis."""
     issues = []
@@ -926,7 +1017,18 @@ def validate_machine_state(root_dir=ROOT, index_path=INDEX_PATH, graph_path=GRAP
             persisted_graph = payload
 
     expected_index = build_symbol_index(root_dir)
-    expected_graph = build_dependency_graph(expected_index, root_dir)
+    constraint_path = os.path.join(root_dir, LCM_DIRNAME, CONSTRAINT_FILENAME)
+    if not os.path.exists(constraint_path):
+        issues.append(f"missing {LCM_DIRNAME}/{CONSTRAINT_FILENAME}")
+    try:
+        constraints = load_constraints(constraint_path)
+        issues.extend(validate_constraints(constraints, expected_index))
+    except (OSError, ValueError) as exc:
+        constraints = {'schema_version': CONSTRAINT_SCHEMA_VERSION, 'constraints': []}
+        issues.append(f"invalid constraints JSON: {exc}")
+    expected_graph = apply_constraints_to_graph(
+        build_dependency_graph(expected_index, root_dir), constraints
+    )
     current_hash = expected_index['source_hash']
 
     if persisted_index is not None:
@@ -1273,7 +1375,20 @@ def cmd_update(args):
     print(f"[SCAN] Indexing symbols across codebase ({ROOT})...")
     file_map, symbol_lookup = build_symbol_database(ROOT)
     symbol_index = build_symbol_index(ROOT)
-    dependency_graph = build_dependency_graph(symbol_index, ROOT)
+    try:
+        constraints = load_constraints(CONSTRAINT_PATH)
+    except (OSError, ValueError) as exc:
+        print(f"[ERR] Invalid {LCM_DIRNAME}/{CONSTRAINT_FILENAME}: {exc}")
+        return 1
+    constraint_issues = validate_constraints(constraints, symbol_index)
+    if constraint_issues:
+        print("[ERR] Constraint validation failed:")
+        for issue in constraint_issues:
+            print(f"  - {issue}")
+        return 1
+    dependency_graph = apply_constraints_to_graph(
+        build_dependency_graph(symbol_index, ROOT), constraints
+    )
     total_syms = len(symbol_index['symbols'])
     total_edges = len(dependency_graph['edges'])
     print(f"       Found {len(file_map)} files with {total_syms} identifiable symbols.")
@@ -1308,6 +1423,9 @@ def cmd_update(args):
     print(f"[INDEX] Wrote {LCM_DIRNAME}/{INDEX_FILENAME} (schema v{INDEX_SCHEMA_VERSION}, {total_syms} symbols).")
     write_dependency_graph(dependency_graph)
     print(f"[GRAPH] Wrote {LCM_DIRNAME}/{GRAPH_FILENAME} (schema v{GRAPH_SCHEMA_VERSION}, {total_edges} edges).")
+    if not os.path.exists(CONSTRAINT_PATH):
+        write_constraints(constraints)
+        print(f"[CONSTRAINTS] Initialized {LCM_DIRNAME}/{CONSTRAINT_FILENAME}.")
 
     # 4. Auto-generate mini compact map for AI Agents
     generate_min_map(MAP_PATH, MIN_MAP_PATH)
@@ -1359,6 +1477,17 @@ def cmd_check(args):
             print(f"  ... and {len(drift_details) - 25} more items.")
 
     if getattr(args, 'fix', False):
+        try:
+            constraints = load_constraints(CONSTRAINT_PATH)
+            constraint_issues = validate_constraints(constraints, expected_index)
+        except (OSError, ValueError) as exc:
+            print(f"[ERR] Constraints require manual repair: {exc}")
+            return 2
+        if constraint_issues:
+            print("[ERR] Constraints require manual repair before generated state can be rebuilt:")
+            for issue in constraint_issues:
+                print(f"  - {issue}")
+            return 2
         print("\n[AUTO-FIX] Rebuilding Markdown and machine state...")
         with open(MAP_PATH + '.bak', 'w', encoding='utf-8') as f:
             f.write(content)
@@ -1367,6 +1496,7 @@ def cmd_check(args):
             f.write(new_content)
         write_symbol_index(expected_index)
         write_dependency_graph(expected_graph)
+        write_constraints(constraints)
         generate_min_map(MAP_PATH, MIN_MAP_PATH)
         print(
             f"✅ [REPAIRED] Updated {MAP_FILENAME}, {MIN_MAP_FILENAME}, "
@@ -1712,7 +1842,7 @@ def cmd_add_feature(args):
     return 0
 
 def cmd_add_constraint(args):
-    """Injects a newly discovered implicit constraint into Module 4."""
+    """Register a structured constraint and keep the Markdown projection compatible."""
     if not os.path.exists(MAP_PATH):
         print(f"[ERR] {MAP_FILENAME} not found. Run 'init' first.")
         return 1
@@ -1720,18 +1850,54 @@ def cmd_add_constraint(args):
     with open(MAP_PATH, 'r', encoding='utf-8', errors='replace') as f:
         content = f.read()
 
-    new_content, assigned_id = inject_constraint(content, args.desc, args.id)
+    constraints = load_constraints(CONSTRAINT_PATH)
+    existing_ids = {entry.get('id') for entry in constraints.get('constraints', [])}
+    assigned_id = args.id
+    if not assigned_id:
+        numbers = [int(cid[1:]) for cid in existing_ids if isinstance(cid, str) and re.fullmatch(r'C\d+', cid)]
+        assigned_id = f"C{max(numbers, default=0) + 1}"
+    assigned_id = assigned_id.upper()
+    if assigned_id in existing_ids:
+        print(f"[ERR] Constraint {assigned_id} already exists.")
+        return 1
+    scope = list(dict.fromkeys(getattr(args, 'scope', None) or []))
+    entry = {
+        'id': assigned_id,
+        'rule': args.desc.strip(),
+        'status': getattr(args, 'status', 'ACTIVE'),
+        'severity': getattr(args, 'severity', 'medium'),
+        'scope': scope,
+        'reason': getattr(args, 'reason', '') or '',
+        'evidence': [],
+        'owner': getattr(args, 'owner', '') or '',
+        'introduced_by': git_get_head_info()[0],
+        'superseded_by': None,
+    }
+    candidate_constraints = {
+        'schema_version': CONSTRAINT_SCHEMA_VERSION,
+        'constraints': constraints.get('constraints', []) + [entry],
+    }
+    index = build_symbol_index(ROOT)
+    issues = validate_constraints(candidate_constraints, index)
+    if issues:
+        print("[ERR] Constraint validation failed:")
+        for issue in issues:
+            print(f"  - {issue}")
+        return 1
+
+    new_content, _ = inject_constraint(content, args.desc, assigned_id)
     codebase_hash = calculate_codebase_hash(ROOT)
     new_content = update_map_header(new_content, codebase_hash)
 
     if args.dry_run:
-        print(f"[DRY-RUN] Constraint {assigned_id} injection preview OK.")
+        print(f"[DRY-RUN] Constraint {assigned_id} structured registration preview OK.")
         return 0
 
     with open(MAP_PATH, 'w', encoding='utf-8') as f:
         f.write(new_content)
-    print(f"[OK] Injected constraint [{assigned_id}] into {MAP_FILENAME}.")
-    generate_min_map(MAP_PATH, MIN_MAP_PATH)
+    write_constraints(candidate_constraints)
+    print(f"[OK] Registered constraint [{assigned_id}] in Markdown and {LCM_DIRNAME}/{CONSTRAINT_FILENAME}.")
+    cmd_update(argparse.Namespace(auto_commit=False, dry_run=False))
 
     if args.auto_commit:
         git_commit_map(f"docs: map constraint [{assigned_id}] - {args.desc[:50]}")
@@ -1963,6 +2129,11 @@ def main():
     p_cons = subparsers.add_parser("add-constraint", help="Inject implicit constraint to Module 4")
     p_cons.add_argument("desc", help="Description of implicit rule or domain trap")
     p_cons.add_argument("--id", help="Custom constraint ID (e.g. C12)")
+    p_cons.add_argument("--scope", action="append", help="Stable Symbol ID in scope; repeat for multiple symbols")
+    p_cons.add_argument("--severity", choices=["low", "medium", "high", "critical"], default="medium")
+    p_cons.add_argument("--status", choices=["ACTIVE", "SUSPECT", "STALE", "SUPERSEDED"], default="ACTIVE")
+    p_cons.add_argument("--reason", help="Why this invariant exists")
+    p_cons.add_argument("--owner", help="Owning team or person")
     p_cons.add_argument("--auto-commit", action="store_true", help="Auto git commit")
     p_cons.add_argument("--dry-run", action="store_true", help="Dry run preview")
 
