@@ -898,14 +898,23 @@ def _rust_symbol_records(file_path):
     return sorted(records, key=lambda item: (item['line'], item['qualified_name']))
 
 
+def _csharp_namespace_name(masked):
+    """Return the single declared C# namespace used for conservative qualification."""
+    matches = re.findall(
+        r'^\s*namespace\s+([A-Za-z_][A-Za-z0-9_.]*)\s*[;{]', masked, re.MULTILINE,
+    )
+    return matches[0] if len(set(matches)) == 1 else ''
+
+
 def _csharp_symbol_records(file_path):
-    """Extract ranged C# methods and class-qualified stable symbol IDs."""
+    """Extract ranged namespace- and class-qualified C# stable symbols."""
     try:
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
             source = f.read()
     except OSError:
         return []
     masked = _strip_javascript_noncode(source)
+    namespace = _csharp_namespace_name(masked)
     source_lines = source.splitlines()
     class_ranges = []
     records = []
@@ -915,12 +924,13 @@ def _csharp_symbol_records(file_path):
         name = match.group(1)
         line = masked.count('\n', 0, match.start()) + 1
         end_line = masked.count('\n', 0, end) + 1 if end >= 0 else line
-        class_ranges.append((body, end, name))
+        qualified_class = f'{namespace}.{name}' if namespace else name
+        class_ranges.append((body, end, qualified_class))
         declaration = source_lines[line - 1] if line <= len(source_lines) else name
         records.append({
-            'name': name, 'qualified_name': name, 'kind': 'class',
+            'name': name, 'qualified_name': qualified_class, 'kind': 'class',
             'line': line, 'end_line': end_line,
-            'fingerprint': _symbol_fingerprint('class', name, declaration),
+            'fingerprint': _symbol_fingerprint('class', qualified_class, declaration),
         })
     for match in RE_CS_METHOD.finditer(masked):
         name = match.group(1)
@@ -1393,6 +1403,20 @@ def build_dependency_graph(index, root_dir=ROOT):
                 continue
             masked = _strip_javascript_noncode(source)
             directory = posixpath.dirname(rel_path)
+            current_namespace = _csharp_namespace_name(masked)
+            csharp_aliases = {
+                match.group(1): match.group(2)
+                for match in re.finditer(
+                    r'^\s*using\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*'
+                    r'([A-Za-z_][A-Za-z0-9_.]*)\s*;', masked, re.MULTILINE,
+                )
+            }
+            csharp_namespaces = [
+                match.group(1) for match in re.finditer(
+                    r'^\s*using\s+(?!static\b)([A-Za-z_][A-Za-z0-9_.]*)\s*;',
+                    masked, re.MULTILINE,
+                )
+            ]
             file_symbols = [
                 symbol for symbol in symbols
                 if symbol['path'] == rel_path and symbol.get('kind') == 'method'
@@ -1405,12 +1429,35 @@ def build_dependency_graph(index, root_dir=ROOT):
                 ]
                 return min(owners, key=lambda item: item['end_line'] - item['line']) if owners else None
 
-            def csharp_target(name, class_name=None):
-                candidates = [
-                    symbol for symbol in by_dir_name.get((directory, name), [])
-                    if symbol.get('kind') == 'method'
-                    and (not class_name or symbol.get('qualified_name') == f'{class_name}.{name}')
-                ]
+            def csharp_target(name, class_name=None, caller=None):
+                candidates = [symbol for symbol in by_name.get(name, []) if symbol.get('kind') == 'method']
+                if class_name:
+                    if class_name in csharp_aliases:
+                        class_names = [csharp_aliases[class_name]]
+                    elif '.' in class_name:
+                        class_names = [class_name]
+                    else:
+                        class_names = []
+                        if current_namespace:
+                            class_names.append(f'{current_namespace}.{class_name}')
+                        class_names.extend(f'{namespace}.{class_name}' for namespace in csharp_namespaces)
+                        class_names.append(class_name)
+                    candidates = [
+                        symbol for symbol in candidates
+                        if symbol.get('qualified_name', '').rsplit('.', 1)[0] in class_names
+                    ]
+                elif caller:
+                    caller_class = caller['qualified_name'].rsplit('.', 1)[0]
+                    same_class = [
+                        symbol for symbol in candidates
+                        if symbol.get('qualified_name', '').rsplit('.', 1)[0] == caller_class
+                    ]
+                    if len(same_class) == 1:
+                        return same_class[0]
+                    candidates = [
+                        symbol for symbol in candidates
+                        if posixpath.dirname(symbol['path']) == directory
+                    ]
                 return candidates[0] if len(candidates) == 1 else None
 
             test_symbols = set()
@@ -1430,7 +1477,7 @@ def build_dependency_graph(index, root_dir=ROOT):
                     continue
                 line = masked.count('\n', 0, match.start()) + 1
                 caller = csharp_owner(line)
-                target = csharp_target(called)
+                target = csharp_target(called, caller=caller)
                 if not caller or not target:
                     continue
                 relation = 'TESTED_BY' if caller['id'] in test_symbols else 'CALLS'
@@ -1449,7 +1496,7 @@ def build_dependency_graph(index, root_dir=ROOT):
                     continue
                 owner_class = caller['qualified_name'].rsplit('.', 1)[0]
                 class_name = owner_class if match.group(1) == 'this' else match.group(1)
-                target = csharp_target(match.group(2), class_name)
+                target = csharp_target(match.group(2), class_name, caller)
                 if not target:
                     continue
                 relation = 'TESTED_BY' if caller['id'] in test_symbols else 'CALLS'
@@ -1472,7 +1519,9 @@ def build_dependency_graph(index, root_dir=ROOT):
                     if not masked[match.start():match.start() + 1].strip():
                         continue
                     method, route, handler_name = match.group(1).upper(), match.group(2) or '/', match.group(3)
-                    handler = csharp_target(handler_name)
+                    handler_line = source.count('\n', 0, match.start()) + 1
+                    handler_owner = csharp_owner(handler_line)
+                    handler = csharp_target(handler_name, caller=handler_owner)
                     if not handler:
                         continue
                     route_id = f'api:{method} {route}'

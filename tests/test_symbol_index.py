@@ -561,6 +561,57 @@ class StableSymbolIndexTests(unittest.TestCase):
                 'api:GET /orders', 'api:GET /health',
             })
 
+    def test_csharp_namespace_becomes_part_of_stable_id(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = self._write(
+                root, 'Services/Orders.cs',
+                'namespace Shop.Services;\n\npublic class Orders {\n'
+                '  public bool Save() { return true; }\n}\n',
+            )
+            records = living_map.scan_file_symbol_records(path, 'Services/Orders.cs')
+            ids = {record['id'] for record in records}
+            self.assertIn('csharp:Services/Orders.cs::Shop.Services.Orders', ids)
+            self.assertIn('csharp:Services/Orders.cs::Shop.Services.Orders.Save', ids)
+
+    def test_csharp_using_namespace_disambiguates_static_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'Sales/Orders.cs',
+                'namespace Shop.Sales;\npublic class Orders {\n'
+                '  public static bool Save() { return true; }\n}\n',
+            )
+            self._write(
+                root, 'Legacy/Orders.cs',
+                'namespace Shop.Legacy;\npublic class Orders {\n'
+                '  public static bool Save() { return false; }\n}\n',
+            )
+            self._write(
+                root, 'Api/Runner.cs',
+                'using Shop.Sales;\nnamespace Shop.Api;\npublic class Runner {\n'
+                '  public bool Run() { return Orders.Save(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'csharp:Sales/Orders.cs::Shop.Sales.Orders.Save')
+
+    def test_csharp_type_alias_resolves_static_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'Services/Orders.cs',
+                'namespace Shop.Services;\npublic class Orders {\n'
+                '  public static bool Save() { return true; }\n}\n',
+            )
+            self._write(
+                root, 'Api/Runner.cs',
+                'using OrderService = Shop.Services.Orders;\nnamespace Shop.Api;\n'
+                'public class Runner {\n  public bool Run() { return OrderService.Save(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'csharp:Services/Orders.cs::Shop.Services.Orders.Save')
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
