@@ -502,6 +502,65 @@ class StableSymbolIndexTests(unittest.TestCase):
             living_map._resolve_rust_module_path('src/main.rs', 'serde::json', known)
         )
 
+    def test_csharp_methods_have_class_qualified_ranges(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = self._write(
+                root, 'Services/Orders.cs',
+                'public class Orders {\n  public bool Save() {\n    return true;\n  }\n}\n',
+            )
+            records = living_map.scan_file_symbol_records(path, 'Services/Orders.cs')
+            method = next(record for record in records if record['name'] == 'Save')
+            self.assertEqual(method['id'], 'csharp:Services/Orders.cs::Orders.Save')
+            self.assertEqual((method['line'], method['end_line']), (2, 4))
+
+    def test_csharp_graph_resolves_direct_and_this_calls(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'Services/Orders.cs',
+                'public class Orders {\n'
+                '  private bool Validate() { return true; }\n'
+                '  public bool Save() { return this.Validate(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['source'], 'csharp:Services/Orders.cs::Orders.Save')
+            self.assertEqual(edge['target'], 'csharp:Services/Orders.cs::Orders.Validate')
+            self.assertEqual(edge['evidence']['source'], 'csharp_static')
+
+    def test_csharp_test_attribute_becomes_tested_by(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'Tests/Helper.cs',
+                'public class Helper {\n  public bool Save() { return true; }\n}\n',
+            )
+            self._write(
+                root, 'Tests/HelperTests.cs',
+                'public class HelperTests {\n  [Fact]\n'
+                '  public void SaveWorks() { Save(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'TESTED_BY')
+            self.assertEqual(edge['source'], 'csharp:Tests/Helper.cs::Helper.Save')
+            self.assertEqual(edge['target'], 'csharp:Tests/HelperTests.cs::HelperTests.SaveWorks')
+
+    def test_csharp_graph_extracts_controller_and_minimal_routes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'Api/Orders.cs',
+                'public class Orders {\n'
+                '  [HttpGet("/orders")]\n  public object List() { return null; }\n'
+                '  public object Health() { return null; }\n'
+                '  public void Routes() { app.MapGet("/health", Health); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            handles = [edge for edge in graph['edges'] if edge['relation'] == 'HANDLES']
+            self.assertEqual({edge['source'] for edge in handles}, {
+                'api:GET /orders', 'api:GET /health',
+            })
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
