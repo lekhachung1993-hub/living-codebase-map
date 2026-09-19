@@ -951,6 +951,63 @@ def _javascript_import_bindings(source, masked, importer_path, known_paths, by_p
     return direct, namespaces
 
 
+def _resolve_python_module_path(importer_path, module, level, known_paths):
+    """Resolve an absolute or relative Python module to one indexed source path."""
+    package_parts = [part for part in posixpath.dirname(importer_path).split('/') if part]
+    if level:
+        if not package_parts or level > len(package_parts):
+            return None
+        base_parts = package_parts[:len(package_parts) - (level - 1)]
+    else:
+        base_parts = []
+    if module:
+        base_parts.extend(part for part in module.split('.') if part)
+    if not base_parts:
+        return None
+    stem = '/'.join(base_parts)
+    candidates = [f'{stem}.py', f'{stem}/__init__.py']
+    matches = [candidate for candidate in candidates if candidate in known_paths]
+    if not matches and not level:
+        matches = [
+            path for path in known_paths
+            if any(path.endswith('/' + candidate) for candidate in candidates)
+        ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _python_import_bindings(tree, importer_path, known_paths, by_path_qualified):
+    """Resolve top-level Python imports into direct symbol and module bindings."""
+    direct = {}
+    namespaces = {}
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                target_path = _resolve_python_module_path(
+                    importer_path, alias.name, 0, known_paths,
+                )
+                if target_path:
+                    namespaces[alias.asname or alias.name] = target_path
+        elif isinstance(node, ast.ImportFrom):
+            module_path = _resolve_python_module_path(
+                importer_path, node.module, node.level, known_paths,
+            )
+            for alias in node.names:
+                if alias.name == '*':
+                    continue
+                local = alias.asname or alias.name
+                target = by_path_qualified.get((module_path, alias.name)) if module_path else None
+                if target:
+                    direct[local] = target
+                    continue
+                child_module = '.'.join(part for part in (node.module, alias.name) if part)
+                child_path = _resolve_python_module_path(
+                    importer_path, child_module, node.level, known_paths,
+                )
+                if child_path:
+                    namespaces[local] = child_path
+    return direct, namespaces
+
+
 def build_dependency_graph(index, root_dir=ROOT):
     """Build a confidence-scored dependency graph from a symbol index.
 
@@ -1130,6 +1187,9 @@ def build_dependency_graph(index, root_dir=ROOT):
                 tree = ast.parse(f.read(), filename=full_path)
         except (OSError, SyntaxError, UnicodeError):
             continue
+        import_bindings, namespace_bindings = _python_import_bindings(
+            tree, rel_path, known_paths, by_path_qualified,
+        )
 
         class CallVisitor(ast.NodeVisitor):
             def __init__(self):
@@ -1187,6 +1247,7 @@ def build_dependency_graph(index, root_dir=ROOT):
                 if caller and called:
                     target = None
                     confidence = 0.0
+                    source_type = 'python_ast'
                     class_scope = caller['qualified_name'].rsplit('.', 1)[0] if caller['kind'] == 'method' else ''
                     if called.startswith('self.') and class_scope:
                         target = by_path_qualified.get((rel_path, f"{class_scope}.{called[5:]}"))
@@ -1196,6 +1257,17 @@ def build_dependency_graph(index, root_dir=ROOT):
                         if direct:
                             target, confidence = direct, 1.0
                     if target is None and isinstance(node.func, ast.Name):
+                        target = import_bindings.get(called)
+                        if target:
+                            confidence, source_type = 1.0, 'python_import'
+                    if target is None and isinstance(node.func, ast.Attribute) and '.' in called:
+                        prefix, member = called.rsplit('.', 1)
+                        target_path = namespace_bindings.get(prefix)
+                        if target_path:
+                            target = by_path_qualified.get((target_path, member))
+                            if target:
+                                confidence, source_type = 1.0, 'python_import'
+                    if target is None and isinstance(node.func, ast.Name):
                         candidates = by_name.get(called.rsplit('.', 1)[-1], [])
                         if len(candidates) == 1:
                             target, confidence = candidates[0], 0.9
@@ -1204,7 +1276,10 @@ def build_dependency_graph(index, root_dir=ROOT):
                         source_id, target_id = caller['id'], target['id']
                         if relation == 'TESTED_BY':
                             source_id, target_id = target_id, source_id
-                        add_edge(source_id, target_id, relation, confidence, rel_path, node.lineno)
+                        add_edge(
+                            source_id, target_id, relation, confidence,
+                            rel_path, node.lineno, source_type,
+                        )
                 self.generic_visit(node)
 
         CallVisitor().visit(tree)
