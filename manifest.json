@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "living-codebase-map",
-  "version": "3.12.0",
+  "version": "3.13.0",
   "description": "Living Codebase Map & Surgical Precision Workflow for AI Coding Agents",
   "author": {
     "name": "Le Khac Hung",

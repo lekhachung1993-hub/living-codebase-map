@@ -91,7 +91,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 651,
+        "line": 652,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -102,7 +102,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 655,
+        "line": 656,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -113,7 +113,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 661,
+        "line": 662,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -124,7 +124,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 664,
+        "line": 665,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -135,7 +135,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 668,
+        "line": 669,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -146,7 +146,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 673,
+        "line": 674,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -157,7 +157,18 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 752,
+        "line": 740,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_strip_rust_noncode",
+      "target": "py:scripts/living_map.py::_strip_javascript_noncode"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 765,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -168,7 +179,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 766,
+        "line": 779,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -179,29 +190,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 770,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::_javascript_symbol_records",
-      "target": "py:scripts/living_map.py::_matching_delimiter"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 775,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::_javascript_symbol_records",
-      "target": "py:scripts/living_map.py::_matching_delimiter"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 778,
+        "line": 783,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -218,12 +207,34 @@
       },
       "relation": "CALLS",
       "source": "py:scripts/living_map.py::_javascript_symbol_records",
-      "target": "py:scripts/living_map.py::_symbol_fingerprint"
+      "target": "py:scripts/living_map.py::_matching_delimiter"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 791,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_javascript_symbol_records",
+      "target": "py:scripts/living_map.py::_matching_delimiter"
     },
     {
       "confidence": 1.0,
       "evidence": {
         "line": 801,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_javascript_symbol_records",
+      "target": "py:scripts/living_map.py::_symbol_fingerprint"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 814,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -234,7 +245,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 808,
+        "line": 821,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -245,24 +256,13 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 810,
+        "line": 823,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
       "relation": "CALLS",
       "source": "py:scripts/living_map.py::_go_symbol_records",
       "target": "py:scripts/living_map.py::_matching_delimiter"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 818,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::_go_symbol_records",
-      "target": "py:scripts/living_map.py::_symbol_fingerprint"
     },
     {
       "confidence": 1.0,
@@ -278,7 +278,84 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 847,
+        "line": 844,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_go_symbol_records",
+      "target": "py:scripts/living_map.py::_symbol_fingerprint"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 856,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_rust_symbol_records",
+      "target": "py:scripts/living_map.py::_strip_rust_noncode"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 861,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_rust_symbol_records",
+      "target": "py:scripts/living_map.py::_matching_delimiter"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 870,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_rust_symbol_records",
+      "target": "py:scripts/living_map.py::_matching_delimiter"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 875,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_rust_symbol_records",
+      "target": "py:scripts/living_map.py::_matching_delimiter"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 887,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_rust_symbol_records",
+      "target": "py:scripts/living_map.py::_symbol_fingerprint"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 896,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::_rust_symbol_records",
+      "target": "py:scripts/living_map.py::_symbol_fingerprint"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 912,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -289,7 +366,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 849,
+        "line": 914,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -300,7 +377,18 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 851,
+        "line": 916,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::scan_file_symbol_records",
+      "target": "py:scripts/living_map.py::_rust_symbol_records"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 918,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -311,7 +399,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 854,
+        "line": 921,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -322,7 +410,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 862,
+        "line": 929,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -333,7 +421,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 884,
+        "line": 951,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -344,7 +432,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 895,
+        "line": 962,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -355,7 +443,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 978,
+        "line": 1045,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -366,7 +454,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 999,
+        "line": 1066,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -377,7 +465,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1036,
+        "line": 1103,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -388,7 +476,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1042,
+        "line": 1109,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -399,7 +487,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1054,
+        "line": 1121,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -410,7 +498,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1091,
+        "line": 1158,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -421,7 +509,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1112,
+        "line": 1179,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -432,7 +520,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1123,
+        "line": 1190,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -443,7 +531,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1143,
+        "line": 1210,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -454,7 +542,84 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1203,
+        "line": 1270,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:scripts/living_map.py::_strip_rust_noncode"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1294,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:scripts/living_map.py::_is_test_path"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 1308,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:scripts/living_map.py::build_dependency_graph.rust_owner"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 1309,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:scripts/living_map.py::build_dependency_graph.rust_module_target"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 1316,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:scripts/living_map.py::build_dependency_graph.add_edge"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 1336,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:scripts/living_map.py::build_dependency_graph.rust_module_target"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 1348,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:scripts/living_map.py::build_dependency_graph.add_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1357,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -465,7 +630,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1205,
+        "line": 1359,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -476,7 +641,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1238,
+        "line": 1392,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -487,7 +652,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1239,
+        "line": 1393,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -498,7 +663,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1242,
+        "line": 1396,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -509,7 +674,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1246,
+        "line": 1400,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -520,7 +685,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1254,
+        "line": 1408,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -531,7 +696,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1276,
+        "line": 1430,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -542,7 +707,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1280,
+        "line": 1434,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -553,7 +718,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1297,
+        "line": 1451,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -564,7 +729,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1319,
+        "line": 1473,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -575,7 +740,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1328,
+        "line": 1482,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -586,7 +751,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1333,
+        "line": 1487,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -597,7 +762,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1356,
+        "line": 1510,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -608,7 +773,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1358,
+        "line": 1512,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -619,7 +784,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1362,
+        "line": 1516,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -630,7 +795,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1384,
+        "line": 1538,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -641,7 +806,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1388,
+        "line": 1542,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -652,7 +817,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1402,
+        "line": 1556,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -663,7 +828,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1413,
+        "line": 1567,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -674,7 +839,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1415,
+        "line": 1569,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -685,7 +850,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1429,
+        "line": 1583,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -696,7 +861,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1440,
+        "line": 1594,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -707,7 +872,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1455,
+        "line": 1609,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -718,7 +883,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1458,
+        "line": 1612,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -729,7 +894,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1487,
+        "line": 1641,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -740,7 +905,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1496,
+        "line": 1650,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -751,7 +916,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1525,
+        "line": 1679,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -762,7 +927,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1529,
+        "line": 1683,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -773,7 +938,7 @@
     {
       "confidence": 0.9,
       "evidence": {
-        "line": 1535,
+        "line": 1689,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -784,7 +949,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1539,
+        "line": 1693,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -795,7 +960,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1670,
+        "line": 1824,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -806,7 +971,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1675,
+        "line": 1829,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -817,7 +982,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1676,
+        "line": 1830,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -828,7 +993,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1680,
+        "line": 1834,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -839,7 +1004,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1681,
+        "line": 1835,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -850,7 +1015,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1773,
+        "line": 1927,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -861,7 +1026,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1864,
+        "line": 2018,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -872,7 +1037,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1912,
+        "line": 2066,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -883,7 +1048,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1920,
+        "line": 2074,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -894,7 +1059,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1925,
+        "line": 2079,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -905,7 +1070,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1952,
+        "line": 2106,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -916,7 +1081,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2032,
+        "line": 2186,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -927,7 +1092,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2035,
+        "line": 2189,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -938,7 +1103,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2153,
+        "line": 2307,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -949,7 +1114,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2154,
+        "line": 2308,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -960,7 +1125,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2187,
+        "line": 2341,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -971,7 +1136,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2193,
+        "line": 2347,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -982,7 +1147,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2207,
+        "line": 2361,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -993,7 +1158,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2208,
+        "line": 2362,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1004,7 +1169,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2210,
+        "line": 2364,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1015,7 +1180,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2214,
+        "line": 2368,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1026,7 +1191,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2220,
+        "line": 2374,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1037,7 +1202,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2221,
+        "line": 2375,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1048,7 +1213,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2228,
+        "line": 2382,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1059,7 +1224,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2232,
+        "line": 2386,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1070,7 +1235,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2236,
+        "line": 2390,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1081,7 +1246,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2253,
+        "line": 2407,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1092,7 +1257,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2255,
+        "line": 2409,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1103,7 +1268,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2258,
+        "line": 2412,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1114,7 +1279,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2262,
+        "line": 2416,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1125,7 +1290,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2265,
+        "line": 2419,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1136,7 +1301,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2277,
+        "line": 2431,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1147,7 +1312,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2284,
+        "line": 2438,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1158,7 +1323,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2285,
+        "line": 2439,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1169,7 +1334,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2312,
+        "line": 2466,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1180,7 +1345,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2313,
+        "line": 2467,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1191,7 +1356,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2325,
+        "line": 2479,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1202,7 +1367,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2328,
+        "line": 2482,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1213,7 +1378,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2329,
+        "line": 2483,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1224,7 +1389,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2330,
+        "line": 2484,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1235,7 +1400,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2331,
+        "line": 2485,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1246,7 +1411,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2358,
+        "line": 2512,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1257,7 +1422,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2363,
+        "line": 2517,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1268,7 +1433,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2500,
+        "line": 2654,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1279,7 +1444,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2636,
+        "line": 2790,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1290,7 +1455,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2637,
+        "line": 2791,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1301,7 +1466,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2648,
+        "line": 2802,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1312,7 +1477,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2649,
+        "line": 2803,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1323,7 +1488,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2669,
+        "line": 2823,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1334,7 +1499,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2672,
+        "line": 2826,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1345,7 +1510,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2684,
+        "line": 2838,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1356,7 +1521,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2704,
+        "line": 2858,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1367,7 +1532,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2711,
+        "line": 2865,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1378,7 +1543,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2712,
+        "line": 2866,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1389,7 +1554,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2719,
+        "line": 2873,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1400,7 +1565,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2720,
+        "line": 2874,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1411,7 +1576,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2721,
+        "line": 2875,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1422,7 +1587,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2729,
+        "line": 2883,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1433,7 +1598,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2731,
+        "line": 2885,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1444,7 +1609,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2734,
+        "line": 2888,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1455,7 +1620,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2744,
+        "line": 2898,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1466,7 +1631,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2765,
+        "line": 2919,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1477,7 +1642,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2774,
+        "line": 2928,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1488,7 +1653,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2792,
+        "line": 2946,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1499,7 +1664,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2804,
+        "line": 2958,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1510,7 +1675,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2833,
+        "line": 2987,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1521,7 +1686,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2861,
+        "line": 3015,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1532,7 +1697,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2879,
+        "line": 3033,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1543,7 +1708,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2921,
+        "line": 3075,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1554,7 +1719,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2933,
+        "line": 3087,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1565,7 +1730,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2950,
+        "line": 3104,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1576,7 +1741,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2956,
+        "line": 3110,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1587,7 +1752,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2961,
+        "line": 3115,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1598,7 +1763,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2969,
+        "line": 3123,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1609,7 +1774,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2977,
+        "line": 3131,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1620,7 +1785,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2982,
+        "line": 3136,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1631,7 +1796,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 3008,
+        "line": 3162,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1642,7 +1807,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 3025,
+        "line": 3179,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1653,7 +1818,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 3047,
+        "line": 3201,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1664,7 +1829,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 3072,
+        "line": 3226,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -2594,172 +2759,139 @@
       },
       "relation": "TESTED_BY",
       "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_functions_and_impl_methods_have_ranges_and_stable_ids"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 399,
+        "line": 403,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::scan_file_symbol_records",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_functions_and_impl_methods_have_ranges_and_stable_ids"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 411,
         "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
       "relation": "TESTED_BY",
       "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_same_module_call"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 400,
+        "line": 412,
         "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
       "relation": "TESTED_BY",
       "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_same_module_call"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 401,
+        "line": 416,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
       "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_same_module_call"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 417,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_same_module_call"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 425,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_test_attribute_becomes_tested_by_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 430,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_test_attribute_becomes_tested_by_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 431,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_test_attribute_becomes_tested_by_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 438,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_attribute_and_axum_routes"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 444,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_attribute_and_axum_routes"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 445,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_attribute_and_axum_routes"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 456,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
       "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 402,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_dependency_graph",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 407,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 419,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_symbol_index",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 420,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_dependency_graph",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 432,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 433,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 434,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 435,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_symbol_index",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 436,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_dependency_graph",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 442,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 448,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_symbol_index",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 449,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_dependency_graph",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call"
     },
     {
       "confidence": 1.0,
@@ -2770,62 +2902,73 @@
       },
       "relation": "TESTED_BY",
       "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_express_route"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 464,
+        "line": 458,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 459,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
       "source": "py:scripts/living_map.py::build_symbol_index",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_express_route"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 460,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target"
     },
     {
       "confidence": 1.0,
       "evidence": {
         "line": 465,
         "path": "tests/test_symbol_index.py",
-        "source": "python_import"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_dependency_graph",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_express_route"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 476,
-        "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
       "relation": "TESTED_BY",
       "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 481,
+        "line": 477,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
       "source": "py:scripts/living_map.py::build_symbol_index",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 482,
+        "line": 478,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
       "source": "py:scripts/living_map.py::build_dependency_graph",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence"
     },
     {
       "confidence": 1.0,
@@ -2836,7 +2979,7 @@
       },
       "relation": "TESTED_BY",
       "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
     },
     {
       "confidence": 1.0,
@@ -2847,79 +2990,233 @@
       },
       "relation": "TESTED_BY",
       "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 496,
+        "line": 492,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 493,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
       "source": "py:scripts/living_map.py::build_symbol_index",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 497,
+        "line": 494,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
       "source": "py:scripts/living_map.py::build_dependency_graph",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 500,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call"
     },
     {
       "confidence": 1.0,
       "evidence": {
         "line": 506,
         "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
+        "source": "python_import"
       },
       "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
+      "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call"
     },
     {
       "confidence": 1.0,
       "evidence": {
         "line": 507,
         "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 508,
-        "path": "tests/test_symbol_index.py",
-        "source": "python_ast"
-      },
-      "relation": "TESTED_BY",
-      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 514,
-        "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
-      "source": "py:scripts/living_map.py::build_symbol_index",
-      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call"
     },
     {
       "confidence": 1.0,
       "evidence": {
         "line": 515,
         "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_express_route"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 522,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_express_route"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 523,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_express_route"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 534,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 539,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 540,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 548,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 549,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 554,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 555,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_dependency_graph",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 564,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 565,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 566,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:tests/test_symbol_index.py::StableSymbolIndexTests._write",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 572,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_import"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::build_symbol_index",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 573,
+        "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
       "relation": "TESTED_BY",
@@ -2929,7 +3226,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 524,
+        "line": 582,
         "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
@@ -2940,7 +3237,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 525,
+        "line": 583,
         "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
@@ -2951,7 +3248,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 531,
+        "line": 589,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -2962,7 +3259,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 532,
+        "line": 590,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -2973,7 +3270,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 541,
+        "line": 599,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -2984,7 +3281,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 544,
+        "line": 602,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -2995,7 +3292,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 560,
+        "line": 618,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3006,7 +3303,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 567,
+        "line": 625,
         "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
@@ -3017,7 +3314,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 568,
+        "line": 626,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3028,7 +3325,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 569,
+        "line": 627,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3039,7 +3336,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 570,
+        "line": 628,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3050,7 +3347,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 571,
+        "line": 629,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3061,7 +3358,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 577,
+        "line": 635,
         "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
@@ -3072,7 +3369,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 578,
+        "line": 636,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3083,7 +3380,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 588,
+        "line": 646,
         "path": "tests/test_symbol_index.py",
         "source": "python_ast"
       },
@@ -3094,7 +3391,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 594,
+        "line": 652,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3105,7 +3402,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 595,
+        "line": 653,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3116,7 +3413,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 598,
+        "line": 656,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3127,7 +3424,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 600,
+        "line": 658,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3138,7 +3435,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 602,
+        "line": 660,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3149,7 +3446,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 615,
+        "line": 673,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3160,7 +3457,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 626,
+        "line": 684,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3171,7 +3468,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 642,
+        "line": 700,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3182,7 +3479,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 659,
+        "line": 717,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3193,7 +3490,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 677,
+        "line": 735,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3204,7 +3501,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 685,
+        "line": 743,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3215,7 +3512,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 686,
+        "line": 744,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3226,7 +3523,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 703,
+        "line": 761,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3237,7 +3534,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 713,
+        "line": 771,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3248,7 +3545,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 723,
+        "line": 781,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3259,7 +3556,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 753,
+        "line": 811,
         "path": "tests/test_symbol_index.py",
         "source": "python_import"
       },
@@ -3360,877 +3657,917 @@
       "type": "symbol"
     },
     {
-      "end_line": 616,
+      "end_line": 617,
       "id": "py:scripts/living_map.py::scan_file_symbols",
       "kind": "function",
-      "line": 523,
+      "line": 524,
       "name": "scan_file_symbols",
       "path": "scripts/living_map.py",
       "qualified_name": "scan_file_symbols",
       "type": "symbol"
     },
     {
-      "end_line": 623,
+      "end_line": 624,
       "id": "py:scripts/living_map.py::_symbol_fingerprint",
       "kind": "function",
-      "line": 619,
+      "line": 620,
       "name": "_symbol_fingerprint",
       "path": "scripts/living_map.py",
       "qualified_name": "_symbol_fingerprint",
       "type": "symbol"
     },
     {
-      "end_line": 674,
+      "end_line": 675,
       "id": "py:scripts/living_map.py::_python_symbol_records",
       "kind": "function",
-      "line": 626,
+      "line": 627,
       "name": "_python_symbol_records",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records",
       "type": "symbol"
     },
     {
-      "end_line": 671,
+      "end_line": 672,
       "id": "py:scripts/living_map.py::_python_symbol_records.Visitor",
       "kind": "class",
-      "line": 638,
+      "line": 639,
       "name": "Visitor",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records.Visitor",
       "type": "symbol"
     },
     {
-      "end_line": 640,
+      "end_line": 641,
       "id": "py:scripts/living_map.py::_python_symbol_records.Visitor.__init__",
       "kind": "method",
-      "line": 639,
+      "line": 640,
       "name": "__init__",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records.Visitor.__init__",
       "type": "symbol"
     },
     {
-      "end_line": 652,
+      "end_line": 653,
       "id": "py:scripts/living_map.py::_python_symbol_records.Visitor._add",
       "kind": "method",
-      "line": 642,
+      "line": 643,
       "name": "_add",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records.Visitor._add",
       "type": "symbol"
     },
     {
-      "end_line": 658,
+      "end_line": 659,
       "id": "py:scripts/living_map.py::_python_symbol_records.Visitor.visit_ClassDef",
       "kind": "method",
-      "line": 654,
+      "line": 655,
       "name": "visit_ClassDef",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records.Visitor.visit_ClassDef",
       "type": "symbol"
     },
     {
-      "end_line": 661,
+      "end_line": 662,
       "id": "py:scripts/living_map.py::_python_symbol_records.Visitor.visit_FunctionDef",
       "kind": "method",
-      "line": 660,
+      "line": 661,
       "name": "visit_FunctionDef",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records.Visitor.visit_FunctionDef",
       "type": "symbol"
     },
     {
-      "end_line": 664,
+      "end_line": 665,
       "id": "py:scripts/living_map.py::_python_symbol_records.Visitor.visit_AsyncFunctionDef",
       "kind": "method",
-      "line": 663,
+      "line": 664,
       "name": "visit_AsyncFunctionDef",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records.Visitor.visit_AsyncFunctionDef",
       "type": "symbol"
     },
     {
-      "end_line": 671,
+      "end_line": 672,
       "id": "py:scripts/living_map.py::_python_symbol_records.Visitor._visit_function",
       "kind": "method",
-      "line": 666,
+      "line": 667,
       "name": "_visit_function",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_symbol_records.Visitor._visit_function",
       "type": "symbol"
     },
     {
-      "end_line": 727,
+      "end_line": 728,
       "id": "py:scripts/living_map.py::_strip_javascript_noncode",
       "kind": "function",
-      "line": 677,
+      "line": 678,
       "name": "_strip_javascript_noncode",
       "path": "scripts/living_map.py",
       "qualified_name": "_strip_javascript_noncode",
       "type": "symbol"
     },
     {
-      "end_line": 742,
+      "end_line": 740,
+      "id": "py:scripts/living_map.py::_strip_rust_noncode",
+      "kind": "function",
+      "line": 731,
+      "name": "_strip_rust_noncode",
+      "path": "scripts/living_map.py",
+      "qualified_name": "_strip_rust_noncode",
+      "type": "symbol"
+    },
+    {
+      "end_line": 755,
       "id": "py:scripts/living_map.py::_matching_delimiter",
       "kind": "function",
-      "line": 730,
+      "line": 743,
       "name": "_matching_delimiter",
       "path": "scripts/living_map.py",
       "qualified_name": "_matching_delimiter",
       "type": "symbol"
     },
     {
-      "end_line": 791,
+      "end_line": 804,
       "id": "py:scripts/living_map.py::_javascript_symbol_records",
       "kind": "function",
-      "line": 745,
+      "line": 758,
       "name": "_javascript_symbol_records",
       "path": "scripts/living_map.py",
       "qualified_name": "_javascript_symbol_records",
       "type": "symbol"
     },
     {
-      "end_line": 833,
+      "end_line": 846,
       "id": "py:scripts/living_map.py::_go_symbol_records",
       "kind": "function",
-      "line": 794,
+      "line": 807,
       "name": "_go_symbol_records",
       "path": "scripts/living_map.py",
       "qualified_name": "_go_symbol_records",
       "type": "symbol"
     },
     {
-      "end_line": 869,
+      "end_line": 898,
+      "id": "py:scripts/living_map.py::_rust_symbol_records",
+      "kind": "function",
+      "line": 849,
+      "name": "_rust_symbol_records",
+      "path": "scripts/living_map.py",
+      "qualified_name": "_rust_symbol_records",
+      "type": "symbol"
+    },
+    {
+      "end_line": 936,
       "id": "py:scripts/living_map.py::scan_file_symbol_records",
       "kind": "function",
-      "line": 836,
+      "line": 901,
       "name": "scan_file_symbol_records",
       "path": "scripts/living_map.py",
       "qualified_name": "scan_file_symbol_records",
       "type": "symbol"
     },
     {
-      "end_line": 899,
+      "end_line": 966,
       "id": "py:scripts/living_map.py::build_symbol_index",
       "kind": "function",
-      "line": 872,
+      "line": 939,
       "name": "build_symbol_index",
       "path": "scripts/living_map.py",
       "qualified_name": "build_symbol_index",
       "type": "symbol"
     },
     {
-      "end_line": 909,
+      "end_line": 976,
       "id": "py:scripts/living_map.py::write_symbol_index",
       "kind": "function",
-      "line": 902,
+      "line": 969,
       "name": "write_symbol_index",
       "path": "scripts/living_map.py",
       "qualified_name": "write_symbol_index",
       "type": "symbol"
     },
     {
-      "end_line": 919,
+      "end_line": 986,
       "id": "py:scripts/living_map.py::_call_name",
       "kind": "function",
-      "line": 912,
+      "line": 979,
       "name": "_call_name",
       "path": "scripts/living_map.py",
       "qualified_name": "_call_name",
       "type": "symbol"
     },
     {
-      "end_line": 934,
+      "end_line": 1001,
       "id": "py:scripts/living_map.py::_is_test_path",
       "kind": "function",
-      "line": 922,
+      "line": 989,
       "name": "_is_test_path",
       "path": "scripts/living_map.py",
       "qualified_name": "_is_test_path",
       "type": "symbol"
     },
     {
-      "end_line": 945,
+      "end_line": 1012,
       "id": "py:scripts/living_map.py::_next_route_path",
       "kind": "function",
-      "line": 937,
+      "line": 1004,
       "name": "_next_route_path",
       "path": "scripts/living_map.py",
       "qualified_name": "_next_route_path",
       "type": "symbol"
     },
     {
-      "end_line": 964,
+      "end_line": 1031,
       "id": "py:scripts/living_map.py::_resolve_javascript_module_path",
       "kind": "function",
-      "line": 948,
+      "line": 1015,
       "name": "_resolve_javascript_module_path",
       "path": "scripts/living_map.py",
       "qualified_name": "_resolve_javascript_module_path",
       "type": "symbol"
     },
     {
-      "end_line": 1002,
+      "end_line": 1069,
       "id": "py:scripts/living_map.py::_javascript_import_bindings",
       "kind": "function",
-      "line": 967,
+      "line": 1034,
       "name": "_javascript_import_bindings",
       "path": "scripts/living_map.py",
       "qualified_name": "_javascript_import_bindings",
       "type": "symbol"
     },
     {
-      "end_line": 1026,
+      "end_line": 1093,
       "id": "py:scripts/living_map.py::_resolve_python_module_path",
       "kind": "function",
-      "line": 1005,
+      "line": 1072,
       "name": "_resolve_python_module_path",
       "path": "scripts/living_map.py",
       "qualified_name": "_resolve_python_module_path",
       "type": "symbol"
     },
     {
-      "end_line": 1059,
+      "end_line": 1126,
       "id": "py:scripts/living_map.py::_python_import_bindings",
       "kind": "function",
-      "line": 1029,
+      "line": 1096,
       "name": "_python_import_bindings",
       "path": "scripts/living_map.py",
       "qualified_name": "_python_import_bindings",
       "type": "symbol"
     },
     {
-      "end_line": 1070,
+      "end_line": 1137,
       "id": "py:scripts/living_map.py::_read_go_module_name",
       "kind": "function",
-      "line": 1062,
+      "line": 1129,
       "name": "_read_go_module_name",
       "path": "scripts/living_map.py",
       "qualified_name": "_read_go_module_name",
       "type": "symbol"
     },
     {
-      "end_line": 1083,
+      "end_line": 1150,
       "id": "py:scripts/living_map.py::_resolve_go_import_dir",
       "kind": "function",
-      "line": 1073,
+      "line": 1140,
       "name": "_resolve_go_import_dir",
       "path": "scripts/living_map.py",
       "qualified_name": "_resolve_go_import_dir",
       "type": "symbol"
     },
     {
-      "end_line": 1124,
+      "end_line": 1191,
       "id": "py:scripts/living_map.py::_go_import_bindings",
       "kind": "function",
-      "line": 1086,
+      "line": 1153,
       "name": "_go_import_bindings",
       "path": "scripts/living_map.py",
       "qualified_name": "_go_import_bindings",
       "type": "symbol"
     },
     {
-      "end_line": 1096,
+      "end_line": 1163,
       "id": "py:scripts/living_map.py::_go_import_bindings.add_binding",
       "kind": "method",
-      "line": 1090,
+      "line": 1157,
       "name": "add_binding",
       "path": "scripts/living_map.py",
       "qualified_name": "_go_import_bindings.add_binding",
       "type": "symbol"
     },
     {
-      "end_line": 1542,
+      "end_line": 1696,
       "id": "py:scripts/living_map.py::build_dependency_graph",
       "kind": "function",
-      "line": 1127,
+      "line": 1194,
       "name": "build_dependency_graph",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph",
       "type": "symbol"
     },
     {
-      "end_line": 1180,
+      "end_line": 1247,
       "id": "py:scripts/living_map.py::build_dependency_graph.add_edge",
       "kind": "method",
-      "line": 1169,
+      "line": 1236,
       "name": "add_edge",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.add_edge",
       "type": "symbol"
     },
     {
-      "end_line": 1189,
+      "end_line": 1256,
       "id": "py:scripts/living_map.py::build_dependency_graph.resolve_target",
       "kind": "method",
-      "line": 1182,
+      "line": 1249,
       "name": "resolve_target",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.resolve_target",
       "type": "symbol"
     },
     {
-      "end_line": 1218,
+      "end_line": 1282,
+      "id": "py:scripts/living_map.py::build_dependency_graph.rust_owner",
+      "kind": "method",
+      "line": 1277,
+      "name": "rust_owner",
+      "path": "scripts/living_map.py",
+      "qualified_name": "build_dependency_graph.rust_owner",
+      "type": "symbol"
+    },
+    {
+      "end_line": 1289,
+      "id": "py:scripts/living_map.py::build_dependency_graph.rust_module_target",
+      "kind": "method",
+      "line": 1284,
+      "name": "rust_module_target",
+      "path": "scripts/living_map.py",
+      "qualified_name": "build_dependency_graph.rust_module_target",
+      "type": "symbol"
+    },
+    {
+      "end_line": 1372,
       "id": "py:scripts/living_map.py::build_dependency_graph.go_owner",
       "kind": "method",
-      "line": 1213,
+      "line": 1367,
       "name": "go_owner",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.go_owner",
       "type": "symbol"
     },
     {
-      "end_line": 1225,
+      "end_line": 1379,
       "id": "py:scripts/living_map.py::build_dependency_graph.go_package_target",
       "kind": "method",
-      "line": 1220,
+      "line": 1374,
       "name": "go_package_target",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.go_package_target",
       "type": "symbol"
     },
     {
-      "end_line": 1533,
+      "end_line": 1687,
       "id": "py:scripts/living_map.py::build_dependency_graph.CallVisitor",
       "kind": "class",
-      "line": 1444,
+      "line": 1598,
       "name": "CallVisitor",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.CallVisitor",
       "type": "symbol"
     },
     {
-      "end_line": 1447,
+      "end_line": 1601,
       "id": "py:scripts/living_map.py::build_dependency_graph.CallVisitor.__init__",
       "kind": "method",
-      "line": 1445,
+      "line": 1599,
       "name": "__init__",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.CallVisitor.__init__",
       "type": "symbol"
     },
     {
-      "end_line": 1452,
+      "end_line": 1606,
       "id": "py:scripts/living_map.py::build_dependency_graph.CallVisitor.visit_ClassDef",
       "kind": "method",
-      "line": 1449,
+      "line": 1603,
       "name": "visit_ClassDef",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.CallVisitor.visit_ClassDef",
       "type": "symbol"
     },
     {
-      "end_line": 1455,
+      "end_line": 1609,
       "id": "py:scripts/living_map.py::build_dependency_graph.CallVisitor.visit_FunctionDef",
       "kind": "method",
-      "line": 1454,
+      "line": 1608,
       "name": "visit_FunctionDef",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.CallVisitor.visit_FunctionDef",
       "type": "symbol"
     },
     {
-      "end_line": 1458,
+      "end_line": 1612,
       "id": "py:scripts/living_map.py::build_dependency_graph.CallVisitor.visit_AsyncFunctionDef",
       "kind": "method",
-      "line": 1457,
+      "line": 1611,
       "name": "visit_AsyncFunctionDef",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.CallVisitor.visit_AsyncFunctionDef",
       "type": "symbol"
     },
     {
-      "end_line": 1492,
+      "end_line": 1646,
       "id": "py:scripts/living_map.py::build_dependency_graph.CallVisitor._visit_function",
       "kind": "method",
-      "line": 1460,
+      "line": 1614,
       "name": "_visit_function",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.CallVisitor._visit_function",
       "type": "symbol"
     },
     {
-      "end_line": 1533,
+      "end_line": 1687,
       "id": "py:scripts/living_map.py::build_dependency_graph.CallVisitor.visit_Call",
       "kind": "method",
-      "line": 1494,
+      "line": 1648,
       "name": "visit_Call",
       "path": "scripts/living_map.py",
       "qualified_name": "build_dependency_graph.CallVisitor.visit_Call",
       "type": "symbol"
     },
     {
-      "end_line": 1552,
+      "end_line": 1706,
       "id": "py:scripts/living_map.py::write_dependency_graph",
       "kind": "function",
-      "line": 1545,
+      "line": 1699,
       "name": "write_dependency_graph",
       "path": "scripts/living_map.py",
       "qualified_name": "write_dependency_graph",
       "type": "symbol"
     },
     {
-      "end_line": 1560,
+      "end_line": 1714,
       "id": "py:scripts/living_map.py::load_constraints",
       "kind": "function",
-      "line": 1555,
+      "line": 1709,
       "name": "load_constraints",
       "path": "scripts/living_map.py",
       "qualified_name": "load_constraints",
       "type": "symbol"
     },
     {
-      "end_line": 1569,
+      "end_line": 1723,
       "id": "py:scripts/living_map.py::write_constraints",
       "kind": "function",
-      "line": 1563,
+      "line": 1717,
       "name": "write_constraints",
       "path": "scripts/living_map.py",
       "qualified_name": "write_constraints",
       "type": "symbol"
     },
     {
-      "end_line": 1609,
+      "end_line": 1763,
       "id": "py:scripts/living_map.py::validate_constraints",
       "kind": "function",
-      "line": 1572,
+      "line": 1726,
       "name": "validate_constraints",
       "path": "scripts/living_map.py",
       "qualified_name": "validate_constraints",
       "type": "symbol"
     },
     {
-      "end_line": 1639,
+      "end_line": 1793,
       "id": "py:scripts/living_map.py::apply_constraints_to_graph",
       "kind": "function",
-      "line": 1612,
+      "line": 1766,
       "name": "apply_constraints_to_graph",
       "path": "scripts/living_map.py",
       "qualified_name": "apply_constraints_to_graph",
       "type": "symbol"
     },
     {
-      "end_line": 1710,
+      "end_line": 1864,
       "id": "py:scripts/living_map.py::validate_machine_state",
       "kind": "function",
-      "line": 1642,
+      "line": 1796,
       "name": "validate_machine_state",
       "path": "scripts/living_map.py",
       "qualified_name": "validate_machine_state",
       "type": "symbol"
     },
     {
-      "end_line": 1756,
+      "end_line": 1910,
       "id": "py:scripts/living_map.py::analyze_graph_impact",
       "kind": "function",
-      "line": 1713,
+      "line": 1867,
       "name": "analyze_graph_impact",
       "path": "scripts/living_map.py",
       "qualified_name": "analyze_graph_impact",
       "type": "symbol"
     },
     {
-      "end_line": 1809,
+      "end_line": 1963,
       "id": "py:scripts/living_map.py::build_change_plan",
       "kind": "function",
-      "line": 1759,
+      "line": 1913,
       "name": "build_change_plan",
       "path": "scripts/living_map.py",
       "qualified_name": "build_change_plan",
       "type": "symbol"
     },
     {
-      "end_line": 1842,
+      "end_line": 1996,
       "id": "py:scripts/living_map.py::verify_changed_files",
       "kind": "function",
-      "line": 1812,
+      "line": 1966,
       "name": "verify_changed_files",
       "path": "scripts/living_map.py",
       "qualified_name": "verify_changed_files",
       "type": "symbol"
     },
     {
-      "end_line": 1859,
+      "end_line": 2013,
       "id": "py:scripts/living_map.py::explain_graph_symbol",
       "kind": "function",
-      "line": 1845,
+      "line": 1999,
       "name": "explain_graph_symbol",
       "path": "scripts/living_map.py",
       "qualified_name": "explain_graph_symbol",
       "type": "symbol"
     },
     {
-      "end_line": 1897,
+      "end_line": 2051,
       "id": "py:scripts/living_map.py::compile_task_context",
       "kind": "function",
-      "line": 1862,
+      "line": 2016,
       "name": "compile_task_context",
       "path": "scripts/living_map.py",
       "qualified_name": "compile_task_context",
       "type": "symbol"
     },
     {
-      "end_line": 1907,
+      "end_line": 2061,
       "id": "py:scripts/living_map.py::parse_symbol_git_history",
       "kind": "function",
-      "line": 1900,
+      "line": 2054,
       "name": "parse_symbol_git_history",
       "path": "scripts/living_map.py",
       "qualified_name": "parse_symbol_git_history",
       "type": "symbol"
     },
     {
-      "end_line": 1933,
+      "end_line": 2087,
       "id": "py:scripts/living_map.py::get_symbol_history",
       "kind": "function",
-      "line": 1910,
+      "line": 2064,
       "name": "get_symbol_history",
       "path": "scripts/living_map.py",
       "qualified_name": "get_symbol_history",
       "type": "symbol"
     },
     {
-      "end_line": 1968,
+      "end_line": 2122,
       "id": "py:scripts/living_map.py::build_symbol_database",
       "kind": "function",
-      "line": 1935,
+      "line": 2089,
       "name": "build_symbol_database",
       "path": "scripts/living_map.py",
       "qualified_name": "build_symbol_database",
       "type": "symbol"
     },
     {
-      "end_line": 2027,
+      "end_line": 2181,
       "id": "py:scripts/living_map.py::update_map_line_numbers",
       "kind": "function",
-      "line": 1974,
+      "line": 2128,
       "name": "update_map_line_numbers",
       "path": "scripts/living_map.py",
       "qualified_name": "update_map_line_numbers",
       "type": "symbol"
     },
     {
-      "end_line": 2060,
+      "end_line": 2214,
       "id": "py:scripts/living_map.py::update_map_header",
       "kind": "function",
-      "line": 2029,
+      "line": 2183,
       "name": "update_map_header",
       "path": "scripts/living_map.py",
       "qualified_name": "update_map_header",
       "type": "symbol"
     },
     {
-      "end_line": 2092,
+      "end_line": 2246,
       "id": "py:scripts/living_map.py::inject_feature",
       "kind": "function",
-      "line": 2062,
+      "line": 2216,
       "name": "inject_feature",
       "path": "scripts/living_map.py",
       "qualified_name": "inject_feature",
       "type": "symbol"
     },
     {
-      "end_line": 2124,
+      "end_line": 2278,
       "id": "py:scripts/living_map.py::inject_constraint",
       "kind": "function",
-      "line": 2094,
+      "line": 2248,
       "name": "inject_constraint",
       "path": "scripts/living_map.py",
       "qualified_name": "inject_constraint",
       "type": "symbol"
     },
     {
-      "end_line": 2195,
+      "end_line": 2349,
       "id": "py:scripts/living_map.py::cmd_init",
       "kind": "function",
-      "line": 2130,
+      "line": 2284,
       "name": "cmd_init",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_init",
       "type": "symbol"
     },
     {
-      "end_line": 2266,
+      "end_line": 2420,
       "id": "py:scripts/living_map.py::cmd_update",
       "kind": "function",
-      "line": 2197,
+      "line": 2351,
       "name": "cmd_update",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_update",
       "type": "symbol"
     },
     {
-      "end_line": 2340,
+      "end_line": 2494,
       "id": "py:scripts/living_map.py::cmd_check",
       "kind": "function",
-      "line": 2268,
+      "line": 2422,
       "name": "cmd_check",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_check",
       "type": "symbol"
     },
     {
-      "end_line": 2496,
+      "end_line": 2650,
       "id": "py:scripts/living_map.py::cmd_impact",
       "kind": "function",
-      "line": 2342,
+      "line": 2496,
       "name": "cmd_impact",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_impact",
       "type": "symbol"
     },
     {
-      "end_line": 2500,
+      "end_line": 2654,
       "id": "py:scripts/living_map.py::cmd_deep_impact",
       "kind": "function",
-      "line": 2498,
+      "line": 2652,
       "name": "cmd_deep_impact",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_deep_impact",
       "type": "symbol"
     },
     {
-      "end_line": 2548,
+      "end_line": 2702,
       "id": "py:scripts/living_map.py::cmd_install_hook",
       "kind": "function",
-      "line": 2502,
+      "line": 2656,
       "name": "cmd_install_hook",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_install_hook",
       "type": "symbol"
     },
     {
-      "end_line": 2673,
+      "end_line": 2827,
       "id": "py:scripts/living_map.py::cmd_add_feature",
       "kind": "function",
-      "line": 2550,
+      "line": 2704,
       "name": "cmd_add_feature",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_add_feature",
       "type": "symbol"
     },
     {
-      "end_line": 2735,
+      "end_line": 2889,
       "id": "py:scripts/living_map.py::cmd_add_constraint",
       "kind": "function",
-      "line": 2675,
+      "line": 2829,
       "name": "cmd_add_constraint",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_add_constraint",
       "type": "symbol"
     },
     {
-      "end_line": 2760,
+      "end_line": 2914,
       "id": "py:scripts/living_map.py::cmd_plan",
       "kind": "function",
-      "line": 2738,
+      "line": 2892,
       "name": "cmd_plan",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_plan",
       "type": "symbol"
     },
     {
-      "end_line": 2783,
+      "end_line": 2937,
       "id": "py:scripts/living_map.py::cmd_verify_change",
       "kind": "function",
-      "line": 2763,
+      "line": 2917,
       "name": "cmd_verify_change",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_verify_change",
       "type": "symbol"
     },
     {
-      "end_line": 2795,
+      "end_line": 2949,
       "id": "py:scripts/living_map.py::cmd_context",
       "kind": "function",
-      "line": 2786,
+      "line": 2940,
       "name": "cmd_context",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_context",
       "type": "symbol"
     },
     {
-      "end_line": 2824,
+      "end_line": 2978,
       "id": "py:scripts/living_map.py::cmd_explain",
       "kind": "function",
-      "line": 2798,
+      "line": 2952,
       "name": "cmd_explain",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_explain",
       "type": "symbol"
     },
     {
-      "end_line": 2856,
+      "end_line": 3010,
       "id": "py:scripts/living_map.py::cmd_why",
       "kind": "function",
-      "line": 2827,
+      "line": 2981,
       "name": "cmd_why",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_why",
       "type": "symbol"
     },
     {
-      "end_line": 2879,
+      "end_line": 3033,
       "id": "py:scripts/living_map.py::cmd_rollback",
       "kind": "function",
-      "line": 2858,
+      "line": 3012,
       "name": "cmd_rollback",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_rollback",
       "type": "symbol"
     },
     {
-      "end_line": 2893,
+      "end_line": 3047,
       "id": "py:scripts/living_map.py::capture_mcp_command",
       "kind": "function",
-      "line": 2885,
+      "line": 3039,
       "name": "capture_mcp_command",
       "path": "scripts/living_map.py",
       "qualified_name": "capture_mcp_command",
       "type": "symbol"
     },
     {
-      "end_line": 3043,
+      "end_line": 3197,
       "id": "py:scripts/living_map.py::build_mcp_server",
       "kind": "function",
-      "line": 2896,
+      "line": 3050,
       "name": "build_mcp_server",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server",
       "type": "symbol"
     },
     {
-      "end_line": 2922,
+      "end_line": 3076,
       "id": "py:scripts/living_map.py::build_mcp_server.update_map",
       "kind": "method",
-      "line": 2912,
+      "line": 3066,
       "name": "update_map",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.update_map",
       "type": "symbol"
     },
     {
-      "end_line": 2938,
+      "end_line": 3092,
       "id": "py:scripts/living_map.py::build_mcp_server.check_drift",
       "kind": "method",
-      "line": 2925,
+      "line": 3079,
       "name": "check_drift",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.check_drift",
       "type": "symbol"
     },
     {
-      "end_line": 2951,
+      "end_line": 3105,
       "id": "py:scripts/living_map.py::build_mcp_server.analyze_code_impact",
       "kind": "method",
-      "line": 2941,
+      "line": 3095,
       "name": "analyze_code_impact",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.analyze_code_impact",
       "type": "symbol"
     },
     {
-      "end_line": 2956,
+      "end_line": 3110,
       "id": "py:scripts/living_map.py::build_mcp_server.plan_change",
       "kind": "method",
-      "line": 2954,
+      "line": 3108,
       "name": "plan_change",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.plan_change",
       "type": "symbol"
     },
     {
-      "end_line": 2964,
+      "end_line": 3118,
       "id": "py:scripts/living_map.py::build_mcp_server.verify_change",
       "kind": "method",
-      "line": 2959,
+      "line": 3113,
       "name": "verify_change",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.verify_change",
       "type": "symbol"
     },
     {
-      "end_line": 2972,
+      "end_line": 3126,
       "id": "py:scripts/living_map.py::build_mcp_server.compile_context",
       "kind": "method",
-      "line": 2967,
+      "line": 3121,
       "name": "compile_context",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.compile_context",
       "type": "symbol"
     },
     {
-      "end_line": 2977,
+      "end_line": 3131,
       "id": "py:scripts/living_map.py::build_mcp_server.explain_symbol",
       "kind": "method",
-      "line": 2975,
+      "line": 3129,
       "name": "explain_symbol",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.explain_symbol",
       "type": "symbol"
     },
     {
-      "end_line": 2985,
+      "end_line": 3139,
       "id": "py:scripts/living_map.py::build_mcp_server.explain_symbol_history",
       "kind": "method",
-      "line": 2980,
+      "line": 3134,
       "name": "explain_symbol_history",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.explain_symbol_history",
       "type": "symbol"
     },
     {
-      "end_line": 3009,
+      "end_line": 3163,
       "id": "py:scripts/living_map.py::build_mcp_server.register_feature",
       "kind": "method",
-      "line": 2988,
+      "line": 3142,
       "name": "register_feature",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.register_feature",
       "type": "symbol"
     },
     {
-      "end_line": 3026,
+      "end_line": 3180,
       "id": "py:scripts/living_map.py::build_mcp_server.register_constraint",
       "kind": "method",
-      "line": 3012,
+      "line": 3166,
       "name": "register_constraint",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.register_constraint",
       "type": "symbol"
     },
     {
-      "end_line": 3041,
+      "end_line": 3195,
       "id": "py:scripts/living_map.py::build_mcp_server.get_map_summary",
       "kind": "method",
-      "line": 3029,
+      "line": 3183,
       "name": "get_map_summary",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.get_map_summary",
       "type": "symbol"
     },
     {
-      "end_line": 3063,
+      "end_line": 3217,
       "id": "py:scripts/living_map.py::cmd_mcp",
       "kind": "function",
-      "line": 3045,
+      "line": 3199,
       "name": "cmd_mcp",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_mcp",
       "type": "symbol"
     },
     {
-      "end_line": 3192,
+      "end_line": 3346,
       "id": "py:scripts/living_map.py::main",
       "kind": "function",
-      "line": 3069,
+      "line": 3223,
       "name": "main",
       "path": "scripts/living_map.py",
       "qualified_name": "main",
       "type": "symbol"
     },
     {
-      "end_line": 760,
+      "end_line": 818,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests",
       "kind": "class",
       "line": 12,
@@ -4490,290 +4827,330 @@
       "type": "symbol"
     },
     {
-      "end_line": 403,
-      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target",
+      "end_line": 407,
+      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_functions_and_impl_methods_have_ranges_and_stable_ids",
       "kind": "method",
       "line": 396,
+      "name": "test_rust_functions_and_impl_methods_have_ranges_and_stable_ids",
+      "path": "tests/test_symbol_index.py",
+      "qualified_name": "StableSymbolIndexTests.test_rust_functions_and_impl_methods_have_ranges_and_stable_ids",
+      "type": "symbol"
+    },
+    {
+      "end_line": 421,
+      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_same_module_call",
+      "kind": "method",
+      "line": 409,
+      "name": "test_rust_graph_extracts_same_module_call",
+      "path": "tests/test_symbol_index.py",
+      "qualified_name": "StableSymbolIndexTests.test_rust_graph_extracts_same_module_call",
+      "type": "symbol"
+    },
+    {
+      "end_line": 434,
+      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_test_attribute_becomes_tested_by_edge",
+      "kind": "method",
+      "line": 423,
+      "name": "test_rust_test_attribute_becomes_tested_by_edge",
+      "path": "tests/test_symbol_index.py",
+      "qualified_name": "StableSymbolIndexTests.test_rust_test_attribute_becomes_tested_by_edge",
+      "type": "symbol"
+    },
+    {
+      "end_line": 452,
+      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_rust_graph_extracts_attribute_and_axum_routes",
+      "kind": "method",
+      "line": 436,
+      "name": "test_rust_graph_extracts_attribute_and_axum_routes",
+      "path": "tests/test_symbol_index.py",
+      "qualified_name": "StableSymbolIndexTests.test_rust_graph_extracts_attribute_and_axum_routes",
+      "type": "symbol"
+    },
+    {
+      "end_line": 461,
+      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target",
+      "kind": "method",
+      "line": 454,
       "name": "test_graph_does_not_guess_ambiguous_call_target",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_graph_does_not_guess_ambiguous_call_target",
       "type": "symbol"
     },
     {
-      "end_line": 428,
+      "end_line": 486,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence",
       "kind": "method",
-      "line": 405,
+      "line": 463,
       "name": "test_javascript_graph_extracts_calls_with_evidence",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_graph_extracts_calls_with_evidence",
       "type": "symbol"
     },
     {
-      "end_line": 438,
+      "end_line": 496,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target",
       "kind": "method",
-      "line": 430,
+      "line": 488,
       "name": "test_javascript_graph_does_not_guess_ambiguous_target",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_graph_does_not_guess_ambiguous_target",
       "type": "symbol"
     },
     {
-      "end_line": 453,
+      "end_line": 511,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call",
       "kind": "method",
-      "line": 440,
+      "line": 498,
       "name": "test_javascript_graph_extracts_block_arrow_call",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_graph_extracts_block_arrow_call",
       "type": "symbol"
     },
     {
-      "end_line": 472,
+      "end_line": 530,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_express_route",
       "kind": "method",
-      "line": 455,
+      "line": 513,
       "name": "test_javascript_graph_extracts_express_route",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_graph_extracts_express_route",
       "type": "symbol"
     },
     {
-      "end_line": 486,
+      "end_line": 544,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route",
       "kind": "method",
-      "line": 474,
+      "line": 532,
       "name": "test_javascript_graph_extracts_next_app_route",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_graph_extracts_next_app_route",
       "type": "symbol"
     },
     {
-      "end_line": 502,
+      "end_line": 560,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge",
       "kind": "method",
-      "line": 488,
+      "line": 546,
       "name": "test_javascript_spec_call_becomes_tested_by_edge",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_spec_call_becomes_tested_by_edge",
       "type": "symbol"
     },
     {
-      "end_line": 520,
+      "end_line": 578,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names",
       "kind": "method",
-      "line": 504,
+      "line": 562,
       "name": "test_javascript_named_import_alias_disambiguates_duplicate_names",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_named_import_alias_disambiguates_duplicate_names",
       "type": "symbol"
     },
     {
-      "end_line": 536,
+      "end_line": 594,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_namespace_import_resolves_index_module",
       "kind": "method",
-      "line": 522,
+      "line": 580,
       "name": "test_javascript_namespace_import_resolves_index_module",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_namespace_import_resolves_index_module",
       "type": "symbol"
     },
     {
-      "end_line": 546,
+      "end_line": 604,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_javascript_module_resolution_preserves_ambiguity",
       "kind": "method",
-      "line": 538,
+      "line": 596,
       "name": "test_javascript_module_resolution_preserves_ambiguity",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_javascript_module_resolution_preserves_ambiguity",
       "type": "symbol"
     },
     {
-      "end_line": 563,
+      "end_line": 621,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_graph_impact_traverses_incoming_and_outgoing_edges",
       "kind": "method",
-      "line": 548,
+      "line": 606,
       "name": "test_graph_impact_traverses_incoming_and_outgoing_edges",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_graph_impact_traverses_incoming_and_outgoing_edges",
       "type": "symbol"
     },
     {
-      "end_line": 573,
+      "end_line": 631,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_machine_state_is_deterministic",
       "kind": "method",
-      "line": 565,
+      "line": 623,
       "name": "test_machine_state_is_deterministic",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_machine_state_is_deterministic",
       "type": "symbol"
     },
     {
-      "end_line": 584,
+      "end_line": 642,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_machine_state_validation_detects_missing_artifacts",
       "kind": "method",
-      "line": 575,
+      "line": 633,
       "name": "test_machine_state_validation_detects_missing_artifacts",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_machine_state_validation_detects_missing_artifacts",
       "type": "symbol"
     },
     {
-      "end_line": 604,
+      "end_line": 662,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_machine_state_validation_detects_tampered_graph",
       "kind": "method",
-      "line": 586,
+      "line": 644,
       "name": "test_machine_state_validation_detects_tampered_graph",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_machine_state_validation_detects_tampered_graph",
       "type": "symbol"
     },
     {
-      "end_line": 616,
+      "end_line": 674,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_constraint_validation_rejects_active_missing_symbol",
       "kind": "method",
-      "line": 606,
+      "line": 664,
       "name": "test_constraint_validation_rejects_active_missing_symbol",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_constraint_validation_rejects_active_missing_symbol",
       "type": "symbol"
     },
     {
-      "end_line": 626,
+      "end_line": 684,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_stale_constraint_may_retain_missing_symbol_history",
       "kind": "method",
-      "line": 618,
+      "line": 676,
       "name": "test_stale_constraint_may_retain_missing_symbol_history",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_stale_constraint_may_retain_missing_symbol_history",
       "type": "symbol"
     },
     {
-      "end_line": 645,
+      "end_line": 703,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_constraints_become_graph_nodes_and_edges",
       "kind": "method",
-      "line": 628,
+      "line": 686,
       "name": "test_constraints_become_graph_nodes_and_edges",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_constraints_become_graph_nodes_and_edges",
       "type": "symbol"
     },
     {
-      "end_line": 663,
+      "end_line": 721,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_change_plan_produces_explainable_risk",
       "kind": "method",
-      "line": 647,
+      "line": 705,
       "name": "test_change_plan_produces_explainable_risk",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_change_plan_produces_explainable_risk",
       "type": "symbol"
     },
     {
-      "end_line": 678,
+      "end_line": 736,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_verify_change_reports_linked_test_not_changed",
       "kind": "method",
-      "line": 665,
+      "line": 723,
       "name": "test_verify_change_reports_linked_test_not_changed",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_verify_change_reports_linked_test_not_changed",
       "type": "symbol"
     },
     {
-      "end_line": 689,
+      "end_line": 747,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_explain_requires_unambiguous_symbol",
       "kind": "method",
-      "line": 680,
+      "line": 738,
       "name": "test_explain_requires_unambiguous_symbol",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_explain_requires_unambiguous_symbol",
       "type": "symbol"
     },
     {
-      "end_line": 706,
+      "end_line": 764,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_context_compiler_respects_budget",
       "kind": "method",
-      "line": 691,
+      "line": 749,
       "name": "test_context_compiler_respects_budget",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_context_compiler_respects_budget",
       "type": "symbol"
     },
     {
-      "end_line": 716,
+      "end_line": 774,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_parse_symbol_git_history",
       "kind": "method",
-      "line": 708,
+      "line": 766,
       "name": "test_parse_symbol_git_history",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_parse_symbol_git_history",
       "type": "symbol"
     },
     {
-      "end_line": 727,
+      "end_line": 785,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_mcp_command_adapter_preserves_cli_status_and_output",
       "kind": "method",
-      "line": 718,
+      "line": 776,
       "name": "test_mcp_command_adapter_preserves_cli_status_and_output",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_mcp_command_adapter_preserves_cli_status_and_output",
       "type": "symbol"
     },
     {
-      "end_line": 721,
+      "end_line": 779,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_mcp_command_adapter_preserves_cli_status_and_output.command",
       "kind": "method",
-      "line": 719,
+      "line": 777,
       "name": "command",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_mcp_command_adapter_preserves_cli_status_and_output.command",
       "type": "symbol"
     },
     {
-      "end_line": 760,
+      "end_line": 818,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools",
       "kind": "method",
-      "line": 729,
+      "line": 787,
       "name": "test_mcp_server_registers_cli_parity_tools",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools",
       "type": "symbol"
     },
     {
-      "end_line": 739,
+      "end_line": 797,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP",
       "kind": "class",
-      "line": 730,
+      "line": 788,
       "name": "FakeFastMCP",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP",
       "type": "symbol"
     },
     {
-      "end_line": 733,
+      "end_line": 791,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP.__init__",
       "kind": "method",
-      "line": 731,
+      "line": 789,
       "name": "__init__",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP.__init__",
       "type": "symbol"
     },
     {
-      "end_line": 739,
+      "end_line": 797,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP.tool",
       "kind": "method",
-      "line": 735,
+      "line": 793,
       "name": "tool",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP.tool",
       "type": "symbol"
     },
     {
-      "end_line": 738,
+      "end_line": 796,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP.tool.register",
       "kind": "method",
-      "line": 736,
+      "line": 794,
       "name": "register",
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_mcp_server_registers_cli_parity_tools.FakeFastMCP.tool.register",
@@ -4781,5 +5158,5 @@
     }
   ],
   "schema_version": 1,
-  "source_hash": "767e18c29b7bc25194c37e804acf26ac"
+  "source_hash": "7ab22c9e4dabe22b2f973f79f9c563e5"
 }

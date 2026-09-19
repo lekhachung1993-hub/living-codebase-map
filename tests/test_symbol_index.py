@@ -393,6 +393,64 @@ class StableSymbolIndexTests(unittest.TestCase):
             )
         )
 
+    def test_rust_functions_and_impl_methods_have_ranges_and_stable_ids(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = self._write(
+                root, 'src/service.rs',
+                'pub struct Service;\n\nimpl Service {\n'
+                '  pub fn save(&self) -> bool {\n    true\n  }\n}\n',
+            )
+            records = living_map.scan_file_symbol_records(path, 'src/service.rs')
+            method = next(record for record in records if record['name'] == 'save')
+            self.assertEqual(method['id'], 'rust:src/service.rs::Service.save')
+            self.assertEqual(method['kind'], 'method')
+            self.assertEqual((method['line'], method['end_line']), (4, 6))
+
+    def test_rust_graph_extracts_same_module_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'src/validate.rs', 'pub fn validate() -> bool { true }\n')
+            self._write(
+                root, 'src/service.rs',
+                "pub fn create(_value: &'static str) -> bool {\n  validate()\n}\n",
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['source'], 'rust:src/service.rs::create')
+            self.assertEqual(edge['target'], 'rust:src/validate.rs::validate')
+            self.assertEqual(edge['evidence']['source'], 'rust_static')
+
+    def test_rust_test_attribute_becomes_tested_by_edge(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'src/lib.rs',
+                'pub fn create() -> bool { true }\n\n'
+                '#[test]\nfn test_create() {\n  assert!(create());\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'TESTED_BY')
+            self.assertEqual(edge['source'], 'rust:src/lib.rs::create')
+            self.assertEqual(edge['target'], 'rust:src/lib.rs::test_create')
+
+    def test_rust_graph_extracts_attribute_and_axum_routes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'src/api.rs',
+                '#[get("/health")]\nasync fn health() {}\n\n'
+                'async fn list_orders() {}\n\n'
+                'fn router() {\n  Router::new().route("/orders", get(list_orders));\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            handles = [edge for edge in graph['edges'] if edge['relation'] == 'HANDLES']
+            self.assertEqual({edge['source'] for edge in handles}, {
+                'api:GET /health', 'api:GET /orders',
+            })
+            self.assertEqual({edge['target'] for edge in handles}, {
+                'rust:src/api.rs::health', 'rust:src/api.rs::list_orders',
+            })
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
