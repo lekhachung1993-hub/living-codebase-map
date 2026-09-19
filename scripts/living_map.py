@@ -1191,6 +1191,75 @@ def _go_import_bindings(source, masked, module_name, known_dirs):
     return bindings
 
 
+def _rust_module_components(path):
+    """Return crate-relative module components for an indexed Rust file."""
+    normalized = path.replace('\\', '/')
+    parts = normalized.split('/')
+    if parts and parts[0] == 'src':
+        parts = parts[1:]
+    if not parts:
+        return []
+    filename = parts[-1]
+    stem = filename[:-3] if filename.endswith('.rs') else filename
+    if stem in {'lib', 'main', 'mod'}:
+        return parts[:-1]
+    return parts[:-1] + [stem]
+
+
+def _resolve_rust_module_path(importer_path, module_path, known_paths):
+    """Resolve crate/self/super Rust module syntax to one indexed source file."""
+    parts = [part for part in module_path.split('::') if part]
+    if not parts:
+        return None
+    current = _rust_module_components(importer_path)
+    if parts[0] == 'crate':
+        components = parts[1:]
+    elif parts[0] == 'self':
+        components = current + parts[1:]
+    elif parts[0] == 'super':
+        components = list(current)
+        while parts and parts[0] == 'super':
+            if not components:
+                return None
+            components.pop()
+            parts.pop(0)
+        components.extend(parts)
+    else:
+        return None
+    stem = 'src/' + '/'.join(components) if components else 'src'
+    candidates = [f'{stem}.rs', f'{stem}/mod.rs']
+    if not components:
+        candidates = ['src/lib.rs', 'src/main.rs']
+    matches = [candidate for candidate in candidates if candidate in known_paths]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _rust_import_bindings(source, masked, importer_path, known_paths, by_path_qualified):
+    """Resolve simple local Rust use declarations into symbols and modules."""
+    direct = {}
+    namespaces = {}
+    pattern = re.compile(
+        r'\buse\s+((?:crate|self|super)(?:::[A-Za-z_][A-Za-z0-9_]*)+)'
+        r'(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?\s*;'
+    )
+    for match in pattern.finditer(source):
+        if not masked[match.start():match.start() + 3].strip():
+            continue
+        qualified, alias = match.group(1), match.group(2)
+        module_path = _resolve_rust_module_path(importer_path, qualified, known_paths)
+        if module_path:
+            namespaces[alias or qualified.rsplit('::', 1)[-1]] = module_path
+            continue
+        parent, separator, name = qualified.rpartition('::')
+        if not separator:
+            continue
+        target_path = _resolve_rust_module_path(importer_path, parent, known_paths)
+        target = by_path_qualified.get((target_path, name)) if target_path else None
+        if target and target.get('kind') == 'function':
+            direct[alias or name] = target
+    return direct, namespaces
+
+
 def build_dependency_graph(index, root_dir=ROOT):
     """Build a confidence-scored dependency graph from a symbol index.
 
@@ -1269,6 +1338,9 @@ def build_dependency_graph(index, root_dir=ROOT):
                 continue
             masked = _strip_rust_noncode(source)
             directory = posixpath.dirname(rel_path)
+            rust_direct, rust_namespaces = _rust_import_bindings(
+                source, masked, rel_path, known_paths, by_path_qualified,
+            )
             file_symbols = [
                 symbol for symbol in symbols
                 if symbol['path'] == rel_path and symbol.get('kind') in {'function', 'method'}
@@ -1282,6 +1354,8 @@ def build_dependency_graph(index, root_dir=ROOT):
                 return min(owners, key=lambda item: item['end_line'] - item['line']) if owners else None
 
             def rust_module_target(name):
+                if name in rust_direct:
+                    return rust_direct[name]
                 candidates = [
                     symbol for symbol in by_dir_name.get((directory, name), [])
                     if symbol.get('kind') == 'function'
@@ -1313,7 +1387,34 @@ def build_dependency_graph(index, root_dir=ROOT):
                 source_id, target_id = caller['id'], target['id']
                 if relation == 'TESTED_BY':
                     source_id, target_id = target_id, source_id
-                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'rust_static')
+                evidence = 'rust_import' if called in rust_direct else 'rust_static'
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, evidence)
+
+            qualified_call = re.compile(
+                r'(?<![A-Za-z0-9_])((?:crate|self|super|[A-Za-z_][A-Za-z0-9_]*)'
+                r'(?:::[A-Za-z_][A-Za-z0-9_]*)+)\s*\('
+            )
+            for match in qualified_call.finditer(masked):
+                parts = match.group(1).split('::')
+                target = None
+                if parts[0] in rust_namespaces and len(parts) == 2:
+                    target = by_path_qualified.get((rust_namespaces[parts[0]], parts[1]))
+                elif parts[0] in {'crate', 'self', 'super'} and len(parts) >= 2:
+                    target_path = _resolve_rust_module_path(
+                        rel_path, '::'.join(parts[:-1]), known_paths,
+                    )
+                    target = by_path_qualified.get((target_path, parts[-1])) if target_path else None
+                if not target or target.get('kind') != 'function':
+                    continue
+                line = masked.count('\n', 0, match.start()) + 1
+                caller = rust_owner(line)
+                if not caller:
+                    continue
+                relation = 'TESTED_BY' if caller['id'] in test_symbols else 'CALLS'
+                source_id, target_id = caller['id'], target['id']
+                if relation == 'TESTED_BY':
+                    source_id, target_id = target_id, source_id
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'rust_import')
 
             attribute_route = re.compile(
                 r'#\s*\[\s*(get|post|put|delete|patch|head)\s*\(\s*"([^"]+)"[^]]*\)\s*\]'
