@@ -9,10 +9,10 @@
 |---|---|
 | Tech Stack | Python 3.8+ (Zero-dependency standard library CLI + optional FastMCP/MCPServer) |
 | Entry Point | `scripts/living_map.py` (`living-codebase-map` / `living-map`) |
-| Primary Storage | Flat Markdown files (`PROJECT_MAP.md`, `PROJECT_MAP.min.md`) |
+| Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `dc9aa4756d5c67ffa49ed250cf5137fb` |
+| Codebase-MD5 | `2db5328f8e3e245a712e308887ebe707` |
 
 ---
 

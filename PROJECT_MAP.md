@@ -1,6 +1,6 @@
-# LIVING PROJECT MAP: living-codebase-map v2.5.0
+# LIVING PROJECT MAP: living-codebase-map v3.1.0
 > **Purpose:** Agent's primary working memory and architectural compass. Read this file BEFORE scanning code.
-> **Last Updated:** 2026-09-19 | Commit: 9ecaa0a
+> **Last Updated:** 2026-09-19 | Commit: fb91a6e
 >
 > **AGENT PROTOCOL:**
 > 1. Read MODULE 5 (Feature Cross-Reference) to identify components related to current task.
@@ -16,10 +16,10 @@
 |---|---|
 | Tech Stack | Python 3.8+ (Zero-dependency standard library CLI + optional FastMCP/MCPServer) |
 | Entry Point | `scripts/living_map.py` (`living-codebase-map` / `living-map`) |
-| Primary Storage | Flat Markdown files (`PROJECT_MAP.md`, `PROJECT_MAP.min.md`) |
+| Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `dc9aa4756d5c67ffa49ed250cf5137fb` |
+| Codebase-MD5 | `2db5328f8e3e245a712e308887ebe707` |
 
 ---
 
