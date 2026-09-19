@@ -152,6 +152,22 @@ class StableSymbolIndexTests(unittest.TestCase):
             self.assertEqual(edge['target'], 'py:service.py::Service.validate')
             self.assertEqual(edge['confidence'], 1.0)
 
+    def test_graph_does_not_resolve_unknown_object_method_by_name_only(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'adapter.py',
+                'class Adapter:\n    def send(self):\n        return True\n',
+            )
+            self._write(
+                root,
+                'service.py',
+                'def run(client):\n    return client.send()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            self.assertEqual(graph['edges'], [])
+
     def test_graph_creates_api_node_from_python_route_decorator(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(
@@ -177,6 +193,105 @@ class StableSymbolIndexTests(unittest.TestCase):
             index = living_map.build_symbol_index(root)
             graph = living_map.build_dependency_graph(index, root)
             self.assertEqual(graph['edges'], [])
+
+    def test_javascript_graph_extracts_calls_with_evidence(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'service.ts',
+                'export function validateOrder(order) {\n'
+                '  return Boolean(order)\n'
+                '}\n\n'
+                'export async function createOrder(order) {\n'
+                '  // validateOrder() in a comment is not evidence\n'
+                '  const note = "validateOrder()"\n'
+                '  return validateOrder(order)\n'
+                '}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edges = [edge for edge in graph['edges'] if edge['relation'] == 'CALLS']
+
+            self.assertEqual(len(edges), 1)
+            self.assertEqual(edges[0]['source'], 'ts:service.ts::createOrder')
+            self.assertEqual(edges[0]['target'], 'ts:service.ts::validateOrder')
+            self.assertEqual(edges[0]['confidence'], 1.0)
+            self.assertEqual(edges[0]['evidence']['source'], 'javascript_static')
+            self.assertEqual(edges[0]['evidence']['line'], 8)
+
+    def test_javascript_graph_does_not_guess_ambiguous_target(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'a.ts', 'export function save() { return true }\n')
+            self._write(root, 'b.ts', 'export function save() { return true }\n')
+            self._write(root, 'caller.ts', 'export function run() { return save() }\n')
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            calls = [edge for edge in graph['edges'] if edge['relation'] == 'CALLS']
+            self.assertEqual(calls, [])
+
+    def test_javascript_graph_extracts_block_arrow_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'worker.js',
+                'const prepare = () => { return true }\n'
+                'export const run = async () => {\n  return prepare()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+
+            self.assertEqual(edge['source'], 'js:worker.js::run')
+            self.assertEqual(edge['target'], 'js:worker.js::prepare')
+
+    def test_javascript_graph_extracts_express_route(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'api.js',
+                'function createOrder(req, res) {\n  return res.sendStatus(201)\n}\n'
+                '// router.delete("/orders", createOrder)\n'
+                'router.post("/orders", createOrder)\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            api_node = next(node for node in graph['nodes'] if node['type'] == 'api')
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'HANDLES')
+
+            self.assertEqual(api_node['id'], 'api:POST /orders')
+            self.assertEqual(len([node for node in graph['nodes'] if node['type'] == 'api']), 1)
+            self.assertEqual(edge['target'], 'js:api.js::createOrder')
+            self.assertEqual(edge['evidence']['source'], 'javascript_static')
+
+    def test_javascript_graph_extracts_next_app_route(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'app/api/orders/route.ts',
+                'export async function GET() {\n  return Response.json([])\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'HANDLES')
+
+            self.assertEqual(edge['source'], 'api:GET /api/orders')
+            self.assertEqual(edge['target'], 'ts:app/api/orders/route.ts::GET')
+
+    def test_javascript_spec_call_becomes_tested_by_edge(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'src/service.ts', 'export function createOrder() { return true }\n')
+            self._write(
+                root,
+                'tests/service.spec.ts',
+                'function testCreateOrder() {\n  return createOrder()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'TESTED_BY')
+
+            self.assertEqual(edge['source'], 'ts:src/service.ts::createOrder')
+            self.assertEqual(edge['target'], 'ts:tests/service.spec.ts::testCreateOrder')
+            self.assertEqual(edge['confidence'], 0.9)
 
     def test_graph_impact_traverses_incoming_and_outgoing_edges(self):
         graph = {
