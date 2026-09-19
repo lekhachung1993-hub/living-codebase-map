@@ -355,7 +355,18 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1210,
+        "line": 1213,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::compile_task_context",
+      "target": "py:scripts/living_map.py::build_change_plan"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1265,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -366,7 +377,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1287,
+        "line": 1342,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -377,68 +388,13 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1290,
+        "line": 1345,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
       "relation": "CALLS",
       "source": "py:scripts/living_map.py::update_map_header",
       "target": "py:scripts/living_map.py::calculate_codebase_hash"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1408,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_init",
-      "target": "py:scripts/living_map.py::git_get_head_info"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1409,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_init",
-      "target": "py:scripts/living_map.py::calculate_codebase_hash"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1442,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_init",
-      "target": "py:scripts/living_map.py::update_map_header"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1448,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_init",
-      "target": "py:scripts/living_map.py::generate_min_map"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1462,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::build_symbol_database"
     },
     {
       "confidence": 1.0,
@@ -448,118 +404,41 @@
         "source": "python_ast"
       },
       "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::build_symbol_index"
+      "source": "py:scripts/living_map.py::cmd_init",
+      "target": "py:scripts/living_map.py::git_get_head_info"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1465,
+        "line": 1464,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
       "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::load_constraints"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1469,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::validate_constraints"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1475,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::apply_constraints_to_graph"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1476,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::build_dependency_graph"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1483,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::update_map_line_numbers"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1487,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
+      "source": "py:scripts/living_map.py::cmd_init",
       "target": "py:scripts/living_map.py::calculate_codebase_hash"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1491,
+        "line": 1497,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
       "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
+      "source": "py:scripts/living_map.py::cmd_init",
       "target": "py:scripts/living_map.py::update_map_header"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1508,
+        "line": 1503,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
       "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::write_symbol_index"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1510,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::write_dependency_graph"
-    },
-    {
-      "confidence": 1.0,
-      "evidence": {
-        "line": 1513,
-        "path": "scripts/living_map.py",
-        "source": "python_ast"
-      },
-      "relation": "CALLS",
-      "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::write_constraints"
+      "source": "py:scripts/living_map.py::cmd_init",
+      "target": "py:scripts/living_map.py::generate_min_map"
     },
     {
       "confidence": 1.0,
@@ -570,7 +449,18 @@
       },
       "relation": "CALLS",
       "source": "py:scripts/living_map.py::cmd_update",
-      "target": "py:scripts/living_map.py::generate_min_map"
+      "target": "py:scripts/living_map.py::build_symbol_database"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1518,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::build_symbol_index"
     },
     {
       "confidence": 1.0,
@@ -581,12 +471,133 @@
       },
       "relation": "CALLS",
       "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::load_constraints"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1524,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::validate_constraints"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1530,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::apply_constraints_to_graph"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1531,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::build_dependency_graph"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1538,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::update_map_line_numbers"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1542,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::calculate_codebase_hash"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1546,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::update_map_header"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1563,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::write_symbol_index"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1565,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::write_dependency_graph"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1568,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::write_constraints"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1572,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
+      "target": "py:scripts/living_map.py::generate_min_map"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 1575,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_update",
       "target": "py:scripts/living_map.py::git_commit_map"
     },
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1532,
+        "line": 1587,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -597,7 +608,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1539,
+        "line": 1594,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -608,7 +619,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1540,
+        "line": 1595,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -619,7 +630,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1567,
+        "line": 1622,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -630,7 +641,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1568,
+        "line": 1623,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -641,7 +652,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1580,
+        "line": 1635,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -652,7 +663,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1583,
+        "line": 1638,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -663,7 +674,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1584,
+        "line": 1639,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -674,7 +685,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1585,
+        "line": 1640,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -685,7 +696,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1586,
+        "line": 1641,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -696,7 +707,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1613,
+        "line": 1668,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -707,7 +718,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1618,
+        "line": 1673,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -718,7 +729,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1755,
+        "line": 1810,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -729,7 +740,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1891,
+        "line": 1946,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -740,7 +751,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1892,
+        "line": 1947,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -751,7 +762,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1903,
+        "line": 1958,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -762,7 +773,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1904,
+        "line": 1959,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -773,7 +784,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1924,
+        "line": 1979,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -784,7 +795,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1927,
+        "line": 1982,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -795,7 +806,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1939,
+        "line": 1994,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -806,7 +817,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1959,
+        "line": 2014,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -817,7 +828,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1966,
+        "line": 2021,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -828,7 +839,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1967,
+        "line": 2022,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -839,7 +850,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1974,
+        "line": 2029,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -850,7 +861,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1975,
+        "line": 2030,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -861,7 +872,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1976,
+        "line": 2031,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -872,7 +883,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1984,
+        "line": 2039,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -883,7 +894,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1986,
+        "line": 2041,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -894,7 +905,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1989,
+        "line": 2044,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -905,7 +916,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 1999,
+        "line": 2054,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -916,7 +927,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2020,
+        "line": 2075,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -927,7 +938,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2029,
+        "line": 2084,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -938,7 +949,29 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2043,
+        "line": 2102,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_context",
+      "target": "py:scripts/living_map.py::compile_task_context"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 2114,
+        "path": "scripts/living_map.py",
+        "source": "python_ast"
+      },
+      "relation": "CALLS",
+      "source": "py:scripts/living_map.py::cmd_explain",
+      "target": "py:scripts/living_map.py::explain_graph_symbol"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": {
+        "line": 2139,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -949,7 +982,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2061,
+        "line": 2157,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -960,7 +993,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2092,
+        "line": 2188,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -971,7 +1004,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2104,
+        "line": 2200,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -982,7 +1015,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2121,
+        "line": 2217,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -993,7 +1026,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2145,
+        "line": 2241,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1004,7 +1037,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2162,
+        "line": 2258,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1015,7 +1048,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2184,
+        "line": 2280,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1026,7 +1059,7 @@
     {
       "confidence": 1.0,
       "evidence": {
-        "line": 2209,
+        "line": 2305,
         "path": "scripts/living_map.py",
         "source": "python_ast"
       },
@@ -1572,6 +1605,39 @@
       "relation": "TESTED_BY",
       "source": "py:scripts/living_map.py::verify_changed_files",
       "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_verify_change_reports_linked_test_not_changed"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 301,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::explain_graph_symbol",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_explain_requires_unambiguous_symbol"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 302,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::explain_graph_symbol",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_explain_requires_unambiguous_symbol"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": {
+        "line": 319,
+        "path": "tests/test_symbol_index.py",
+        "source": "python_ast"
+      },
+      "relation": "TESTED_BY",
+      "source": "py:scripts/living_map.py::compile_task_context",
+      "target": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_context_compiler_respects_budget"
     }
   ],
   "nodes": [
@@ -1986,257 +2052,297 @@
       "type": "symbol"
     },
     {
-      "end_line": 1226,
+      "end_line": 1208,
+      "id": "py:scripts/living_map.py::explain_graph_symbol",
+      "kind": "function",
+      "line": 1194,
+      "name": "explain_graph_symbol",
+      "path": "scripts/living_map.py",
+      "qualified_name": "explain_graph_symbol",
+      "type": "symbol"
+    },
+    {
+      "end_line": 1246,
+      "id": "py:scripts/living_map.py::compile_task_context",
+      "kind": "function",
+      "line": 1211,
+      "name": "compile_task_context",
+      "path": "scripts/living_map.py",
+      "qualified_name": "compile_task_context",
+      "type": "symbol"
+    },
+    {
+      "end_line": 1281,
       "id": "py:scripts/living_map.py::build_symbol_database",
       "kind": "function",
-      "line": 1193,
+      "line": 1248,
       "name": "build_symbol_database",
       "path": "scripts/living_map.py",
       "qualified_name": "build_symbol_database",
       "type": "symbol"
     },
     {
-      "end_line": 1282,
+      "end_line": 1337,
       "id": "py:scripts/living_map.py::update_map_line_numbers",
       "kind": "function",
-      "line": 1232,
+      "line": 1287,
       "name": "update_map_line_numbers",
       "path": "scripts/living_map.py",
       "qualified_name": "update_map_line_numbers",
       "type": "symbol"
     },
     {
-      "end_line": 1315,
+      "end_line": 1370,
       "id": "py:scripts/living_map.py::update_map_header",
       "kind": "function",
-      "line": 1284,
+      "line": 1339,
       "name": "update_map_header",
       "path": "scripts/living_map.py",
       "qualified_name": "update_map_header",
       "type": "symbol"
     },
     {
-      "end_line": 1347,
+      "end_line": 1402,
       "id": "py:scripts/living_map.py::inject_feature",
       "kind": "function",
-      "line": 1317,
+      "line": 1372,
       "name": "inject_feature",
       "path": "scripts/living_map.py",
       "qualified_name": "inject_feature",
       "type": "symbol"
     },
     {
-      "end_line": 1379,
+      "end_line": 1434,
       "id": "py:scripts/living_map.py::inject_constraint",
       "kind": "function",
-      "line": 1349,
+      "line": 1404,
       "name": "inject_constraint",
       "path": "scripts/living_map.py",
       "qualified_name": "inject_constraint",
       "type": "symbol"
     },
     {
-      "end_line": 1450,
+      "end_line": 1505,
       "id": "py:scripts/living_map.py::cmd_init",
       "kind": "function",
-      "line": 1385,
+      "line": 1440,
       "name": "cmd_init",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_init",
       "type": "symbol"
     },
     {
-      "end_line": 1521,
+      "end_line": 1576,
       "id": "py:scripts/living_map.py::cmd_update",
       "kind": "function",
-      "line": 1452,
+      "line": 1507,
       "name": "cmd_update",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_update",
       "type": "symbol"
     },
     {
-      "end_line": 1595,
+      "end_line": 1650,
       "id": "py:scripts/living_map.py::cmd_check",
       "kind": "function",
-      "line": 1523,
+      "line": 1578,
       "name": "cmd_check",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_check",
       "type": "symbol"
     },
     {
-      "end_line": 1751,
+      "end_line": 1806,
       "id": "py:scripts/living_map.py::cmd_impact",
       "kind": "function",
-      "line": 1597,
+      "line": 1652,
       "name": "cmd_impact",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_impact",
       "type": "symbol"
     },
     {
-      "end_line": 1755,
+      "end_line": 1810,
       "id": "py:scripts/living_map.py::cmd_deep_impact",
       "kind": "function",
-      "line": 1753,
+      "line": 1808,
       "name": "cmd_deep_impact",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_deep_impact",
       "type": "symbol"
     },
     {
-      "end_line": 1803,
+      "end_line": 1858,
       "id": "py:scripts/living_map.py::cmd_install_hook",
       "kind": "function",
-      "line": 1757,
+      "line": 1812,
       "name": "cmd_install_hook",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_install_hook",
       "type": "symbol"
     },
     {
-      "end_line": 1928,
+      "end_line": 1983,
       "id": "py:scripts/living_map.py::cmd_add_feature",
       "kind": "function",
-      "line": 1805,
+      "line": 1860,
       "name": "cmd_add_feature",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_add_feature",
       "type": "symbol"
     },
     {
-      "end_line": 1990,
+      "end_line": 2045,
       "id": "py:scripts/living_map.py::cmd_add_constraint",
       "kind": "function",
-      "line": 1930,
+      "line": 1985,
       "name": "cmd_add_constraint",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_add_constraint",
       "type": "symbol"
     },
     {
-      "end_line": 2015,
+      "end_line": 2070,
       "id": "py:scripts/living_map.py::cmd_plan",
       "kind": "function",
-      "line": 1993,
+      "line": 2048,
       "name": "cmd_plan",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_plan",
       "type": "symbol"
     },
     {
-      "end_line": 2038,
+      "end_line": 2093,
       "id": "py:scripts/living_map.py::cmd_verify_change",
       "kind": "function",
-      "line": 2018,
+      "line": 2073,
       "name": "cmd_verify_change",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_verify_change",
       "type": "symbol"
     },
     {
-      "end_line": 2061,
+      "end_line": 2105,
+      "id": "py:scripts/living_map.py::cmd_context",
+      "kind": "function",
+      "line": 2096,
+      "name": "cmd_context",
+      "path": "scripts/living_map.py",
+      "qualified_name": "cmd_context",
+      "type": "symbol"
+    },
+    {
+      "end_line": 2134,
+      "id": "py:scripts/living_map.py::cmd_explain",
+      "kind": "function",
+      "line": 2108,
+      "name": "cmd_explain",
+      "path": "scripts/living_map.py",
+      "qualified_name": "cmd_explain",
+      "type": "symbol"
+    },
+    {
+      "end_line": 2157,
       "id": "py:scripts/living_map.py::cmd_rollback",
       "kind": "function",
-      "line": 2040,
+      "line": 2136,
       "name": "cmd_rollback",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_rollback",
       "type": "symbol"
     },
     {
-      "end_line": 2180,
+      "end_line": 2276,
       "id": "py:scripts/living_map.py::build_mcp_server",
       "kind": "function",
-      "line": 2067,
+      "line": 2163,
       "name": "build_mcp_server",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server",
       "type": "symbol"
     },
     {
-      "end_line": 2093,
+      "end_line": 2189,
       "id": "py:scripts/living_map.py::build_mcp_server.update_map",
       "kind": "method",
-      "line": 2083,
+      "line": 2179,
       "name": "update_map",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.update_map",
       "type": "symbol"
     },
     {
-      "end_line": 2109,
+      "end_line": 2205,
       "id": "py:scripts/living_map.py::build_mcp_server.check_drift",
       "kind": "method",
-      "line": 2096,
+      "line": 2192,
       "name": "check_drift",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.check_drift",
       "type": "symbol"
     },
     {
-      "end_line": 2122,
+      "end_line": 2218,
       "id": "py:scripts/living_map.py::build_mcp_server.analyze_code_impact",
       "kind": "method",
-      "line": 2112,
+      "line": 2208,
       "name": "analyze_code_impact",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.analyze_code_impact",
       "type": "symbol"
     },
     {
-      "end_line": 2146,
+      "end_line": 2242,
       "id": "py:scripts/living_map.py::build_mcp_server.register_feature",
       "kind": "method",
-      "line": 2125,
+      "line": 2221,
       "name": "register_feature",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.register_feature",
       "type": "symbol"
     },
     {
-      "end_line": 2163,
+      "end_line": 2259,
       "id": "py:scripts/living_map.py::build_mcp_server.register_constraint",
       "kind": "method",
-      "line": 2149,
+      "line": 2245,
       "name": "register_constraint",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.register_constraint",
       "type": "symbol"
     },
     {
-      "end_line": 2178,
+      "end_line": 2274,
       "id": "py:scripts/living_map.py::build_mcp_server.get_map_summary",
       "kind": "method",
-      "line": 2166,
+      "line": 2262,
       "name": "get_map_summary",
       "path": "scripts/living_map.py",
       "qualified_name": "build_mcp_server.get_map_summary",
       "type": "symbol"
     },
     {
-      "end_line": 2200,
+      "end_line": 2296,
       "id": "py:scripts/living_map.py::cmd_mcp",
       "kind": "function",
-      "line": 2182,
+      "line": 2278,
       "name": "cmd_mcp",
       "path": "scripts/living_map.py",
       "qualified_name": "cmd_mcp",
       "type": "symbol"
     },
     {
-      "end_line": 2315,
+      "end_line": 2420,
       "id": "py:scripts/living_map.py::main",
       "kind": "function",
-      "line": 2206,
+      "line": 2302,
       "name": "main",
       "path": "scripts/living_map.py",
       "qualified_name": "main",
       "type": "symbol"
     },
     {
-      "end_line": 294,
+      "end_line": 322,
       "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests",
       "kind": "class",
       "line": 9,
@@ -2434,8 +2540,28 @@
       "path": "tests/test_symbol_index.py",
       "qualified_name": "StableSymbolIndexTests.test_verify_change_reports_linked_test_not_changed",
       "type": "symbol"
+    },
+    {
+      "end_line": 305,
+      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_explain_requires_unambiguous_symbol",
+      "kind": "method",
+      "line": 296,
+      "name": "test_explain_requires_unambiguous_symbol",
+      "path": "tests/test_symbol_index.py",
+      "qualified_name": "StableSymbolIndexTests.test_explain_requires_unambiguous_symbol",
+      "type": "symbol"
+    },
+    {
+      "end_line": 322,
+      "id": "py:tests/test_symbol_index.py::StableSymbolIndexTests.test_context_compiler_respects_budget",
+      "kind": "method",
+      "line": 307,
+      "name": "test_context_compiler_respects_budget",
+      "path": "tests/test_symbol_index.py",
+      "qualified_name": "StableSymbolIndexTests.test_context_compiler_respects_budget",
+      "type": "symbol"
     }
   ],
   "schema_version": 1,
-  "source_hash": "2a94468f72c6c5977ee03a15fe171edb"
+  "source_hash": "dd5825c2404117d0ee309ca0d0b04c53"
 }
