@@ -49,6 +49,7 @@ import hashlib
 import argparse
 import subprocess
 import contextlib
+import posixpath
 from datetime import datetime
 
 # Reconfigure stdout/stderr for Unicode safety across Windows/Linux terminals
@@ -893,6 +894,63 @@ def _next_route_path(path):
     return None
 
 
+def _resolve_javascript_module_path(importer_path, specifier, known_paths):
+    """Resolve a relative JS/TS module specifier to one indexed repository path."""
+    if not specifier.startswith('.'):
+        return None
+    base = posixpath.normpath(posixpath.join(posixpath.dirname(importer_path), specifier))
+    if base in known_paths:
+        return base
+    candidates = []
+    extension = posixpath.splitext(base)[1]
+    if not extension:
+        candidates.extend(base + suffix for suffix in ('.ts', '.tsx', '.js', '.jsx', '.vue'))
+        candidates.extend(posixpath.join(base, 'index' + suffix) for suffix in ('.ts', '.tsx', '.js', '.jsx', '.vue'))
+    elif extension == '.js':
+        stem = base[:-3]
+        candidates.extend((stem + '.ts', stem + '.tsx'))
+    matches = [candidate for candidate in candidates if candidate in known_paths]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _javascript_import_bindings(source, masked, importer_path, known_paths, by_path_qualified):
+    """Resolve explicit relative ESM imports into direct and namespace bindings."""
+    direct = {}
+    namespaces = {}
+    named_pattern = re.compile(
+        r'\bimport\s+(?:type\s+)?\{([^}]+)\}\s+from\s*([\'\"])([^\'\"]+)\2',
+        re.MULTILINE,
+    )
+    for match in named_pattern.finditer(source):
+        if not masked[match.start():match.start() + 1].strip():
+            continue
+        target_path = _resolve_javascript_module_path(importer_path, match.group(3), known_paths)
+        if not target_path:
+            continue
+        for item in match.group(1).split(','):
+            parts = re.split(r'\s+as\s+', re.sub(r'^\s*type\s+', '', item.strip()), maxsplit=1)
+            imported = parts[0].strip()
+            local = parts[1].strip() if len(parts) == 2 else imported
+            if not re.fullmatch(r'[A-Za-z_$][A-Za-z0-9_$]*', imported):
+                continue
+            target = by_path_qualified.get((target_path, imported))
+            if target:
+                direct[local] = target
+
+    namespace_pattern = re.compile(
+        r'\bimport\s+\*\s+as\s+([A-Za-z_$][A-Za-z0-9_$]*)\s+from\s*'
+        r'([\'\"])([^\'\"]+)\2',
+        re.MULTILINE,
+    )
+    for match in namespace_pattern.finditer(source):
+        if not masked[match.start():match.start() + 1].strip():
+            continue
+        target_path = _resolve_javascript_module_path(importer_path, match.group(3), known_paths)
+        if target_path:
+            namespaces[match.group(1)] = target_path
+    return direct, namespaces
+
+
 def build_dependency_graph(index, root_dir=ROOT):
     """Build a confidence-scored dependency graph from a symbol index.
 
@@ -903,6 +961,7 @@ def build_dependency_graph(index, root_dir=ROOT):
     nodes = []
     node_ids = set()
     symbols = index.get('symbols', [])
+    known_paths = {file_info['path'] for file_info in index.get('files', [])}
     by_path_qualified = {}
     by_name = {}
 
@@ -964,6 +1023,9 @@ def build_dependency_graph(index, root_dir=ROOT):
                 symbol for symbol in symbols
                 if symbol['path'] == rel_path and symbol.get('kind') == 'function'
             ]
+            import_bindings, namespace_bindings = _javascript_import_bindings(
+                source, masked, rel_path, known_paths, by_path_qualified,
+            )
             call_pattern = re.compile(r'(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(')
             ignored_calls = {
                 'if', 'for', 'while', 'switch', 'catch', 'function', 'return',
@@ -981,7 +1043,10 @@ def build_dependency_graph(index, root_dir=ROOT):
                 if not owners:
                     continue
                 caller = min(owners, key=lambda item: item['end_line'] - item['line'])
-                target, confidence = resolve_target(rel_path, called)
+                target = import_bindings.get(called)
+                confidence = 1.0 if target else 0.0
+                if target is None:
+                    target, confidence = resolve_target(rel_path, called)
                 if target:
                     relation = 'TESTED_BY' if _is_test_path(rel_path) else 'CALLS'
                     source_id, target_id = caller['id'], target['id']
@@ -991,6 +1056,32 @@ def build_dependency_graph(index, root_dir=ROOT):
                         source_id, target_id, relation, confidence,
                         rel_path, line, 'javascript_static',
                     )
+
+            member_pattern = re.compile(
+                r'(?<![A-Za-z0-9_$])([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*'
+                r'([A-Za-z_$][A-Za-z0-9_$]*)\s*\('
+            )
+            for match in member_pattern.finditer(masked):
+                target_path = namespace_bindings.get(match.group(1))
+                if not target_path:
+                    continue
+                line = masked.count('\n', 0, match.start()) + 1
+                owners = [
+                    symbol for symbol in file_symbols
+                    if symbol['line'] <= line <= symbol['end_line']
+                ]
+                target = by_path_qualified.get((target_path, match.group(2)))
+                if not owners or not target:
+                    continue
+                caller = min(owners, key=lambda item: item['end_line'] - item['line'])
+                relation = 'TESTED_BY' if _is_test_path(rel_path) else 'CALLS'
+                source_id, target_id = caller['id'], target['id']
+                if relation == 'TESTED_BY':
+                    source_id, target_id = target_id, source_id
+                add_edge(
+                    source_id, target_id, relation, 1.0,
+                    rel_path, line, 'javascript_import',
+                )
 
             route_pattern = re.compile(
                 r'\b(?:app|router)\s*\.\s*(get|post|put|delete|patch|head)\s*\('
