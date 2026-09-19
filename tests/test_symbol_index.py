@@ -293,6 +293,34 @@ class StableSymbolIndexTests(unittest.TestCase):
         report = living_map.verify_changed_files(['service.py'], graph)
         self.assertEqual(report['missing_tests'], ['tests/test_service.py'])
 
+    def test_explain_requires_unambiguous_symbol(self):
+        graph = {'nodes': [
+            {'id': 'py:a.py::save', 'name': 'save', 'qualified_name': 'save'},
+            {'id': 'py:b.py::save', 'name': 'save', 'qualified_name': 'save'},
+        ], 'edges': []}
+        ambiguous = living_map.explain_graph_symbol('save', graph)
+        exact = living_map.explain_graph_symbol('py:a.py::save', graph)
+        self.assertIsNone(ambiguous['match'])
+        self.assertEqual(len(ambiguous['candidates']), 2)
+        self.assertEqual(exact['match']['id'], 'py:a.py::save')
+
+    def test_context_compiler_respects_budget(self):
+        graph = {
+            'nodes': [
+                {'id': 'py:service.py::create_order', 'type': 'symbol', 'name': 'create_order', 'qualified_name': 'create_order', 'path': 'service.py'},
+                {'id': 'py:tests/test_service.py::test_create_order', 'type': 'symbol', 'name': 'test_create_order', 'qualified_name': 'test_create_order', 'path': 'tests/test_service.py'},
+            ],
+            'edges': [{
+                'source': 'py:service.py::create_order',
+                'target': 'py:tests/test_service.py::test_create_order',
+                'relation': 'TESTED_BY', 'confidence': 1.0,
+            }],
+        }
+        result = living_map.compile_task_context('change create order', graph, budget=80)
+        self.assertLessEqual(result['estimated_tokens'], 80)
+        self.assertIn('Risk:', result['text'])
+        self.assertTrue(result['plan']['seeds'])
+
 
 if __name__ == '__main__':
     unittest.main()

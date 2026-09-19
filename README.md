@@ -19,6 +19,7 @@
 | ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
 | 📜 **Structured Constraints** | `.lcm/constraints.json` stores lifecycle, severity, stable-symbol scope, reason, owner, and provenance; active rules become graph edges. |
 | 🛡️ **Change Safety Engine** | `map plan` explains risk before editing; `map verify-change` checks the diff against linked tests and constraints afterward. |
+| 🧩 **Dynamic Context Compiler** | `map context` selects task-relevant symbols and relationships within a real token budget; `map explain` gives one-symbol orientation. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -49,6 +50,8 @@ You **do not need to open a terminal** or find the Python script. Just type conv
 | `map check` | Deterministically verifies `PROJECT_MAP.md`, `.lcm/index.json`, and `.lcm/graph.json`; `--fix` rebuilds all four generated artifacts. |
 | `map plan "<task>"` | Finds likely symbols/files, traverses their blast radius, and reports an explainable GREEN/YELLOW/RED risk score. |
 | `map verify-change` | Compares the current Git diff with graph-linked tests and constraints; use `--strict` as a quality gate. |
+| `map context "<task>" --budget 500` | Produces a task-specific context packet rather than using one static mini-map for every task. |
+| `map explain <symbol>` | Shows the exact Stable Symbol ID, location, incoming callers, outgoing calls, tests, routes, and constraints. |
 | `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
 | `map add-feature "<prompt>"` | Natural language auto-parsing: extracts feature ID (`Fxxx`), DOM selector, API route, and registers into Module 5. |
 | `map rollback [hash]` | Safe Rollback Lock: Inspects map history or restores map checkpoint (**source code is 100% untouched**). |
@@ -200,6 +203,15 @@ python scripts/living_map.py verify-change --base HEAD --strict
 ```
 
 Risk scores explain their inputs: API exposure, constraint severity, graph blast radius, inferred dependencies, and missing linked tests. `verify-change` is advisory by default and becomes a failing quality gate with `--strict`.
+
+### Dynamic context
+
+```bash
+python scripts/living_map.py context "fix order validation" --budget 500
+python scripts/living_map.py explain create_order
+```
+
+The budget is enforced using a conservative character-to-token estimate. Ambiguous `explain` queries fail and list Stable Symbol IDs instead of silently selecting one.
 
 <details>
 <summary><h3>📁 Repository Structure</h3></summary>

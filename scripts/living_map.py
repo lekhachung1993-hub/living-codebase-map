@@ -1190,6 +1190,61 @@ def verify_changed_files(changed_files, graph):
         'constraints': list({node['id']: node for node in constraints}.values()),
     }
 
+
+def explain_graph_symbol(query, graph):
+    """Return a structured one-hop explanation for one unambiguous graph node."""
+    q = query.strip().lower()
+    matches = [
+        node for node in graph.get('nodes', [])
+        if q == node.get('id', '').lower()
+        or q == node.get('qualified_name', '').lower()
+        or q == node.get('name', '').lower()
+    ]
+    if len(matches) != 1:
+        return {'match': None, 'candidates': [node['id'] for node in matches]}
+    node = matches[0]
+    incoming = [edge for edge in graph.get('edges', []) if edge.get('target') == node['id']]
+    outgoing = [edge for edge in graph.get('edges', []) if edge.get('source') == node['id']]
+    return {'match': node, 'candidates': [], 'incoming': incoming, 'outgoing': outgoing}
+
+
+def compile_task_context(task, graph, budget=500):
+    """Compile task-specific graph context within an approximate token budget."""
+    plan = build_change_plan(task, graph)
+    node_by_id = {node['id']: node for node in plan['nodes']}
+    lines = [
+        'LCM TASK CONTEXT',
+        f"Task: {task}",
+        f"Risk: {plan['risk_level']} ({plan['risk_score']})",
+    ]
+    if plan['reasons']:
+        lines.append('Risk reasons: ' + ', '.join(f"{p} {r}" for p, r in plan['reasons']))
+    lines.append('Relevant nodes:')
+    for node in sorted(plan['nodes'], key=lambda item: (item.get('type', ''), item['id'])):
+        detail = node.get('path') or node.get('rule') or ''
+        lines.append(f"- [{node.get('type', 'node')}] {node['id']} {detail}".rstrip())
+    if plan['edges']:
+        lines.append('Relationships:')
+        for edge in plan['edges']:
+            source = node_by_id.get(edge['source'], {}).get('name', edge['source'])
+            target = node_by_id.get(edge['target'], {}).get('name', edge['target'])
+            lines.append(f"- {source} --{edge['relation']}--> {target} ({edge['confidence']:.2f})")
+
+    max_chars = max(200, int(budget) * 4)
+    selected = []
+    used = 0
+    for line in lines:
+        cost = len(line) + 1
+        if selected and used + cost > max_chars:
+            break
+        selected.append(line[:max_chars] if not selected else line)
+        used += min(cost, max_chars)
+    omitted = len(lines) - len(selected)
+    if omitted and used + 40 <= max_chars:
+        selected.append(f"... {omitted} context lines omitted by budget")
+    text = '\n'.join(selected)
+    return {'text': text, 'estimated_tokens': (len(text) + 3) // 4, 'omitted_lines': omitted, 'plan': plan}
+
 def build_symbol_database(root_dir=ROOT):
     """
     Traverses the codebase and builds:
@@ -2037,6 +2092,47 @@ def cmd_verify_change(args):
     print("Linked tests: no missing test-file changes detected.")
     return 0
 
+
+def cmd_context(args):
+    """Print task-specific context constrained by a token budget."""
+    if not os.path.exists(GRAPH_PATH):
+        print(f"[ERR] {LCM_DIRNAME}/{GRAPH_FILENAME} not found. Run 'update' first.")
+        return 1
+    with open(GRAPH_PATH, 'r', encoding='utf-8') as f:
+        result = compile_task_context(args.task, json.load(f), args.budget)
+    print(result['text'])
+    print(f"Context budget: ~{result['estimated_tokens']}/{args.budget} tokens")
+    return 0 if result['plan']['seeds'] else 2
+
+
+def cmd_explain(args):
+    """Explain one graph symbol, including callers, callees, tests, and constraints."""
+    if not os.path.exists(GRAPH_PATH):
+        print(f"[ERR] {LCM_DIRNAME}/{GRAPH_FILENAME} not found. Run 'update' first.")
+        return 1
+    with open(GRAPH_PATH, 'r', encoding='utf-8') as f:
+        result = explain_graph_symbol(args.symbol, json.load(f))
+    if result['match'] is None:
+        if result['candidates']:
+            print("[ERR] Ambiguous symbol. Use one full Stable Symbol ID:")
+            for candidate in result['candidates']:
+                print(f"  - {candidate}")
+        else:
+            print(f"[ERR] Symbol not found: {args.symbol}")
+        return 2
+    node = result['match']
+    print(f"SYMBOL: {node['id']}")
+    print(f"Type: {node.get('kind', node.get('type', 'node'))}")
+    if node.get('path'):
+        print(f"Location: {node['path']}:{node.get('line', '?')}")
+    print("Incoming:")
+    for edge in result['incoming']:
+        print(f"  - {edge['relation']} from {edge['source']} ({edge['confidence']:.2f})")
+    print("Outgoing:")
+    for edge in result['outgoing']:
+        print(f"  - {edge['relation']} to {edge['target']} ({edge['confidence']:.2f})")
+    return 0
+
 def cmd_rollback(args):
     """Lists history or restores map to a previous commit (Safe: NEVER touches source code)."""
     print(f"🛡️ [SAFETY NOTICE] 'rollback' operates strictly on {MAP_FILENAME}. Source code is never touched.")
@@ -2278,6 +2374,13 @@ def main():
     p_verify.add_argument("--base", default="HEAD", help="Git revision used as diff base (default: HEAD)")
     p_verify.add_argument("--strict", action="store_true", help="Exit non-zero when linked tests were not changed")
 
+    p_context = subparsers.add_parser("context", help="Compile task-specific context within a token budget")
+    p_context.add_argument("task", help="Natural-language task")
+    p_context.add_argument("--budget", type=int, default=500, help="Approximate output token budget")
+
+    p_explain = subparsers.add_parser("explain", help="Explain one symbol and its one-hop relationships")
+    p_explain.add_argument("symbol", help="Symbol name, qualified name, or Stable Symbol ID")
+
     # rollback (Safe Map-Only Rollback)
     p_rb = subparsers.add_parser("rollback", help="Restore PROJECT_MAP.md to a previous commit (Safe: NEVER touches source code)")
     p_rb.add_argument("--to", help="Target commit hash to rollback to")
@@ -2307,6 +2410,8 @@ def main():
         "add-constraint": cmd_add_constraint,
         "plan": cmd_plan,
         "verify-change": cmd_verify_change,
+        "context": cmd_context,
+        "explain": cmd_explain,
         "rollback": cmd_rollback,
         "mcp": cmd_mcp,
     }

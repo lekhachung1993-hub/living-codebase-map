@@ -38,6 +38,8 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 | `map impact <symbol>` | Traverse graph callers/callees, merge documented cross-layer links, and return a concise report with confidence. |
 | `map plan "<task>"` | Compile a task-focused file/symbol plan and explainable risk score before editing. |
 | `map verify-change` | Compare the Git diff with linked tests and constraints after editing; use strict mode for a gate. |
+| `map context "<task>" --budget 500` | Compile only task-relevant nodes and edges within the requested context budget. |
+| `map explain <symbol>` | Explain one exact symbol; require a Stable Symbol ID when a short name is ambiguous. |
 | `map check` | Deterministically verify Markdown, symbol index, and dependency graph synchronization; rebuild every generated artifact with `--fix`. |
 | `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
 | `map rollback [hash]` | Inspect map commit history or safely restore map checkpoint (source code is never touched). |
@@ -95,6 +97,7 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
    - **Recent Commit & Feature Status** (Header & Module 8)
    - **Implicit Constraints** (Module 4) — *rules that cannot be inferred from code alone*
    - **Feature Cross-Reference** (Module 5) — find related DOM IDs and APIs
+   - For a concrete task, prefer `map context "<task>" --budget 500` over loading unrelated map sections.
 3. If `PROJECT_MAP.md` is missing, initialize it immediately:
    ```bash
    python scripts/living_map.py init
