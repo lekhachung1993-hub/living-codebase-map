@@ -19,6 +19,7 @@
 | 🌐 **JavaScript/TypeScript Graph** | Zero-dependency static analysis extracts named calls, test links, Express routes, and Next.js App Router handlers. |
 | 📦 **Import-Aware Resolution** | Relative ESM named and namespace imports resolve aliases and duplicate symbol names to the correct JS/TS module. |
 | 🐍 **Python Import Resolution** | AST-backed absolute, relative, aliased, module, package, and unique `src/` imports resolve duplicate Python symbols safely. |
+| 🐹 **Go Graph Intelligence** | Receiver-qualified methods, same-package calls, `_test.go` links, `net/http`, and common router handlers become evidence-backed graph relationships. |
 | ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
 | 📜 **Structured Constraints** | `.lcm/constraints.json` stores lifecycle, severity, stable-symbol scope, reason, owner, and provenance; active rules become graph edges. |
 | 🛡️ **Change Safety Engine** | `map plan` explains risk before editing; `map verify-change` checks the diff against linked tests and constraints afterward. |
@@ -185,13 +186,13 @@ pip install 'living-codebase-map[mcp]'
 
 ### Dependency graph confidence
 
-The graph extracts Python and JavaScript/TypeScript `CALLS`, `TESTED_BY`, and route `HANDLES` relationships with file-and-line evidence. Python uses the standard-library AST and resolves top-level absolute, relative, aliased, module, package, and uniquely matched `src/` imports. JS/TS uses a conservative zero-dependency static pass supporting named functions, block-bodied arrow functions, Express-style routes, and Next.js App Router handlers. Relative ESM named imports, aliases, namespace imports, extensionless modules, directory `index` modules, and NodeNext-style `.js` specifiers are resolved against indexed source files.
+The graph extracts Python, JavaScript/TypeScript, and Go `CALLS`, `TESTED_BY`, and route `HANDLES` relationships with file-and-line evidence. Python uses the standard-library AST and resolves top-level absolute, relative, aliased, module, package, and uniquely matched `src/` imports. JS/TS uses a conservative zero-dependency static pass supporting named functions, block-bodied arrow functions, Express-style routes, and Next.js App Router handlers. Relative ESM named imports, aliases, namespace imports, extensionless modules, directory `index` modules, and NodeNext-style `.js` specifiers are resolved against indexed source files. Go receiver methods use receiver-qualified Stable IDs; same-package calls, receiver calls, `_test.go`, `http.HandleFunc`, and common router verbs are linked without requiring a Go toolchain.
 
 - `1.0`: exact qualified target in the same file, including `self.method()`.
 - `0.9`: the called name has exactly one candidate across the repository.
 - unresolved: ambiguous or dynamic calls are omitted rather than reported as facts.
 
-Each edge stores its extractor plus the evidence `path:line`. Calls inside comments and string literals are masked before JS/TS analysis. Python wildcard imports, runtime imports, JS/TS package aliases, dynamic imports, dynamic dispatch, anonymous inline handlers, and unbound member calls are deliberately omitted when they cannot be resolved safely. Other languages continue to use the stable symbol index and Markdown impact fallback until dedicated graph extractors are added.
+Each edge stores its extractor plus the evidence `path:line`. Calls inside comments and string literals are masked before JS/TS and Go analysis. Python wildcard imports, runtime imports, JS/TS package aliases, Go cross-package calls, dynamic imports, dynamic dispatch, anonymous inline handlers, and unbound member calls are deliberately omitted when they cannot be resolved safely. Other languages continue to use the stable symbol index and Markdown impact fallback until dedicated graph extractors are added.
 
 ### Structured constraint lifecycle
 

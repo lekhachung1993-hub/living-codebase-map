@@ -497,6 +497,11 @@ def git_rollback_map(target_hash):
 # ─────────────────────────────────────────────────────────────
 
 RE_GO_FUNC    = re.compile(r'^[ \t]*func\s+(?:\([^)]+\)\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.MULTILINE)
+RE_GO_DECL    = re.compile(
+    r'^[ \t]*func\s*(?:\(\s*([A-Za-z_][A-Za-z0-9_]*)\s+\*?([A-Za-z_][A-Za-z0-9_]*)[^)]*\)\s*)?'
+    r'([A-Za-z_][A-Za-z0-9_]*)\s*\(',
+    re.MULTILINE,
+)
 RE_GO_STRUCT  = re.compile(r'^[ \t]*type\s+([A-Za-z_][A-Za-z0-9_]*)\s+(?:struct|interface)\b', re.MULTILINE)
 RE_PY_DEF     = re.compile(r'^[ \t]*(?:async\s+)?def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(', re.MULTILINE)
 RE_PY_CLS     = re.compile(r'^[ \t]*class\s+([A-Za-z_][A-Za-z0-9_]*)\s*[:\(]', re.MULTILINE)
@@ -786,6 +791,48 @@ def _javascript_symbol_records(file_path):
     return sorted(unique.values(), key=lambda item: (item['line'], item['name']))
 
 
+def _go_symbol_records(file_path):
+    """Extract Go functions, receiver methods, and types with stable ranges."""
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            source = f.read()
+    except OSError:
+        return []
+    masked = _strip_javascript_noncode(source)
+    source_lines = source.splitlines()
+    records = []
+    for match in RE_GO_DECL.finditer(masked):
+        receiver_var, receiver_type, name = match.group(1), match.group(2), match.group(3)
+        line = masked.count('\n', 0, match.start()) + 1
+        opening = match.end() - 1
+        closing = _matching_delimiter(masked, opening, '(', ')')
+        body = masked.find('{', closing + 1) if closing >= 0 else -1
+        end_offset = _matching_delimiter(masked, body, '{', '}')
+        end_line = masked.count('\n', 0, end_offset) + 1 if end_offset >= 0 else line
+        qualified = f'{receiver_type}.{name}' if receiver_type else name
+        kind = 'method' if receiver_type else 'function'
+        declaration = source_lines[line - 1] if line <= len(source_lines) else name
+        record = {
+            'name': name, 'qualified_name': qualified, 'kind': kind,
+            'line': line, 'end_line': end_line,
+            'fingerprint': _symbol_fingerprint(kind, qualified, declaration),
+        }
+        if receiver_type:
+            record['receiver'] = receiver_var
+            record['receiver_type'] = receiver_type
+        records.append(record)
+    for match in RE_GO_STRUCT.finditer(masked):
+        name = match.group(1)
+        line = masked.count('\n', 0, match.start()) + 1
+        declaration = source_lines[line - 1] if line <= len(source_lines) else name
+        records.append({
+            'name': name, 'qualified_name': name, 'kind': 'type',
+            'line': line, 'end_line': line,
+            'fingerprint': _symbol_fingerprint('type', name, declaration),
+        })
+    return sorted(records, key=lambda item: (item['line'], item['qualified_name']))
+
+
 def scan_file_symbol_records(file_path, rel_path=None):
     """Return structured symbols used by the v3 index.
 
@@ -798,6 +845,8 @@ def scan_file_symbol_records(file_path, rel_path=None):
 
     if ext == '.py':
         records = _python_symbol_records(file_path)
+    elif ext == '.go':
+        records = _go_symbol_records(file_path)
     elif ext in ('.js', '.ts', '.jsx', '.tsx', '.vue'):
         records = _javascript_symbol_records(file_path)
     else:
@@ -880,6 +929,8 @@ def _is_test_path(path):
         or '/tests/' in normalized
         or '.test.' in basename
         or '.spec.' in basename
+        or basename.startswith('test_')
+        or basename.endswith('_test.go')
     )
 
 
@@ -1021,6 +1072,7 @@ def build_dependency_graph(index, root_dir=ROOT):
     known_paths = {file_info['path'] for file_info in index.get('files', [])}
     by_path_qualified = {}
     by_name = {}
+    by_dir_name = {}
 
     for symbol in symbols:
         node = {
@@ -1037,6 +1089,8 @@ def build_dependency_graph(index, root_dir=ROOT):
         node_ids.add(node['id'])
         by_path_qualified[(symbol['path'], symbol['qualified_name'])] = symbol
         by_name.setdefault(symbol['name'], []).append(symbol)
+        directory = posixpath.dirname(symbol['path'])
+        by_dir_name.setdefault((directory, symbol['name']), []).append(symbol)
 
     edges = []
     edge_keys = set()
@@ -1065,10 +1119,107 @@ def build_dependency_graph(index, root_dir=ROOT):
 
     for file_info in index.get('files', []):
         language = file_info.get('language')
-        if language not in {'py', 'js', 'ts', 'vue'}:
+        if language not in {'py', 'js', 'ts', 'vue', 'go'}:
             continue
         rel_path = file_info['path']
         full_path = os.path.join(root_dir, rel_path)
+        if language == 'go':
+            try:
+                with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                    source = f.read()
+            except OSError:
+                continue
+            masked = _strip_javascript_noncode(source)
+            directory = posixpath.dirname(rel_path)
+            file_symbols = [
+                symbol for symbol in symbols
+                if symbol['path'] == rel_path and symbol.get('kind') in {'function', 'method'}
+            ]
+
+            def go_owner(line):
+                owners = [
+                    symbol for symbol in file_symbols
+                    if symbol['line'] <= line <= symbol['end_line']
+                ]
+                return min(owners, key=lambda item: item['end_line'] - item['line']) if owners else None
+
+            def go_package_target(name):
+                candidates = [
+                    symbol for symbol in by_dir_name.get((directory, name), [])
+                    if symbol.get('kind') == 'function'
+                ]
+                return candidates[0] if len(candidates) == 1 else None
+
+            call_pattern = re.compile(r'(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_]*)\s*\(')
+            ignored_calls = {
+                'if', 'for', 'switch', 'select', 'func', 'len', 'cap', 'append',
+                'copy', 'delete', 'complex', 'real', 'imag', 'make', 'new', 'panic',
+                'recover', 'print', 'println', 'close',
+            }
+            for match in call_pattern.finditer(masked):
+                called = match.group(1)
+                if called in ignored_calls:
+                    continue
+                line = masked.count('\n', 0, match.start()) + 1
+                caller = go_owner(line)
+                target = go_package_target(called)
+                if not caller or not target:
+                    continue
+                relation = 'TESTED_BY' if _is_test_path(rel_path) else 'CALLS'
+                source_id, target_id = caller['id'], target['id']
+                if relation == 'TESTED_BY':
+                    source_id, target_id = target_id, source_id
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'go_static')
+
+            member_pattern = re.compile(
+                r'(?<![A-Za-z0-9_])([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*'
+                r'([A-Za-z_][A-Za-z0-9_]*)\s*\('
+            )
+            for match in member_pattern.finditer(masked):
+                line = masked.count('\n', 0, match.start()) + 1
+                caller = go_owner(line)
+                if not caller or match.group(1) != caller.get('receiver'):
+                    continue
+                qualified = f"{caller.get('receiver_type')}.{match.group(2)}"
+                candidates = [
+                    symbol for symbol in symbols
+                    if posixpath.dirname(symbol['path']) == directory
+                    and symbol.get('qualified_name') == qualified
+                ]
+                if len(candidates) != 1:
+                    continue
+                relation = 'TESTED_BY' if _is_test_path(rel_path) else 'CALLS'
+                source_id, target_id = caller['id'], candidates[0]['id']
+                if relation == 'TESTED_BY':
+                    source_id, target_id = target_id, source_id
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'go_static')
+
+            route_patterns = (
+                (re.compile(r'\bhttp\.HandleFunc\s*\(\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*)'), 'ANY'),
+                (re.compile(r'\b(?:router|routes|app|api|group|e)\s*\.\s*(GET|POST|PUT|DELETE|PATCH|HEAD)\s*\(\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*)'), None),
+            )
+            for pattern, fixed_method in route_patterns:
+                for match in pattern.finditer(source):
+                    if not masked[match.start():match.start() + 1].strip():
+                        continue
+                    if fixed_method:
+                        method, route, handler_name = fixed_method, match.group(1), match.group(2)
+                    else:
+                        method, route, handler_name = match.group(1), match.group(2), match.group(3)
+                    handler = go_package_target(handler_name)
+                    if not handler:
+                        continue
+                    route_id = f"api:{method} {route}"
+                    line = source.count('\n', 0, match.start()) + 1
+                    if route_id not in node_ids:
+                        node_ids.add(route_id)
+                        nodes.append({
+                            'id': route_id, 'type': 'api', 'name': f"{method} {route}",
+                            'method': method, 'route': route, 'path': rel_path, 'line': line,
+                        })
+                    add_edge(route_id, handler['id'], 'HANDLES', 1.0, rel_path, line, 'go_static')
+            continue
+
         if language in {'js', 'ts', 'vue'}:
             try:
                 with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
