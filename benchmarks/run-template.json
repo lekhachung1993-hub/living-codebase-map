@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "name": "replace-with-run-name",
+  "metadata": {
+    "repository_commit": "REQUIRED",
+    "model": "REQUIRED",
+    "configuration": "baseline-or-lcm",
+    "timeout_seconds": 900
+  },
+  "results": [
+    {"task_id": "context-budget", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "language-extractor", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "constraint-validation", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "mcp-parity", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "graph-resolution", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "map-drift", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "temporal-history", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "route-impact", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "change-verification", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},
+    {"task_id": "release-sync", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0}
+  ]
+}

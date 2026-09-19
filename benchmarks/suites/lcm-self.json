@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "name": "LCM self-maintenance v1",
+  "description": "Repository-grounded tasks covering feature work, bug fixes, refactors, impact, history, verification, and release maintenance.",
+  "tasks": [
+    {
+      "id": "context-budget",
+      "category": "feature",
+      "prompt": "Add a stricter token budget mode to task context compilation.",
+      "acceptance_checks": ["context output stays within the requested budget", "existing and new unit tests pass"],
+      "expected_files": ["scripts/living_map.py", "tests/test_symbol_index.py", "README.md"],
+      "expected_symbols": ["py:scripts/living_map.py::compile_task_context", "py:scripts/living_map.py::cmd_context"],
+      "expected_dependencies": ["py:scripts/living_map.py::cmd_context|CALLS|py:scripts/living_map.py::compile_task_context"],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "language-extractor",
+      "category": "feature",
+      "prompt": "Add stable ranged symbols for another source language.",
+      "acceptance_checks": ["stable IDs do not contain line numbers", "ranges and collision tests pass"],
+      "expected_files": ["scripts/living_map.py", "tests/test_symbol_index.py", "PROJECT_MAP.md"],
+      "expected_symbols": ["py:scripts/living_map.py::scan_file_symbol_records", "py:scripts/living_map.py::build_symbol_index"],
+      "expected_dependencies": ["py:scripts/living_map.py::build_symbol_index|CALLS|py:scripts/living_map.py::scan_file_symbol_records"],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "constraint-validation",
+      "category": "bugfix",
+      "prompt": "Reject malformed active constraints without breaking stale history.",
+      "acceptance_checks": ["malformed ACTIVE constraints fail validation", "STALE historical references remain valid"],
+      "expected_files": ["scripts/living_map.py", "tests/test_symbol_index.py", ".lcm/constraints.json"],
+      "expected_symbols": ["py:scripts/living_map.py::validate_constraints"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "mcp-parity",
+      "category": "feature",
+      "prompt": "Expose a new CLI capability through MCP with matching status output.",
+      "acceptance_checks": ["MCP tool delegates to the CLI behavior", "exit status and output are preserved"],
+      "expected_files": ["scripts/living_map.py", "tests/test_symbol_index.py", "SKILL.md"],
+      "expected_symbols": ["py:scripts/living_map.py::build_mcp_server", "py:scripts/living_map.py::capture_mcp_command"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "graph-resolution",
+      "category": "bugfix",
+      "prompt": "Fix an ambiguous dependency edge without introducing guessed targets.",
+      "acceptance_checks": ["exact target produces an evidence-backed edge", "ambiguous target remains unresolved"],
+      "expected_files": ["scripts/living_map.py", "tests/test_symbol_index.py", ".lcm/graph.json"],
+      "expected_symbols": ["py:scripts/living_map.py::build_dependency_graph"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "map-drift",
+      "category": "verification",
+      "prompt": "Diagnose and repair a deterministic map drift failure.",
+      "acceptance_checks": ["map check passes after update", "a second update produces no drift"],
+      "expected_files": ["scripts/living_map.py", "PROJECT_MAP.md", "PROJECT_MAP.min.md", ".lcm/index.json", ".lcm/graph.json"],
+      "expected_symbols": ["py:scripts/living_map.py::cmd_update", "py:scripts/living_map.py::cmd_check"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "temporal-history",
+      "category": "explanation",
+      "prompt": "Explain why a symbol changed and preserve its Git-backed history.",
+      "acceptance_checks": ["history output identifies relevant commits", "ambiguous symbols require a stable ID"],
+      "expected_files": ["scripts/living_map.py", "tests/test_symbol_index.py"],
+      "expected_symbols": ["py:scripts/living_map.py::cmd_why", "py:scripts/living_map.py::parse_symbol_git_history"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "route-impact",
+      "category": "impact",
+      "prompt": "Find the handler, tests, and blast radius for a public API route.",
+      "acceptance_checks": ["route handler is identified", "linked tests and graph neighbors are reported"],
+      "expected_files": ["scripts/living_map.py", ".lcm/graph.json", "tests/test_symbol_index.py"],
+      "expected_symbols": ["py:scripts/living_map.py::build_dependency_graph", "py:scripts/living_map.py::analyze_graph_impact"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "change-verification",
+      "category": "verification",
+      "prompt": "Report linked tests that were not updated for a changed implementation.",
+      "acceptance_checks": ["unchanged linked tests are reported", "strict mode fails when required coverage is missing"],
+      "expected_files": ["scripts/living_map.py", "tests/test_symbol_index.py"],
+      "expected_symbols": ["py:scripts/living_map.py::verify_changed_files", "py:scripts/living_map.py::cmd_verify_change"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    },
+    {
+      "id": "release-sync",
+      "category": "maintenance",
+      "prompt": "Prepare a release while keeping package, manifest, docs, index, and graph synchronized.",
+      "acceptance_checks": ["package and manifest versions match", "map check and full test suite pass"],
+      "expected_files": ["pyproject.toml", "manifest.json", "README.md", "SKILL.md", "PROJECT_MAP.md", "PROJECT_MAP.min.md", ".lcm/index.json", ".lcm/graph.json"],
+      "expected_symbols": ["py:scripts/living_map.py::cmd_update", "py:scripts/living_map.py::cmd_check"],
+      "expected_dependencies": [],
+      "expected_tests": ["tests/test_symbol_index.py"],
+      "expected_constraints": []
+    }
+  ]
+}
