@@ -250,6 +250,85 @@ class StableSymbolIndexTests(unittest.TestCase):
             self.assertEqual(edge['target'], 'py:api.py::create_customer')
             self.assertEqual(edge['confidence'], 1.0)
 
+    def test_go_receiver_methods_have_qualified_stable_ids(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = self._write(
+                root,
+                'service.go',
+                'package service\n\ntype User struct{}\ntype Order struct{}\n\n'
+                'func (u *User) Save() {}\nfunc (o *Order) Save() {}\n',
+            )
+            records = living_map.scan_file_symbol_records(path, 'service.go')
+            save_ids = {record['id'] for record in records if record['name'] == 'Save'}
+            self.assertEqual(save_ids, {
+                'go:service.go::User.Save',
+                'go:service.go::Order.Save',
+            })
+
+    def test_go_graph_extracts_same_package_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'validate.go', 'package service\n\nfunc Validate() bool { return true }\n')
+            self._write(
+                root,
+                'service.go',
+                'package service\n\nfunc Create() bool {\n  return Validate()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['source'], 'go:service.go::Create')
+            self.assertEqual(edge['target'], 'go:validate.go::Validate')
+            self.assertEqual(edge['evidence']['source'], 'go_static')
+
+    def test_go_graph_resolves_receiver_method_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'service.go',
+                'package service\n\ntype Service struct{}\n\n'
+                'func (s *Service) Validate() bool { return true }\n\n'
+                'func (s *Service) Create() bool {\n  return s.Validate()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['source'], 'go:service.go::Service.Create')
+            self.assertEqual(edge['target'], 'go:service.go::Service.Validate')
+
+    def test_go_test_call_becomes_tested_by_edge(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'service.go', 'package service\n\nfunc Create() bool { return true }\n')
+            self._write(
+                root,
+                'service_test.go',
+                'package service\n\nfunc TestCreate() {\n  Create()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'TESTED_BY')
+            self.assertEqual(edge['source'], 'go:service.go::Create')
+            self.assertEqual(edge['target'], 'go:service_test.go::TestCreate')
+
+    def test_go_graph_extracts_http_and_framework_routes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'api.go',
+                'package api\n\nfunc ListOrders() {}\nfunc CreateOrder() {}\n\n'
+                '// router.DELETE("/orders", CreateOrder)\n'
+                'func Routes() {\n'
+                '  http.HandleFunc("/health", ListOrders)\n'
+                '  router.POST("/orders", CreateOrder)\n'
+                '}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            handles = [edge for edge in graph['edges'] if edge['relation'] == 'HANDLES']
+            self.assertEqual({edge['source'] for edge in handles}, {
+                'api:ANY /health', 'api:POST /orders',
+            })
+            self.assertTrue(all(edge['evidence']['source'] == 'go_static' for edge in handles))
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
