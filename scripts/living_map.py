@@ -719,7 +719,7 @@ def build_symbol_index(root_dir=ROOT):
 
     return {
         'schema_version': INDEX_SCHEMA_VERSION,
-        'generated_at': datetime.now().astimezone().isoformat(timespec='seconds'),
+        'source_hash': calculate_codebase_hash(root_dir),
         'root': '.',
         'files': files,
         'symbols': symbols,
@@ -881,7 +881,7 @@ def build_dependency_graph(index, root_dir=ROOT):
 
     return {
         'schema_version': GRAPH_SCHEMA_VERSION,
-        'generated_at': datetime.now().astimezone().isoformat(timespec='seconds'),
+        'source_hash': index.get('source_hash', calculate_codebase_hash(root_dir)),
         'nodes': nodes,
         'edges': edges,
     }
@@ -895,6 +895,66 @@ def write_dependency_graph(graph, graph_path=GRAPH_PATH):
         json.dump(graph, f, ensure_ascii=False, indent=2, sort_keys=True)
         f.write('\n')
     os.replace(temp_path, graph_path)
+
+
+def validate_machine_state(root_dir=ROOT, index_path=INDEX_PATH, graph_path=GRAPH_PATH):
+    """Validate schemas and compare persisted machine state with fresh analysis."""
+    issues = []
+    persisted_index = None
+    persisted_graph = None
+
+    for label, path, expected_schema in (
+        ('index', index_path, INDEX_SCHEMA_VERSION),
+        ('graph', graph_path, GRAPH_SCHEMA_VERSION),
+    ):
+        if not os.path.exists(path):
+            issues.append(f"missing {os.path.relpath(path, root_dir).replace(os.sep, '/')}")
+            continue
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                payload = json.load(f)
+        except (OSError, ValueError) as exc:
+            issues.append(f"invalid {label} JSON: {exc}")
+            continue
+        if payload.get('schema_version') != expected_schema:
+            issues.append(
+                f"{label} schema is {payload.get('schema_version')!r}; expected {expected_schema}"
+            )
+        if label == 'index':
+            persisted_index = payload
+        else:
+            persisted_graph = payload
+
+    expected_index = build_symbol_index(root_dir)
+    expected_graph = build_dependency_graph(expected_index, root_dir)
+    current_hash = expected_index['source_hash']
+
+    if persisted_index is not None:
+        if persisted_index.get('source_hash') != current_hash:
+            issues.append('index source_hash does not match the current codebase')
+        if persisted_index != expected_index:
+            issues.append('index content differs from a fresh deterministic scan')
+
+    if persisted_graph is not None:
+        if persisted_graph.get('source_hash') != current_hash:
+            issues.append('graph source_hash does not match the current codebase')
+        node_ids = {node.get('id') for node in persisted_graph.get('nodes', [])}
+        for position, edge in enumerate(persisted_graph.get('edges', [])):
+            if edge.get('source') not in node_ids or edge.get('target') not in node_ids:
+                issues.append(f"graph edge {position} references a missing node")
+                break
+            confidence = edge.get('confidence')
+            if not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
+                issues.append(f"graph edge {position} has invalid confidence")
+                break
+            evidence = edge.get('evidence', {})
+            if not evidence.get('path') or not isinstance(evidence.get('line'), int):
+                issues.append(f"graph edge {position} has invalid evidence")
+                break
+        if persisted_graph != expected_graph:
+            issues.append('graph content differs from a fresh deterministic scan')
+
+    return list(dict.fromkeys(issues)), expected_index, expected_graph
 
 
 def analyze_graph_impact(query, graph, max_depth=2):
@@ -1257,10 +1317,7 @@ def cmd_update(args):
     return 0
 
 def cmd_check(args):
-    """
-    CI/CD Lint: Verifies if map is in sync.
-    Smart Mode compares MD5. If drift or --full is specified, runs a full symbol scan.
-    """
+    """Verify Markdown projections and deterministic machine state."""
     if not os.path.exists(MAP_PATH):
         print(f"❌ [LIVING MAP LINT ERR] {MAP_FILENAME} not found at {MAP_PATH}")
         return 1
@@ -1268,25 +1325,30 @@ def cmd_check(args):
     with open(MAP_PATH, 'r', encoding='utf-8', errors='replace') as f:
         content = f.read()
 
-    # 1. Fast MD5 Check (unless --full is requested)
-    if not getattr(args, 'full', False):
-        current_hash = calculate_codebase_hash(ROOT)
-        m_hash = re.search(r'Codebase-MD5:\s*([a-f0-9]{32})', content)
-        if not m_hash:
-            m_hash = re.search(r'\|\s*Codebase-MD5\s*\|\s*`?([a-f0-9]{32})`?\s*\|', content)
+    machine_issues, expected_index, expected_graph = validate_machine_state(ROOT, INDEX_PATH, GRAPH_PATH)
+    current_hash = expected_index['source_hash']
+    m_hash = re.search(r'Codebase-MD5:\s*([a-f0-9]{32})', content)
+    if not m_hash:
+        m_hash = re.search(r'\|\s*Codebase-MD5\s*\|\s*`?([a-f0-9]{32})`?\s*\|', content)
+    markdown_hash_ok = bool(m_hash and m_hash.group(1) == current_hash)
 
-        if m_hash and m_hash.group(1) == current_hash:
-            print(f"✅ [SMART DRIFT CHECK PASS] Codebase MD5 matches ({current_hash[:8]}...). Map is 100% in sync.")
-            return 0
-
-    # 2. Detailed Symbol-Level Scan
     _, symbol_lookup = build_symbol_database(ROOT)
     new_content, updated_count, drift_details = update_map_line_numbers(content, symbol_lookup)
+    has_drift = bool(machine_issues or not markdown_hash_ok or updated_count)
 
-    if updated_count == 0:
-        print(f"✅ [LIVING MAP LINT PASS] All symbol locations in {MAP_FILENAME} are 100% in sync with codebase.")
+    if not has_drift:
+        print(
+            f"✅ [LIVING MAP LINT PASS] Markdown, index, and graph match "
+            f"the current codebase ({current_hash[:8]}...)."
+        )
         return 0
-    else:
+
+    print("\n❌ [LIVING MAP LINT FAILED] Generated state is out of sync:\n")
+    if not markdown_hash_ok:
+        print("  - PROJECT_MAP.md Codebase-MD5 does not match the current codebase")
+    for issue in machine_issues:
+        print(f"  - {issue}")
+    if updated_count:
         print(f"\n❌ [LIVING MAP LINT FAILED] Found {updated_count} outdated symbol location(s) in {MAP_FILENAME}:\n")
         print(f"  {'FILE':<25} {'SYMBOL':<32} {'MAP LINE':<12} {'ACTUAL':<10} {'DELTA'}")
         print("  " + "-" * 85)
@@ -1296,22 +1358,25 @@ def cmd_check(args):
         if len(drift_details) > 25:
             print(f"  ... and {len(drift_details) - 25} more items.")
 
-        if getattr(args, 'fix', False):
-            print("\n[AUTO-FIX] Applying updates now (--fix enabled)...")
-            bak_path = MAP_PATH + '.bak'
-            with open(bak_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            codebase_hash = calculate_codebase_hash(ROOT)
-            new_content = update_map_header(new_content, codebase_hash)
-            with open(MAP_PATH, 'w', encoding='utf-8') as f:
-                f.write(new_content)
-            generate_min_map(MAP_PATH, MIN_MAP_PATH)
-            print(f"✅ [REPAIRED] Successfully updated {MAP_FILENAME} and {MIN_MAP_FILENAME}.")
-            return 0
-        else:
-            print(f"\n👉 FIX REQUIRED: Run 'python {os.path.relpath(__file__, ROOT)} update' to sync before pushing.")
-            print("   Or run: 'python living_map.py check --fix'")
-            return 2
+    if getattr(args, 'fix', False):
+        print("\n[AUTO-FIX] Rebuilding Markdown and machine state...")
+        with open(MAP_PATH + '.bak', 'w', encoding='utf-8') as f:
+            f.write(content)
+        new_content = update_map_header(new_content, current_hash)
+        with open(MAP_PATH, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        write_symbol_index(expected_index)
+        write_dependency_graph(expected_graph)
+        generate_min_map(MAP_PATH, MIN_MAP_PATH)
+        print(
+            f"✅ [REPAIRED] Updated {MAP_FILENAME}, {MIN_MAP_FILENAME}, "
+            f"{LCM_DIRNAME}/{INDEX_FILENAME}, and {LCM_DIRNAME}/{GRAPH_FILENAME}."
+        )
+        return 0
+
+    print(f"\n👉 FIX REQUIRED: Run 'python {os.path.relpath(__file__, ROOT)} update' before pushing.")
+    print("   Or run: 'python living_map.py check --fix'")
+    return 2
 
 def cmd_impact(args, is_deep=False):
     """

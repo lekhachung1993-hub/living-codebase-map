@@ -178,6 +178,47 @@ class StableSymbolIndexTests(unittest.TestCase):
         self.assertEqual(len(result['edges']), 2)
         self.assertEqual(len(result['nodes']), 3)
 
+    def test_machine_state_is_deterministic(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'app.py', 'def run():\n    return True\n')
+            first_index = living_map.build_symbol_index(root)
+            first_graph = living_map.build_dependency_graph(first_index, root)
+            second_index = living_map.build_symbol_index(root)
+            second_graph = living_map.build_dependency_graph(second_index, root)
+            self.assertEqual(first_index, second_index)
+            self.assertEqual(first_graph, second_graph)
+
+    def test_machine_state_validation_detects_missing_artifacts(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'app.py', 'def run():\n    return True\n')
+            issues, _, _ = living_map.validate_machine_state(
+                root,
+                os.path.join(root, '.lcm', 'index.json'),
+                os.path.join(root, '.lcm', 'graph.json'),
+            )
+            self.assertIn('missing .lcm/index.json', issues)
+            self.assertIn('missing .lcm/graph.json', issues)
+
+    def test_machine_state_validation_detects_tampered_graph(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'app.py',
+                'def helper():\n    return True\n\n'
+                'def run():\n    return helper()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            index_path = os.path.join(root, '.lcm', 'index.json')
+            graph_path = os.path.join(root, '.lcm', 'graph.json')
+            living_map.write_symbol_index(index, index_path)
+            graph['edges'][0]['confidence'] = 7
+            living_map.write_dependency_graph(graph, graph_path)
+
+            issues, _, _ = living_map.validate_machine_state(root, index_path, graph_path)
+            self.assertIn('graph edge 0 has invalid confidence', issues)
+            self.assertIn('graph content differs from a fresh deterministic scan', issues)
+
 
 if __name__ == '__main__':
     unittest.main()

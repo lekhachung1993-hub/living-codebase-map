@@ -16,6 +16,7 @@
 |---|---|
 | 🎯 **Stable Symbol Index** | `.lcm/index.json` identifies symbols by language, repository path, and qualified name; line ranges remain refreshable navigation metadata. |
 | 🕸️ **Evidence-backed Dependency Graph** | `.lcm/graph.json` records dependency edges with confidence and source evidence; ambiguous call targets are not guessed. |
+| ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -43,7 +44,7 @@ You **do not need to open a terminal** or find the Python script. Just type conv
 | `map update` | Runs `living_map.py update`, refreshes locations, writes `.lcm/index.json` and `.lcm/graph.json`, generates `PROJECT_MAP.min.md`, and leaves commits under developer control. |
 | `map impact <symbol>` | Traverses graph callers/callees and combines them with the documented map layers in concise Lean Mode. |
 | `map deep-impact <symbol>` | Runs `living_map.py deep-impact <symbol>`, **Deep Mode** generating an exhaustive 6-layer tree view (`├──`, `└──`) for complex refactoring. |
-| `map check` | Runs the Smart Drift MD5 Check and falls back to symbol verification when needed. |
+| `map check` | Deterministically verifies `PROJECT_MAP.md`, `.lcm/index.json`, and `.lcm/graph.json`; `--fix` rebuilds all four generated artifacts. |
 | `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
 | `map add-feature "<prompt>"` | Natural language auto-parsing: extracts feature ID (`Fxxx`), DOM selector, API route, and registers into Module 5. |
 | `map rollback [hash]` | Safe Rollback Lock: Inspects map history or restores map checkpoint (**source code is 100% untouched**). |
@@ -99,7 +100,7 @@ When the user sends these keywords in chat, execute the corresponding action aut
 | `python living_map.py deep-impact <symbol>` | Exhaustive 6-layer architecture dependency tree | Full tree analysis (`├──`, `└──`) for high-stakes refactoring. |
 | `python living_map.py add-feature "<prompt>"` | Auto-parse feature from natural language | Extracts ID, UI selector (`#id`, `.class`), API, and cleans description. |
 | `python living_map.py add-constraint "<text>"` | Register implicit business traps into Module 4 | Automatically assigns incremental `[Cx]` identifiers. |
-| `python living_map.py check` | Verify drift using MD5 and symbol locations | Fast path for pre-commit and CI; performance depends on repository size and storage. |
+| `python living_map.py check` | Rebuild and compare Markdown, symbol index, and graph state | Detects missing files, schema mismatch, stale hashes, malformed edges, and content drift. |
 | `python living_map.py install-hook` | Auto-install Git Pre-commit guard | Zero-drift enforcement, blocks commits if map is out of sync. |
 | `python living_map.py rollback --to <hash>` | Restore map to previous checkpoint | Safe Lock: Strictly restores `PROJECT_MAP.md`; source code is never touched. |
 | `python living_map.py mcp` | Launch as Model Context Protocol (MCP) Server | Runs stdio server exposing 6 native tools to Cursor, Claude, Antigravity, Windsurf. |

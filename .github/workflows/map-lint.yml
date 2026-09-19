@@ -7,8 +7,28 @@ on:
     branches: [ main, master, develop ]
 
 jobs:
+  unit-tests:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.10", "3.13"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
   lint-living-map:
-    name: Check Living Map Synchronization
+    name: Check Map, Index, and Graph Synchronization
+    needs: unit-tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -37,11 +57,11 @@ jobs:
         if: failure()
         run: |
           echo "=========================================================================="
-          echo "❌ FAILED: PROJECT_MAP.md is out of sync or has line drift with codebase!"
+          echo "❌ FAILED: PROJECT_MAP.md or .lcm machine state is out of sync!"
           echo "🤖 Solution for Agent / Developer:"
           echo "   1. Open local IDE or terminal."
           echo "   2. Run chat command: 'map update' or CLI: 'python scripts/living_map.py update'"
           echo "   3. (Optional) Auto-repair with: 'python scripts/living_map.py check --fix'"
-          echo "   4. Commit PROJECT_MAP.md and PROJECT_MAP.min.md, then push to GitHub."
+          echo "   4. Commit PROJECT_MAP.md, PROJECT_MAP.min.md, .lcm/index.json, and .lcm/graph.json."
           echo "=========================================================================="
           exit 1
