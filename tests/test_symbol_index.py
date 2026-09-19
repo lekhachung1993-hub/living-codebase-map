@@ -667,6 +667,47 @@ class StableSymbolIndexTests(unittest.TestCase):
                 'api:GET /orders', 'api:POST /orders',
             })
 
+    def test_java_import_disambiguates_static_class_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'sales/Orders.java', 'package shop.sales;\npublic class Orders {\n  public static boolean save() { return true; }\n}\n')
+            self._write(root, 'legacy/Orders.java', 'package shop.legacy;\npublic class Orders {\n  public static boolean save() { return false; }\n}\n')
+            self._write(
+                root, 'api/Runner.java',
+                'package shop.api;\nimport shop.sales.Orders;\npublic class Runner {\n'
+                '  public boolean run() { return Orders.save(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'java:sales/Orders.java::shop.sales.Orders.save')
+            self.assertEqual(edge['evidence']['source'], 'java_import')
+
+    def test_java_static_import_resolves_bare_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'services/Orders.java', 'package shop.services;\npublic class Orders {\n  public static boolean save() { return true; }\n}\n')
+            self._write(
+                root, 'api/Runner.java',
+                'package shop.api;\nimport static shop.services.Orders.save;\n'
+                'public class Runner {\n  public boolean run() { return save(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'java:services/Orders.java::shop.services.Orders.save')
+            self.assertEqual(edge['evidence']['source'], 'java_import')
+
+    def test_java_wildcard_import_is_not_guessed(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'services/Orders.java', 'package shop.services;\npublic class Orders {\n  public static boolean save() { return true; }\n}\n')
+            self._write(
+                root, 'api/Runner.java',
+                'package shop.api;\nimport static shop.services.Orders.*;\n'
+                'public class Runner {\n  public boolean run() { return save(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            self.assertFalse(any(edge['relation'] == 'CALLS' for edge in graph['edges']))
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
