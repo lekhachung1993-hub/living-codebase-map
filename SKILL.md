@@ -24,7 +24,7 @@ triggers:
 
 > **Philosophy:** AI coding models fail in production codebases not from lack of intelligence, but from **blind surgery** — missing implicit business constraints, hallucinating outdated line numbers, and severing unseen cross-layer connections between UI DOM, API contracts, and database states.
 >
-> **The Solution:** A stable symbol index, evidence-backed Python, JavaScript/TypeScript, import-aware Go, module-aware Rust, and C# dependency graph, lifecycle-managed constraints (`.lcm/constraints.json`), and living Markdown projection. The CLI refreshes navigation locations without confusing line numbers with identity; commits remain explicit.
+> **The Solution:** A stable symbol index, evidence-backed Python, JavaScript/TypeScript, import-aware Go, module-aware Rust, and namespace-aware C# dependency graph, lifecycle-managed constraints (`.lcm/constraints.json`), and living Markdown projection. The CLI refreshes navigation locations without confusing line numbers with identity; commits remain explicit.
 
 ---
 
