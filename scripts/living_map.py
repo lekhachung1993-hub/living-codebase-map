@@ -1104,6 +1104,92 @@ def analyze_graph_impact(query, graph, max_depth=2):
         'edges': unique_edges,
     }
 
+
+def build_change_plan(task, graph):
+    """Compile a task-focused change plan and explainable risk score."""
+    tokens = {token for token in re.findall(r'[A-Za-z0-9_/-]{3,}', task.lower())}
+    candidates = []
+    for node in graph.get('nodes', []):
+        haystack = ' '.join(str(node.get(key, '')) for key in ('id', 'name', 'qualified_name', 'path')).lower()
+        score = sum(1 for token in tokens if token in haystack)
+        if score:
+            candidates.append((score, node))
+    candidates.sort(key=lambda item: (-item[0], item[1]['id']))
+    seeds = [node['id'] for _, node in candidates[:8]]
+    selected_nodes = {node['id']: node for _, node in candidates[:8]}
+    selected_edges = []
+    for seed in seeds:
+        impact = analyze_graph_impact(seed, graph, max_depth=2)
+        selected_nodes.update({node['id']: node for node in impact['nodes']})
+        selected_edges.extend(impact['edges'])
+
+    unique_edges = {(e['source'], e['target'], e['relation']): e for e in selected_edges}
+    reasons = []
+    risk = 0
+    if any(node.get('type') == 'api' for node in selected_nodes.values()):
+        risk += 25
+        reasons.append(('+25', 'public API or route'))
+    constraints = [node for node in selected_nodes.values() if node.get('type') == 'constraint']
+    if any(node.get('severity') == 'critical' for node in constraints):
+        risk += 25
+        reasons.append(('+25', 'critical constraint'))
+    elif any(node.get('severity') == 'high' for node in constraints):
+        risk += 15
+        reasons.append(('+15', 'high constraint'))
+    dependent_count = max(0, len(selected_nodes) - len(seeds))
+    if dependent_count > 10:
+        risk += 20
+        reasons.append(('+20', f'{dependent_count} related nodes'))
+    elif dependent_count > 3:
+        risk += 10
+        reasons.append(('+10', f'{dependent_count} related nodes'))
+    if any(edge.get('confidence', 1) < 0.95 for edge in unique_edges.values()):
+        risk += 10
+        reasons.append(('+10', 'inferred dependency'))
+    has_tests = any(edge.get('relation') == 'TESTED_BY' for edge in unique_edges.values())
+    if seeds and not has_tests:
+        risk += 15
+        reasons.append(('+15', 'no linked tests'))
+    level = 'RED' if risk >= 60 else ('YELLOW' if risk >= 30 else 'GREEN')
+    return {
+        'task': task, 'risk_score': risk, 'risk_level': level,
+        'reasons': reasons, 'seeds': seeds,
+        'nodes': list(selected_nodes.values()), 'edges': list(unique_edges.values()),
+    }
+
+
+def verify_changed_files(changed_files, graph):
+    """Compare changed files with graph-linked tests and constraints."""
+    changed = {path.replace('\\', '/') for path in changed_files}
+    nodes = {node['id']: node for node in graph.get('nodes', [])}
+    changed_ids = {
+        node_id for node_id, node in nodes.items()
+        if node.get('path', '').replace('\\', '/') in changed
+    }
+    related_edges = [
+        edge for edge in graph.get('edges', [])
+        if edge.get('source') in changed_ids or edge.get('target') in changed_ids
+    ]
+    missing_tests = []
+    constraints = []
+    for edge in related_edges:
+        if edge.get('relation') == 'TESTED_BY' and edge.get('source') in changed_ids:
+            test_node = nodes.get(edge.get('target'), {})
+            test_path = test_node.get('path')
+            if test_path and test_path not in changed:
+                missing_tests.append(test_path)
+        if edge.get('relation') == 'CONSTRAINED_BY':
+            constraint_node = nodes.get(edge.get('target'), {})
+            if constraint_node:
+                constraints.append(constraint_node)
+    return {
+        'changed_files': sorted(changed),
+        'changed_symbols': sorted(changed_ids),
+        'related_edges': related_edges,
+        'missing_tests': sorted(set(missing_tests)),
+        'constraints': list({node['id']: node for node in constraints}.values()),
+    }
+
 def build_symbol_database(root_dir=ROOT):
     """
     Traverses the codebase and builds:
@@ -1903,6 +1989,54 @@ def cmd_add_constraint(args):
         git_commit_map(f"docs: map constraint [{assigned_id}] - {args.desc[:50]}")
     return 0
 
+
+def cmd_plan(args):
+    """Create a graph-backed pre-flight plan for a requested change."""
+    if not os.path.exists(GRAPH_PATH):
+        print(f"[ERR] {LCM_DIRNAME}/{GRAPH_FILENAME} not found. Run 'update' first.")
+        return 1
+    with open(GRAPH_PATH, 'r', encoding='utf-8') as f:
+        plan = build_change_plan(args.task, json.load(f))
+    print(f"CHANGE PLAN | Risk: {plan['risk_level']} ({plan['risk_score']})")
+    print(f"Task: {plan['task']}")
+    if plan['reasons']:
+        print("Risk reasons: " + ", ".join(f"{points} {reason}" for points, reason in plan['reasons']))
+    if not plan['seeds']:
+        print("[WARN] No matching symbols found; inspect the repository before editing.")
+        return 2
+    paths = sorted({node.get('path') for node in plan['nodes'] if node.get('path')})
+    print(f"Likely files ({len(paths)}): " + ", ".join(paths[:12]))
+    print(f"Blast radius: {len(plan['nodes'])} nodes / {len(plan['edges'])} relationships")
+    constraints = [node for node in plan['nodes'] if node.get('type') == 'constraint']
+    if constraints:
+        print("Constraints: " + ", ".join(f"{n['name']} ({n['severity']})" for n in constraints))
+    tests = sorted({node.get('path') for node in plan['nodes'] if node.get('path', '').startswith(('test/', 'tests/'))})
+    print("Tests: " + (", ".join(tests) if tests else "no linked tests found"))
+    return 0
+
+
+def cmd_verify_change(args):
+    """Check git diff coverage against graph-linked tests and constraints."""
+    code, out, err = _git(['diff', '--name-only', args.base])
+    if code != 0:
+        print(f"[ERR] Could not read git diff: {err}")
+        return 1
+    changed_files = [line for line in out.splitlines() if line.strip()]
+    if not os.path.exists(GRAPH_PATH):
+        print(f"[ERR] {LCM_DIRNAME}/{GRAPH_FILENAME} not found. Run 'update' first.")
+        return 1
+    with open(GRAPH_PATH, 'r', encoding='utf-8') as f:
+        report = verify_changed_files(changed_files, json.load(f))
+    print(f"CHANGE CONSISTENCY CHECK | Base: {args.base}")
+    print(f"Changed: {len(report['changed_files'])} files / {len(report['changed_symbols'])} indexed symbols")
+    if report['constraints']:
+        print("Constraints: " + ", ".join(node['name'] for node in report['constraints']))
+    if report['missing_tests']:
+        print("Potentially missing tests: " + ", ".join(report['missing_tests']))
+        return 2 if args.strict else 0
+    print("Linked tests: no missing test-file changes detected.")
+    return 0
+
 def cmd_rollback(args):
     """Lists history or restores map to a previous commit (Safe: NEVER touches source code)."""
     print(f"🛡️ [SAFETY NOTICE] 'rollback' operates strictly on {MAP_FILENAME}. Source code is never touched.")
@@ -2137,6 +2271,13 @@ def main():
     p_cons.add_argument("--auto-commit", action="store_true", help="Auto git commit")
     p_cons.add_argument("--dry-run", action="store_true", help="Dry run preview")
 
+    p_plan = subparsers.add_parser("plan", help="Build a graph-backed change plan and risk score")
+    p_plan.add_argument("task", help="Natural-language change request")
+
+    p_verify = subparsers.add_parser("verify-change", help="Compare git diff with graph-linked tests and constraints")
+    p_verify.add_argument("--base", default="HEAD", help="Git revision used as diff base (default: HEAD)")
+    p_verify.add_argument("--strict", action="store_true", help="Exit non-zero when linked tests were not changed")
+
     # rollback (Safe Map-Only Rollback)
     p_rb = subparsers.add_parser("rollback", help="Restore PROJECT_MAP.md to a previous commit (Safe: NEVER touches source code)")
     p_rb.add_argument("--to", help="Target commit hash to rollback to")
@@ -2164,6 +2305,8 @@ def main():
         "install-hook": cmd_install_hook,
         "add-feature": cmd_add_feature,
         "add-constraint": cmd_add_constraint,
+        "plan": cmd_plan,
+        "verify-change": cmd_verify_change,
         "rollback": cmd_rollback,
         "mcp": cmd_mcp,
     }

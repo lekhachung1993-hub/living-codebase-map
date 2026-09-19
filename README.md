@@ -18,6 +18,7 @@
 | 🕸️ **Evidence-backed Dependency Graph** | `.lcm/graph.json` records dependency edges with confidence and source evidence; ambiguous call targets are not guessed. |
 | ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
 | 📜 **Structured Constraints** | `.lcm/constraints.json` stores lifecycle, severity, stable-symbol scope, reason, owner, and provenance; active rules become graph edges. |
+| 🛡️ **Change Safety Engine** | `map plan` explains risk before editing; `map verify-change` checks the diff against linked tests and constraints afterward. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -46,6 +47,8 @@ You **do not need to open a terminal** or find the Python script. Just type conv
 | `map impact <symbol>` | Traverses graph callers/callees and combines them with the documented map layers in concise Lean Mode. |
 | `map deep-impact <symbol>` | Runs `living_map.py deep-impact <symbol>`, **Deep Mode** generating an exhaustive 6-layer tree view (`├──`, `└──`) for complex refactoring. |
 | `map check` | Deterministically verifies `PROJECT_MAP.md`, `.lcm/index.json`, and `.lcm/graph.json`; `--fix` rebuilds all four generated artifacts. |
+| `map plan "<task>"` | Finds likely symbols/files, traverses their blast radius, and reports an explainable GREEN/YELLOW/RED risk score. |
+| `map verify-change` | Compares the current Git diff with graph-linked tests and constraints; use `--strict` as a quality gate. |
 | `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
 | `map add-feature "<prompt>"` | Natural language auto-parsing: extracts feature ID (`Fxxx`), DOM selector, API route, and registers into Module 5. |
 | `map rollback [hash]` | Safe Rollback Lock: Inspects map history or restores map checkpoint (**source code is 100% untouched**). |
@@ -187,6 +190,16 @@ python scripts/living_map.py add-constraint "Writes must be idempotent" \
 ```
 
 Constraints use `ACTIVE`, `SUSPECT`, `STALE`, or `SUPERSEDED`. Active constraints with missing Symbol IDs fail `map check`; stale constraints may retain deleted scope as historical knowledge. Active and suspect scopes produce `CONSTRAINED_BY` graph edges.
+
+### Safety workflow
+
+```bash
+python scripts/living_map.py plan "change order creation API"
+# edit code and tests
+python scripts/living_map.py verify-change --base HEAD --strict
+```
+
+Risk scores explain their inputs: API exposure, constraint severity, graph blast radius, inferred dependencies, and missing linked tests. `verify-change` is advisory by default and becomes a failing quality gate with `--strict`.
 
 <details>
 <summary><h3>📁 Repository Structure</h3></summary>

@@ -36,6 +36,8 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 |---|---|
 | `map update` | Run `living_map.py update`, write `.lcm/index.json` and `.lcm/graph.json`, refresh location caches, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. Never auto-commit unless requested. |
 | `map impact <symbol>` | Traverse graph callers/callees, merge documented cross-layer links, and return a concise report with confidence. |
+| `map plan "<task>"` | Compile a task-focused file/symbol plan and explainable risk score before editing. |
+| `map verify-change` | Compare the Git diff with linked tests and constraints after editing; use strict mode for a gate. |
 | `map check` | Deterministically verify Markdown, symbol index, and dependency graph synchronization; rebuild every generated artifact with `--fix`. |
 | `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
 | `map rollback [hash]` | Inspect map commit history or safely restore map checkpoint (source code is never touched). |
@@ -108,6 +110,8 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 ---
 
 ## STEP 1: RISK TRIAGE
+
+Run `python scripts/living_map.py plan "<user request>"` when the task is more than a trivial GREEN edit. Use its score reasons as evidence; do not promote or downgrade risk without explaining why.
 
 Classify every incoming user request into one of three risk categories:
 
@@ -198,6 +202,10 @@ Once changes are in place and local tests pass:
    python scripts/living_map.py check
    ```
    A passing check requires the current code hash, stable index, graph schema, graph evidence, and freshly rebuilt deterministic content to match.
+4. **Change consistency:**
+   ```bash
+   python scripts/living_map.py verify-change --base HEAD --strict
+   ```
 
 ---
 

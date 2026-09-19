@@ -12,7 +12,7 @@
 | Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `072a392dda73f34601bdcdddac611716` |
+| Codebase-MD5 | `2a94468f72c6c5977ee03a15fe171edb` |
 
 ---
 
