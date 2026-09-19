@@ -1444,6 +1444,35 @@ def build_dependency_graph(index, root_dir=ROOT):
                 continue
             masked = _strip_javascript_noncode(source)
             directory = posixpath.dirname(rel_path)
+            package_match = re.search(
+                r'^\s*package\s+([A-Za-z_][A-Za-z0-9_.]*)\s*;', masked, re.MULTILINE,
+            )
+            current_package = package_match.group(1) if package_match else ''
+            known_java_classes = {
+                symbol['qualified_name']: symbol
+                for symbol in symbols if symbol.get('language') == 'java' and symbol.get('kind') == 'class'
+            }
+            java_class_imports = {}
+            for match in re.finditer(
+                r'^\s*import\s+(?!static\b)([A-Za-z_][A-Za-z0-9_.]*)\s*;',
+                masked, re.MULTILINE,
+            ):
+                qualified_class = match.group(1)
+                if qualified_class in known_java_classes:
+                    java_class_imports[qualified_class.rsplit('.', 1)[-1]] = qualified_class
+            java_static_imports = {}
+            for match in re.finditer(
+                r'^\s*import\s+static\s+([A-Za-z_][A-Za-z0-9_.]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*;',
+                masked, re.MULTILINE,
+            ):
+                qualified_class, method_name = match.group(1), match.group(2)
+                candidates = [
+                    symbol for symbol in by_name.get(method_name, [])
+                    if symbol.get('language') == 'java'
+                    and symbol.get('qualified_name', '').rsplit('.', 1)[0] == qualified_class
+                ]
+                if len(candidates) == 1:
+                    java_static_imports[method_name] = candidates[0]
             file_symbols = [symbol for symbol in symbols if symbol['path'] == rel_path and symbol.get('kind') == 'method']
 
             def java_owner(line):
@@ -1451,13 +1480,21 @@ def build_dependency_graph(index, root_dir=ROOT):
                 return min(owners, key=lambda item: item['end_line'] - item['line']) if owners else None
 
             def java_target(name, class_name=None, caller=None):
+                if not class_name and name in java_static_imports:
+                    return java_static_imports[name]
                 candidates = [symbol for symbol in by_name.get(name, []) if symbol.get('kind') == 'method']
                 if class_name:
+                    if class_name in java_class_imports:
+                        class_names = [java_class_imports[class_name]]
+                    elif '.' in class_name:
+                        class_names = [class_name]
+                    else:
+                        class_names = [class_name]
+                        if current_package:
+                            class_names.insert(0, f'{current_package}.{class_name}')
                     candidates = [
                         symbol for symbol in candidates
-                        if symbol.get('qualified_name', '').rsplit('.', 1)[0] == class_name
-                        or symbol.get('qualified_name', '').rsplit('.', 2)[-2] == class_name
-                        or symbol.get('qualified_name', '').rsplit('.', 1)[0].endswith('.' + class_name)
+                        if symbol.get('qualified_name', '').rsplit('.', 1)[0] in class_names
                     ]
                 elif caller:
                     caller_class = caller['qualified_name'].rsplit('.', 1)[0]
@@ -1489,7 +1526,8 @@ def build_dependency_graph(index, root_dir=ROOT):
                 source_id, target_id = caller['id'], target['id']
                 if relation == 'TESTED_BY':
                     source_id, target_id = target_id, source_id
-                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'java_static')
+                evidence = 'java_import' if called in java_static_imports else 'java_static'
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, evidence)
 
             member_pattern = re.compile(r'(?<![A-Za-z0-9_])([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\(')
             for match in member_pattern.finditer(masked):
@@ -1506,7 +1544,8 @@ def build_dependency_graph(index, root_dir=ROOT):
                 source_id, target_id = caller['id'], target['id']
                 if relation == 'TESTED_BY':
                     source_id, target_id = target_id, source_id
-                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'java_static')
+                evidence = 'java_import' if match.group(1) in java_class_imports else 'java_static'
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, evidence)
 
             spring_route = re.compile(
                 r'@(Get|Post|Put|Delete|Patch)Mapping\s*\(\s*(?:value\s*=\s*)?"([^"]+)"[^)]*\)'
