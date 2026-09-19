@@ -24,6 +24,9 @@ dependencies = [
 living-codebase-map = "scripts.living_map:main"
 living-map = "scripts.living_map:main"
 
+[tool.setuptools]
+packages = ["scripts"]
+
 [project.urls]
 Homepage = "https://github.com/lekhachung1993-hub/living-codebase-map"
 Repository = "https://github.com/lekhachung1993-hub/living-codebase-map.git"
