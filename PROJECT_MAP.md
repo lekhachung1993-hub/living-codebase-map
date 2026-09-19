@@ -1,6 +1,6 @@
-# LIVING PROJECT MAP: living-codebase-map v3.13.0
+# LIVING PROJECT MAP: living-codebase-map v3.14.0
 > **Purpose:** Agent's primary working memory and architectural compass. Read this file BEFORE scanning code.
-> **Last Updated:** 2026-09-19 | Commit: 20f15ba
+> **Last Updated:** 2026-09-20 | Commit: adade42
 >
 > **AGENT PROTOCOL:**
 > 1. Read MODULE 5 (Feature Cross-Reference) to identify components related to current task.
@@ -19,7 +19,7 @@
 | Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `7ab22c9e4dabe22b2f973f79f9c563e5` |
+| Codebase-MD5 | `abe710717654d437f07d29c7d11516b9` |
 
 ---
 
@@ -55,39 +55,42 @@
 | L1129 | `_read_go_module_name()` | Reads the local module identity from go.mod without requiring Go |
 | L1140 | `_resolve_go_import_dir()` | Resolves local-module Go imports to indexed repository packages |
 | L1153 | `_go_import_bindings()` | Maps default and explicit Go aliases to local indexed packages |
-| L2089 | `build_symbol_database()` | Full codebase symbol scanner and lookup table builder |
-| L2128 | `update_map_line_numbers()` | Synchronizes line numbers in MODULE 1 & 2 tables |
-| L2183 | `update_map_header()` | Refreshes date, commit hash, and MD5 in header |
-| L2216 | `inject_feature()` | Adds new entry into MODULE 5 Feature Traceability Matrix |
-| L2248 | `inject_constraint()` | Appends new operational rule to MODULE 4 |
-| L2284 | `cmd_init()` | CLI handler for `living-map init` |
-| L2351 | `cmd_update()` | CLI handler for `living-map update` |
-| L2422 | `cmd_check()` | CLI handler for CI/CD smart drift check |
-| L2496 | `cmd_impact()` | CLI handler for blast radius impact analysis |
-| L2652 | `cmd_deep_impact()` | CLI handler for 6-layer architecture dependency tree |
-| L2656 | `cmd_install_hook()` | CLI handler for installing Git pre-commit / pre-push hooks |
-| L2704 | `cmd_add_feature()` | CLI handler for feature registration (supports NLP auto-parsing) |
-| L2829 | `cmd_add_constraint()` | CLI handler for adding constraints to Module 4 |
-| L2892 | `cmd_plan()` | CLI handler for graph-backed change planning |
-| L2917 | `cmd_verify_change()` | CLI handler for diff/test/constraint verification |
-| L2940 | `cmd_context()` | CLI handler for budgeted task context compilation |
-| L2952 | `cmd_explain()` | CLI handler for one-symbol relationship explanation |
-| L2981 | `cmd_why()` | CLI handler for Git-backed symbol history |
-| L3012 | `cmd_rollback()` | CLI handler for safe map rollback |
-| L3039 | `capture_mcp_command()` | Preserves CLI exit status and output for native MCP tools |
-| L3050 | `build_mcp_server()` | Factory initializing FastMCP or MCPServer instance |
-| L3066 | `update_map()` | MCP Tool: updates PROJECT_MAP.md via stdio/SSE |
-| L3079 | `check_drift()` | MCP Tool: fast MD5 drift check |
-| L3095 | `analyze_code_impact()` | MCP Tool: blast radius impact analysis |
-| L3108 | `plan_change()` | MCP Tool: graph-backed pre-flight plan and risk score |
-| L3113 | `verify_change()` | MCP Tool: change/test/constraint consistency gate |
-| L3121 | `compile_context()` | MCP Tool: budgeted task context compiler |
-| L3129 | `explain_symbol()` | MCP Tool: unambiguous Stable Symbol explanation |
-| L3134 | `explain_symbol_history()` | MCP Tool: Git temporal memory and constraints |
-| L3142 | `register_feature()` | MCP Tool: feature traceability registration |
-| L3166 | `register_constraint()` | MCP Tool: implicit constraint registration |
-| L3183 | `get_map_summary()` | MCP Tool: returns token-saving minified summary |
-| L3199 | `cmd_mcp()` | CLI handler for launching MCP server over Stdio or SSE |
+| L1194 | `_rust_module_components()` | Derives crate-relative module components from Rust source paths |
+| L1209 | `_resolve_rust_module_path()` | Resolves crate, self, and super module paths conservatively |
+| L1237 | `_rust_import_bindings()` | Maps simple Rust use aliases to exact local symbols and modules |
+| L2190 | `build_symbol_database()` | Full codebase symbol scanner and lookup table builder |
+| L2229 | `update_map_line_numbers()` | Synchronizes line numbers in MODULE 1 & 2 tables |
+| L2284 | `update_map_header()` | Refreshes date, commit hash, and MD5 in header |
+| L2317 | `inject_feature()` | Adds new entry into MODULE 5 Feature Traceability Matrix |
+| L2349 | `inject_constraint()` | Appends new operational rule to MODULE 4 |
+| L2385 | `cmd_init()` | CLI handler for `living-map init` |
+| L2452 | `cmd_update()` | CLI handler for `living-map update` |
+| L2523 | `cmd_check()` | CLI handler for CI/CD smart drift check |
+| L2597 | `cmd_impact()` | CLI handler for blast radius impact analysis |
+| L2753 | `cmd_deep_impact()` | CLI handler for 6-layer architecture dependency tree |
+| L2757 | `cmd_install_hook()` | CLI handler for installing Git pre-commit / pre-push hooks |
+| L2805 | `cmd_add_feature()` | CLI handler for feature registration (supports NLP auto-parsing) |
+| L2930 | `cmd_add_constraint()` | CLI handler for adding constraints to Module 4 |
+| L2993 | `cmd_plan()` | CLI handler for graph-backed change planning |
+| L3018 | `cmd_verify_change()` | CLI handler for diff/test/constraint verification |
+| L3041 | `cmd_context()` | CLI handler for budgeted task context compilation |
+| L3053 | `cmd_explain()` | CLI handler for one-symbol relationship explanation |
+| L3082 | `cmd_why()` | CLI handler for Git-backed symbol history |
+| L3113 | `cmd_rollback()` | CLI handler for safe map rollback |
+| L3140 | `capture_mcp_command()` | Preserves CLI exit status and output for native MCP tools |
+| L3151 | `build_mcp_server()` | Factory initializing FastMCP or MCPServer instance |
+| L3167 | `update_map()` | MCP Tool: updates PROJECT_MAP.md via stdio/SSE |
+| L3180 | `check_drift()` | MCP Tool: fast MD5 drift check |
+| L3196 | `analyze_code_impact()` | MCP Tool: blast radius impact analysis |
+| L3209 | `plan_change()` | MCP Tool: graph-backed pre-flight plan and risk score |
+| L3214 | `verify_change()` | MCP Tool: change/test/constraint consistency gate |
+| L3222 | `compile_context()` | MCP Tool: budgeted task context compiler |
+| L3230 | `explain_symbol()` | MCP Tool: unambiguous Stable Symbol explanation |
+| L3235 | `explain_symbol_history()` | MCP Tool: Git temporal memory and constraints |
+| L3243 | `register_feature()` | MCP Tool: feature traceability registration |
+| L3267 | `register_constraint()` | MCP Tool: implicit constraint registration |
+| L3284 | `get_map_summary()` | MCP Tool: returns token-saving minified summary |
+| L3300 | `cmd_mcp()` | CLI handler for launching MCP server over Stdio or SSE |
 
 ---
 

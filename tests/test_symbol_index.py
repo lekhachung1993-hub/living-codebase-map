@@ -451,6 +451,57 @@ class StableSymbolIndexTests(unittest.TestCase):
                 'rust:src/api.rs::health', 'rust:src/api.rs::list_orders',
             })
 
+    def test_rust_use_alias_resolves_cross_module_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'src/orders.rs', 'pub fn save() -> bool { true }\n')
+            self._write(
+                root, 'src/main.rs',
+                'mod orders;\nuse crate::orders::save as persist;\n\n'
+                'fn run() -> bool {\n  persist()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['source'], 'rust:src/main.rs::run')
+            self.assertEqual(edge['target'], 'rust:src/orders.rs::save')
+            self.assertEqual(edge['confidence'], 1.0)
+            self.assertEqual(edge['evidence']['source'], 'rust_import')
+
+    def test_rust_module_alias_resolves_qualified_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'src/orders/mod.rs', 'pub fn save() -> bool { true }\n')
+            self._write(
+                root, 'src/main.rs',
+                'mod orders;\nuse crate::orders as order_service;\n\n'
+                'fn run() -> bool {\n  order_service::save()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'rust:src/orders/mod.rs::save')
+            self.assertEqual(edge['evidence']['source'], 'rust_import')
+
+    def test_rust_crate_qualified_call_resolves_without_use(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'src/orders.rs', 'pub fn save() -> bool { true }\n')
+            self._write(
+                root, 'src/main.rs',
+                'mod orders;\nfn run() -> bool {\n  crate::orders::save()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'rust:src/orders.rs::save')
+
+    def test_rust_module_resolution_preserves_ambiguity_and_external_paths(self):
+        known = {'src/orders.rs', 'src/orders/mod.rs'}
+        self.assertIsNone(
+            living_map._resolve_rust_module_path('src/main.rs', 'crate::orders', known)
+        )
+        self.assertIsNone(
+            living_map._resolve_rust_module_path('src/main.rs', 'serde::json', known)
+        )
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
