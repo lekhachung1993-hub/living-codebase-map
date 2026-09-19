@@ -168,6 +168,71 @@ class StableSymbolIndexTests(unittest.TestCase):
             graph = living_map.build_dependency_graph(index, root)
             self.assertEqual(graph['edges'], [])
 
+    def test_python_import_alias_disambiguates_duplicate_names(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'a.py', 'def save():\n    return "a"\n')
+            self._write(root, 'b.py', 'def save():\n    return "b"\n')
+            self._write(
+                root,
+                'caller.py',
+                'from a import save as persist\n\ndef run():\n    return persist()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+
+            self.assertEqual(edge['source'], 'py:caller.py::run')
+            self.assertEqual(edge['target'], 'py:a.py::save')
+            self.assertEqual(edge['confidence'], 1.0)
+            self.assertEqual(edge['evidence']['source'], 'python_import')
+
+    def test_python_module_alias_resolves_member_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'services/orders.py', 'def save():\n    return True\n')
+            self._write(
+                root,
+                'caller.py',
+                'import services.orders as orders\n\ndef run():\n    return orders.save()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+
+            self.assertEqual(edge['target'], 'py:services/orders.py::save')
+            self.assertEqual(edge['evidence']['source'], 'python_import')
+
+    def test_python_relative_import_resolves_symbol(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'pkg/service.py', 'def save():\n    return True\n')
+            self._write(
+                root,
+                'pkg/caller.py',
+                'from .service import save\n\ndef run():\n    return save()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'py:pkg/service.py::save')
+
+    def test_python_module_resolution_preserves_ambiguity(self):
+        known = {'pkg.py', 'pkg/__init__.py'}
+        self.assertIsNone(
+            living_map._resolve_python_module_path('caller.py', 'pkg', 0, known)
+        )
+
+    def test_python_absolute_import_resolves_unique_src_layout(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'src/pkg/service.py', 'def save():\n    return True\n')
+            self._write(
+                root,
+                'caller.py',
+                'from pkg.service import save\n\ndef run():\n    return save()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['target'], 'py:src/pkg/service.py::save')
+
     def test_graph_creates_api_node_from_python_route_decorator(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(
