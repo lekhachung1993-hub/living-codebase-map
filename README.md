@@ -16,6 +16,7 @@
 |---|---|
 | 🎯 **Stable Symbol Index** | `.lcm/index.json` identifies symbols by language, repository path, and qualified name; line ranges remain refreshable navigation metadata. |
 | 🕸️ **Evidence-backed Dependency Graph** | `.lcm/graph.json` records dependency edges with confidence and source evidence; ambiguous call targets are not guessed. |
+| 🌐 **JavaScript/TypeScript Graph** | Zero-dependency static analysis extracts named calls, test links, Express routes, and Next.js App Router handlers. |
 | ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
 | 📜 **Structured Constraints** | `.lcm/constraints.json` stores lifecycle, severity, stable-symbol scope, reason, owner, and provenance; active rules become graph edges. |
 | 🛡️ **Change Safety Engine** | `map plan` explains risk before editing; `map verify-change` checks the diff against linked tests and constraints afterward. |
@@ -182,13 +183,13 @@ pip install 'living-codebase-map[mcp]'
 
 ### Dependency graph confidence
 
-Phase 2 extracts Python `CALLS`, `TESTED_BY`, and route `HANDLES` relationships with AST evidence. FastAPI/Flask-style HTTP decorators also become API nodes:
+The graph extracts Python and JavaScript/TypeScript `CALLS`, `TESTED_BY`, and route `HANDLES` relationships with file-and-line evidence. Python uses the standard-library AST; JS/TS uses a conservative zero-dependency static pass supporting named functions, block-bodied arrow functions, Express-style routes, and Next.js App Router handlers.
 
 - `1.0`: exact qualified target in the same file, including `self.method()`.
 - `0.9`: the called name has exactly one candidate across the repository.
 - unresolved: ambiguous or dynamic calls are omitted rather than reported as facts.
 
-Each edge stores its extractor plus the evidence `path:line`. Other languages continue to use the stable symbol index and Markdown impact fallback until dedicated graph extractors are added.
+Each edge stores its extractor plus the evidence `path:line`. Calls inside comments and string literals are masked before JS/TS analysis. Dynamic dispatch, anonymous inline handlers, and member calls are deliberately omitted when they cannot be resolved safely. Other languages continue to use the stable symbol index and Markdown impact fallback until dedicated graph extractors are added.
 
 ### Structured constraint lifecycle
 

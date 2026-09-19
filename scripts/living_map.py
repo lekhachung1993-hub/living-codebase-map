@@ -668,6 +668,123 @@ def _python_symbol_records(file_path):
     return records
 
 
+def _strip_javascript_noncode(source):
+    """Mask JS/TS comments and literals while preserving offsets and newlines."""
+    result = list(source)
+    state = 'code'
+    quote = None
+    escaped = False
+    index = 0
+    while index < len(source):
+        char = source[index]
+        following = source[index + 1] if index + 1 < len(source) else ''
+        if state == 'code':
+            if char == '/' and following == '/':
+                result[index] = result[index + 1] = ' '
+                state = 'line_comment'
+                index += 2
+                continue
+            if char == '/' and following == '*':
+                result[index] = result[index + 1] = ' '
+                state = 'block_comment'
+                index += 2
+                continue
+            if char in {'\'', '"', '`'}:
+                result[index] = ' '
+                state = 'string'
+                quote = char
+                escaped = False
+        elif state == 'line_comment':
+            if char == '\n':
+                state = 'code'
+            else:
+                result[index] = ' '
+        elif state == 'block_comment':
+            if char == '*' and following == '/':
+                result[index] = result[index + 1] = ' '
+                state = 'code'
+                index += 2
+                continue
+            if char != '\n':
+                result[index] = ' '
+        else:
+            if char != '\n':
+                result[index] = ' '
+            if escaped:
+                escaped = False
+            elif char == '\\':
+                escaped = True
+            elif char == quote:
+                state = 'code'
+                quote = None
+        index += 1
+    return ''.join(result)
+
+
+def _matching_delimiter(source, start, opening, closing):
+    """Return the offset of a matching delimiter in already-masked source."""
+    if start < 0 or start >= len(source) or source[start] != opening:
+        return -1
+    depth = 0
+    for index in range(start, len(source)):
+        if source[index] == opening:
+            depth += 1
+        elif source[index] == closing:
+            depth -= 1
+            if depth == 0:
+                return index
+    return -1
+
+
+def _javascript_symbol_records(file_path):
+    """Extract named JS/TS functions, arrow functions, and classes with ranges."""
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            source = f.read()
+    except OSError:
+        return []
+    masked = _strip_javascript_noncode(source)
+    source_lines = source.splitlines()
+    declarations = []
+    patterns = (
+        (RE_JS_FUNC, 'function', 'function'),
+        (RE_JS_VARF, 'function', 'arrow'),
+        (RE_JS_CLS, 'class', 'class'),
+    )
+    for pattern, kind, style in patterns:
+        for match in pattern.finditer(masked):
+            line = masked.count('\n', 0, match.start()) + 1
+            end_offset = -1
+            if style == 'function':
+                opening = masked.find('(', match.start(), match.end() + 1)
+                closing = _matching_delimiter(masked, opening, '(', ')')
+                body = masked.find('{', closing + 1) if closing >= 0 else -1
+                terminator = masked.find(';', closing + 1) if closing >= 0 else -1
+                if terminator < 0 or (body >= 0 and body < terminator):
+                    end_offset = _matching_delimiter(masked, body, '{', '}')
+            elif style == 'arrow':
+                body_match = re.match(r'\s*\{', masked[match.end():])
+                if body_match:
+                    body = match.end() + body_match.end() - 1
+                    end_offset = _matching_delimiter(masked, body, '{', '}')
+            else:
+                body = masked.find('{', match.end())
+                end_offset = _matching_delimiter(masked, body, '{', '}')
+            end_line = masked.count('\n', 0, end_offset) + 1 if end_offset >= 0 else line
+            name = match.group(1)
+            declaration = source_lines[line - 1] if line <= len(source_lines) else name
+            declarations.append({
+                'name': name,
+                'qualified_name': name,
+                'kind': kind,
+                'line': line,
+                'end_line': end_line,
+                'fingerprint': _symbol_fingerprint(kind, name, declaration),
+            })
+    unique = {(item['name'], item['line']): item for item in declarations}
+    return sorted(unique.values(), key=lambda item: (item['line'], item['name']))
+
+
 def scan_file_symbol_records(file_path, rel_path=None):
     """Return structured symbols used by the v3 index.
 
@@ -680,6 +797,8 @@ def scan_file_symbol_records(file_path, rel_path=None):
 
     if ext == '.py':
         records = _python_symbol_records(file_path)
+    elif ext in ('.js', '.ts', '.jsx', '.tsx', '.vue'):
+        records = _javascript_symbol_records(file_path)
     else:
         records = []
         for name, line in scan_file_symbols(file_path).items():
@@ -750,11 +869,36 @@ def _call_name(node):
     return None
 
 
+def _is_test_path(path):
+    """Recognize conventional Python and JavaScript test file locations."""
+    normalized = path.replace('\\', '/').lower()
+    basename = normalized.rsplit('/', 1)[-1]
+    return (
+        normalized.startswith(('test/', 'tests/'))
+        or '/test/' in normalized
+        or '/tests/' in normalized
+        or '.test.' in basename
+        or '.spec.' in basename
+    )
+
+
+def _next_route_path(path):
+    """Derive a public route from a Next.js app-router route module path."""
+    normalized = path.replace('\\', '/')
+    padded = '/' + normalized.lstrip('/')
+    if '/app/' in padded:
+        route = padded.split('/app/', 1)[1].rsplit('/route.', 1)[0]
+        parts = [part for part in route.split('/') if not (part.startswith('(') and part.endswith(')'))]
+        return '/' + '/'.join(parts)
+    return None
+
+
 def build_dependency_graph(index, root_dir=ROOT):
     """Build a confidence-scored dependency graph from a symbol index.
 
-    Phase 2 starts with deterministic Python AST call edges. Unsupported or
-    dynamic constructs are omitted instead of being presented as facts.
+    Python uses the standard-library AST. JavaScript and TypeScript use a
+    conservative zero-dependency static pass. Ambiguous or dynamic constructs
+    are omitted instead of being presented as facts.
     """
     nodes = []
     node_ids = set()
@@ -794,11 +938,102 @@ def build_dependency_graph(index, root_dir=ROOT):
             'evidence': {'path': path, 'line': line, 'source': source_type},
         })
 
+    def resolve_target(rel_path, called):
+        direct = by_path_qualified.get((rel_path, called))
+        if direct:
+            return direct, 1.0
+        candidates = by_name.get(called, [])
+        if len(candidates) == 1:
+            return candidates[0], 0.9
+        return None, 0.0
+
     for file_info in index.get('files', []):
-        if file_info.get('language') != 'py':
+        language = file_info.get('language')
+        if language not in {'py', 'js', 'ts', 'vue'}:
             continue
         rel_path = file_info['path']
         full_path = os.path.join(root_dir, rel_path)
+        if language in {'js', 'ts', 'vue'}:
+            try:
+                with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                    source = f.read()
+            except OSError:
+                continue
+            masked = _strip_javascript_noncode(source)
+            file_symbols = [
+                symbol for symbol in symbols
+                if symbol['path'] == rel_path and symbol.get('kind') == 'function'
+            ]
+            call_pattern = re.compile(r'(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(')
+            ignored_calls = {
+                'if', 'for', 'while', 'switch', 'catch', 'function', 'return',
+                'typeof', 'delete', 'void', 'new', 'super', 'import',
+            }
+            for match in call_pattern.finditer(masked):
+                called = match.group(1)
+                if called in ignored_calls:
+                    continue
+                line = masked.count('\n', 0, match.start()) + 1
+                owners = [
+                    symbol for symbol in file_symbols
+                    if symbol['line'] <= line <= symbol['end_line']
+                ]
+                if not owners:
+                    continue
+                caller = min(owners, key=lambda item: item['end_line'] - item['line'])
+                target, confidence = resolve_target(rel_path, called)
+                if target:
+                    relation = 'TESTED_BY' if _is_test_path(rel_path) else 'CALLS'
+                    source_id, target_id = caller['id'], target['id']
+                    if relation == 'TESTED_BY':
+                        source_id, target_id = target_id, source_id
+                    add_edge(
+                        source_id, target_id, relation, confidence,
+                        rel_path, line, 'javascript_static',
+                    )
+
+            route_pattern = re.compile(
+                r'\b(?:app|router)\s*\.\s*(get|post|put|delete|patch|head)\s*\('
+                r'\s*([\'"`])([^\'"`$]+)\2\s*,\s*([A-Za-z_$][A-Za-z0-9_$]*)',
+                re.IGNORECASE,
+            )
+            for match in route_pattern.finditer(source):
+                if not masked[match.start():match.start() + 1].strip():
+                    continue
+                method, route, handler_name = match.group(1).upper(), match.group(3), match.group(4)
+                handler, confidence = resolve_target(rel_path, handler_name)
+                if not handler:
+                    continue
+                route_id = f"api:{method} {route}"
+                line = source.count('\n', 0, match.start()) + 1
+                if route_id not in node_ids:
+                    node_ids.add(route_id)
+                    nodes.append({
+                        'id': route_id, 'type': 'api', 'name': f"{method} {route}",
+                        'method': method, 'route': route, 'path': rel_path, 'line': line,
+                    })
+                add_edge(route_id, handler['id'], 'HANDLES', confidence, rel_path, line, 'javascript_static')
+
+            next_route = _next_route_path(rel_path) if re.search(r'(^|/)route\.(?:js|ts|jsx|tsx)$', rel_path) else None
+            if next_route:
+                for handler in file_symbols:
+                    method = handler['name'].upper()
+                    if method not in {'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'}:
+                        continue
+                    route_id = f"api:{method} {next_route}"
+                    if route_id not in node_ids:
+                        node_ids.add(route_id)
+                        nodes.append({
+                            'id': route_id, 'type': 'api', 'name': f"{method} {next_route}",
+                            'method': method, 'route': next_route,
+                            'path': rel_path, 'line': handler['line'],
+                        })
+                    add_edge(
+                        route_id, handler['id'], 'HANDLES', 1.0,
+                        rel_path, handler['line'], 'javascript_static',
+                    )
+            continue
+
         try:
             with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
                 tree = ast.parse(f.read(), filename=full_path)
@@ -869,12 +1104,12 @@ def build_dependency_graph(index, root_dir=ROOT):
                         direct = by_path_qualified.get((rel_path, called))
                         if direct:
                             target, confidence = direct, 1.0
-                    if target is None:
+                    if target is None and isinstance(node.func, ast.Name):
                         candidates = by_name.get(called.rsplit('.', 1)[-1], [])
                         if len(candidates) == 1:
                             target, confidence = candidates[0], 0.9
                     if target:
-                        relation = 'TESTED_BY' if caller['path'].startswith(('test/', 'tests/')) else 'CALLS'
+                        relation = 'TESTED_BY' if _is_test_path(caller['path']) else 'CALLS'
                         source_id, target_id = caller['id'], target['id']
                         if relation == 'TESTED_BY':
                             source_id, target_id = target_id, source_id
