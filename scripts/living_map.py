@@ -1059,6 +1059,71 @@ def _python_import_bindings(tree, importer_path, known_paths, by_path_qualified)
     return direct, namespaces
 
 
+def _read_go_module_name(root_dir):
+    """Read the local module path from go.mod without invoking the Go toolchain."""
+    try:
+        with open(os.path.join(root_dir, 'go.mod'), 'r', encoding='utf-8') as f:
+            source = f.read()
+    except OSError:
+        return None
+    match = re.search(r'^\s*module\s+([^\s]+)', source, re.MULTILINE)
+    return match.group(1).strip('"`') if match else None
+
+
+def _resolve_go_import_dir(import_path, module_name, known_dirs):
+    """Resolve one local-module Go import to an indexed repository directory."""
+    if not module_name:
+        return None
+    if import_path == module_name:
+        directory = ''
+    elif import_path.startswith(module_name + '/'):
+        directory = import_path[len(module_name) + 1:]
+    else:
+        return None
+    return directory if directory in known_dirs else None
+
+
+def _go_import_bindings(source, masked, module_name, known_dirs):
+    """Map explicit and default Go import aliases to local indexed packages."""
+    bindings = {}
+
+    def add_binding(alias, import_path):
+        directory = _resolve_go_import_dir(import_path, module_name, known_dirs)
+        if directory is None or alias in {'_', '.'}:
+            return
+        local_name = alias or import_path.rstrip('/').rsplit('/', 1)[-1]
+        if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', local_name):
+            bindings[local_name] = directory
+
+    block_pattern = re.compile(r'\bimport\s*\((.*?)\)', re.DOTALL)
+    entry_pattern = re.compile(
+        r'(?m)^\s*(?:(?P<alias>[A-Za-z_][A-Za-z0-9_]*|[._])\s+)?'
+        r'["`](?P<path>[^"`]+)["`]'
+    )
+    block_ranges = []
+    for block in block_pattern.finditer(source):
+        if not masked[block.start():block.start() + 6].strip():
+            continue
+        block_ranges.append((block.start(), block.end()))
+        for entry in entry_pattern.finditer(block.group(1)):
+            line = entry.group(0).lstrip()
+            if line.startswith(('//', '/*', '*')):
+                continue
+            add_binding(entry.group('alias'), entry.group('path'))
+
+    single_pattern = re.compile(
+        r'\bimport\s+(?:(?P<alias>[A-Za-z_][A-Za-z0-9_]*|[._])\s+)?'
+        r'["`](?P<path>[^"`]+)["`]'
+    )
+    for match in single_pattern.finditer(source):
+        if any(start <= match.start() < end for start, end in block_ranges):
+            continue
+        if not masked[match.start():match.start() + 6].strip():
+            continue
+        add_binding(match.group('alias'), match.group('path'))
+    return bindings
+
+
 def build_dependency_graph(index, root_dir=ROOT):
     """Build a confidence-scored dependency graph from a symbol index.
 
@@ -1070,6 +1135,12 @@ def build_dependency_graph(index, root_dir=ROOT):
     node_ids = set()
     symbols = index.get('symbols', [])
     known_paths = {file_info['path'] for file_info in index.get('files', [])}
+    known_go_dirs = {
+        posixpath.dirname(file_info['path'])
+        for file_info in index.get('files', [])
+        if file_info.get('language') == 'go'
+    }
+    go_module_name = _read_go_module_name(root_dir)
     by_path_qualified = {}
     by_name = {}
     by_dir_name = {}
@@ -1131,6 +1202,9 @@ def build_dependency_graph(index, root_dir=ROOT):
                 continue
             masked = _strip_javascript_noncode(source)
             directory = posixpath.dirname(rel_path)
+            go_imports = _go_import_bindings(
+                source, masked, go_module_name, known_go_dirs,
+            )
             file_symbols = [
                 symbol for symbol in symbols
                 if symbol['path'] == rel_path and symbol.get('kind') in {'function', 'method'}
@@ -1178,25 +1252,36 @@ def build_dependency_graph(index, root_dir=ROOT):
             for match in member_pattern.finditer(masked):
                 line = masked.count('\n', 0, match.start()) + 1
                 caller = go_owner(line)
-                if not caller or match.group(1) != caller.get('receiver'):
+                if not caller:
                     continue
-                qualified = f"{caller.get('receiver_type')}.{match.group(2)}"
-                candidates = [
-                    symbol for symbol in symbols
-                    if posixpath.dirname(symbol['path']) == directory
-                    and symbol.get('qualified_name') == qualified
-                ]
+                prefix, member = match.group(1), match.group(2)
+                evidence = 'go_static'
+                if prefix == caller.get('receiver'):
+                    qualified = f"{caller.get('receiver_type')}.{member}"
+                    candidates = [
+                        symbol for symbol in symbols
+                        if posixpath.dirname(symbol['path']) == directory
+                        and symbol.get('qualified_name') == qualified
+                    ]
+                elif prefix in go_imports:
+                    candidates = [
+                        symbol for symbol in by_dir_name.get((go_imports[prefix], member), [])
+                        if symbol.get('kind') == 'function'
+                    ]
+                    evidence = 'go_import'
+                else:
+                    continue
                 if len(candidates) != 1:
                     continue
                 relation = 'TESTED_BY' if _is_test_path(rel_path) else 'CALLS'
                 source_id, target_id = caller['id'], candidates[0]['id']
                 if relation == 'TESTED_BY':
                     source_id, target_id = target_id, source_id
-                add_edge(source_id, target_id, relation, 1.0, rel_path, line, 'go_static')
+                add_edge(source_id, target_id, relation, 1.0, rel_path, line, evidence)
 
             route_patterns = (
-                (re.compile(r'\bhttp\.HandleFunc\s*\(\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*)'), 'ANY'),
-                (re.compile(r'\b(?:router|routes|app|api|group|e)\s*\.\s*(GET|POST|PUT|DELETE|PATCH|HEAD)\s*\(\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*)'), None),
+                (re.compile(r'\bhttp\.HandleFunc\s*\(\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)?)'), 'ANY'),
+                (re.compile(r'\b(?:router|routes|app|api|group|e)\s*\.\s*(GET|POST|PUT|DELETE|PATCH|HEAD)\s*\(\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)?)'), None),
             )
             for pattern, fixed_method in route_patterns:
                 for match in pattern.finditer(source):
@@ -1206,7 +1291,21 @@ def build_dependency_graph(index, root_dir=ROOT):
                         method, route, handler_name = fixed_method, match.group(1), match.group(2)
                     else:
                         method, route, handler_name = match.group(1), match.group(2), match.group(3)
-                    handler = go_package_target(handler_name)
+                    handler_parts = [part.strip() for part in handler_name.split('.')]
+                    evidence = 'go_static'
+                    if len(handler_parts) == 1:
+                        handler = go_package_target(handler_parts[0])
+                    elif handler_parts[0] in go_imports:
+                        candidates = [
+                            symbol for symbol in by_dir_name.get(
+                                (go_imports[handler_parts[0]], handler_parts[1]), []
+                            )
+                            if symbol.get('kind') == 'function'
+                        ]
+                        handler = candidates[0] if len(candidates) == 1 else None
+                        evidence = 'go_import'
+                    else:
+                        handler = None
                     if not handler:
                         continue
                     route_id = f"api:{method} {route}"
@@ -1217,7 +1316,7 @@ def build_dependency_graph(index, root_dir=ROOT):
                             'id': route_id, 'type': 'api', 'name': f"{method} {route}",
                             'method': method, 'route': route, 'path': rel_path, 'line': line,
                         })
-                    add_edge(route_id, handler['id'], 'HANDLES', 1.0, rel_path, line, 'go_static')
+                    add_edge(route_id, handler['id'], 'HANDLES', 1.0, rel_path, line, evidence)
             continue
 
         if language in {'js', 'ts', 'vue'}:
