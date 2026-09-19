@@ -67,8 +67,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MAP_FILENAME = 'PROJECT_MAP.md'
 MIN_MAP_FILENAME = 'PROJECT_MAP.min.md'
 INDEX_SCHEMA_VERSION = 3
+GRAPH_SCHEMA_VERSION = 1
 LCM_DIRNAME = '.lcm'
 INDEX_FILENAME = 'index.json'
+GRAPH_FILENAME = 'graph.json'
 
 def find_project_root():
     """Locates the project root directory reliably."""
@@ -103,6 +105,7 @@ ROOT = find_project_root()
 MAP_PATH = os.path.join(ROOT, MAP_FILENAME)
 MIN_MAP_PATH = os.path.join(ROOT, MIN_MAP_FILENAME)
 INDEX_PATH = os.path.join(ROOT, LCM_DIRNAME, INDEX_FILENAME)
+GRAPH_PATH = os.path.join(ROOT, LCM_DIRNAME, GRAPH_FILENAME)
 
 CODE_EXTENSIONS = {
     '.go': 'go',
@@ -438,8 +441,15 @@ def git_log_map(limit=15):
     return entries
 
 def git_commit_map(message):
-    """Stages and commits both full and compact map."""
-    c1, _, e1 = _git(['add', MAP_FILENAME, MIN_MAP_FILENAME])
+    """Stage and commit human projections plus generated machine state."""
+    generated_paths = [MAP_FILENAME, MIN_MAP_FILENAME]
+    for relative_path in (
+        os.path.join(LCM_DIRNAME, INDEX_FILENAME),
+        os.path.join(LCM_DIRNAME, GRAPH_FILENAME),
+    ):
+        if os.path.exists(os.path.join(ROOT, relative_path)):
+            generated_paths.append(relative_path)
+    c1, _, e1 = _git(['add'] + generated_paths)
     if c1 != 0:
         print(f"  [GIT ERR] git add failed: {e1}")
         return False
@@ -725,6 +735,213 @@ def write_symbol_index(index, index_path=INDEX_PATH):
         f.write('\n')
     os.replace(temp_path, index_path)
 
+
+def _call_name(node):
+    """Return a dotted textual name for a Python call target when available."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        prefix = _call_name(node.value)
+        return f"{prefix}.{node.attr}" if prefix else node.attr
+    return None
+
+
+def build_dependency_graph(index, root_dir=ROOT):
+    """Build a confidence-scored dependency graph from a symbol index.
+
+    Phase 2 starts with deterministic Python AST call edges. Unsupported or
+    dynamic constructs are omitted instead of being presented as facts.
+    """
+    nodes = []
+    node_ids = set()
+    symbols = index.get('symbols', [])
+    by_path_qualified = {}
+    by_name = {}
+
+    for symbol in symbols:
+        node = {
+            'id': symbol['id'],
+            'type': 'symbol',
+            'name': symbol['name'],
+            'qualified_name': symbol['qualified_name'],
+            'kind': symbol['kind'],
+            'path': symbol['path'],
+            'line': symbol['line'],
+            'end_line': symbol['end_line'],
+        }
+        nodes.append(node)
+        node_ids.add(node['id'])
+        by_path_qualified[(symbol['path'], symbol['qualified_name'])] = symbol
+        by_name.setdefault(symbol['name'], []).append(symbol)
+
+    edges = []
+    edge_keys = set()
+
+    def add_edge(source, target, relation, confidence, path, line, source_type='python_ast'):
+        key = (source, target, relation, path, line)
+        if source == target or key in edge_keys:
+            return
+        edge_keys.add(key)
+        edges.append({
+            'source': source,
+            'target': target,
+            'relation': relation,
+            'confidence': confidence,
+            'evidence': {'path': path, 'line': line, 'source': source_type},
+        })
+
+    for file_info in index.get('files', []):
+        if file_info.get('language') != 'py':
+            continue
+        rel_path = file_info['path']
+        full_path = os.path.join(root_dir, rel_path)
+        try:
+            with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                tree = ast.parse(f.read(), filename=full_path)
+        except (OSError, SyntaxError, UnicodeError):
+            continue
+
+        class CallVisitor(ast.NodeVisitor):
+            def __init__(self):
+                self.scope = []
+                self.callers = []
+
+            def visit_ClassDef(self, node):
+                self.scope.append(node.name)
+                self.generic_visit(node)
+                self.scope.pop()
+
+            def visit_FunctionDef(self, node):
+                self._visit_function(node)
+
+            def visit_AsyncFunctionDef(self, node):
+                self._visit_function(node)
+
+            def _visit_function(self, node):
+                qualified = '.'.join(self.scope + [node.name])
+                caller = by_path_qualified.get((rel_path, qualified))
+                if caller:
+                    for decorator in node.decorator_list:
+                        if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute):
+                            continue
+                        method = decorator.func.attr.upper()
+                        if method not in {'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'}:
+                            continue
+                        if not decorator.args or not isinstance(decorator.args[0], ast.Constant):
+                            continue
+                        route_value = decorator.args[0].value
+                        if not isinstance(route_value, str):
+                            continue
+                        route_id = f"api:{method} {route_value}"
+                        if route_id not in node_ids:
+                            node_ids.add(route_id)
+                            nodes.append({
+                                'id': route_id,
+                                'type': 'api',
+                                'name': f"{method} {route_value}",
+                                'method': method,
+                                'route': route_value,
+                                'path': rel_path,
+                                'line': decorator.lineno,
+                            })
+                        add_edge(route_id, caller['id'], 'HANDLES', 1.0, rel_path, decorator.lineno)
+                self.scope.append(node.name)
+                self.callers.append(caller)
+                self.generic_visit(node)
+                self.callers.pop()
+                self.scope.pop()
+
+            def visit_Call(self, node):
+                caller = self.callers[-1] if self.callers else None
+                called = _call_name(node.func)
+                if caller and called:
+                    target = None
+                    confidence = 0.0
+                    class_scope = caller['qualified_name'].rsplit('.', 1)[0] if caller['kind'] == 'method' else ''
+                    if called.startswith('self.') and class_scope:
+                        target = by_path_qualified.get((rel_path, f"{class_scope}.{called[5:]}"))
+                        confidence = 1.0
+                    if target is None:
+                        direct = by_path_qualified.get((rel_path, called))
+                        if direct:
+                            target, confidence = direct, 1.0
+                    if target is None:
+                        candidates = by_name.get(called.rsplit('.', 1)[-1], [])
+                        if len(candidates) == 1:
+                            target, confidence = candidates[0], 0.9
+                    if target:
+                        relation = 'TESTED_BY' if caller['path'].startswith(('test/', 'tests/')) else 'CALLS'
+                        source_id, target_id = caller['id'], target['id']
+                        if relation == 'TESTED_BY':
+                            source_id, target_id = target_id, source_id
+                        add_edge(source_id, target_id, relation, confidence, rel_path, node.lineno)
+                self.generic_visit(node)
+
+        CallVisitor().visit(tree)
+
+    return {
+        'schema_version': GRAPH_SCHEMA_VERSION,
+        'generated_at': datetime.now().astimezone().isoformat(timespec='seconds'),
+        'nodes': nodes,
+        'edges': edges,
+    }
+
+
+def write_dependency_graph(graph, graph_path=GRAPH_PATH):
+    """Atomically persist the dependency graph."""
+    os.makedirs(os.path.dirname(graph_path), exist_ok=True)
+    temp_path = graph_path + '.tmp'
+    with open(temp_path, 'w', encoding='utf-8') as f:
+        json.dump(graph, f, ensure_ascii=False, indent=2, sort_keys=True)
+        f.write('\n')
+    os.replace(temp_path, graph_path)
+
+
+def analyze_graph_impact(query, graph, max_depth=2):
+    """Traverse incoming and outgoing dependency edges from matching symbols."""
+    q = query.strip().lower()
+    nodes = {node['id']: node for node in graph.get('nodes', [])}
+    seeds = [
+        node['id'] for node in nodes.values()
+        if q == node['id'].lower()
+        or q == node.get('qualified_name', '').lower()
+        or q == node.get('name', '').lower()
+    ]
+    if not seeds:
+        return {'seeds': [], 'nodes': [], 'edges': []}
+
+    traversable = {'CALLS', 'TESTED_BY', 'HANDLES', 'TRIGGERS', 'READS', 'WRITES', 'CONSTRAINED_BY'}
+    visited = set(seeds)
+    frontier = set(seeds)
+    selected_edges = []
+    for _ in range(max(0, max_depth)):
+        next_frontier = set()
+        for edge in graph.get('edges', []):
+            if edge.get('relation') not in traversable:
+                continue
+            if edge['source'] in frontier or edge['target'] in frontier:
+                selected_edges.append(edge)
+                other = edge['target'] if edge['source'] in frontier else edge['source']
+                if other not in visited:
+                    visited.add(other)
+                    next_frontier.add(other)
+        frontier = next_frontier
+        if not frontier:
+            break
+
+    unique_edges = []
+    seen_edges = set()
+    for edge in selected_edges:
+        key = (edge['source'], edge['target'], edge['relation'])
+        if key not in seen_edges:
+            seen_edges.add(key)
+            unique_edges.append(edge)
+    return {
+        'seeds': seeds,
+        'nodes': [nodes[node_id] for node_id in visited if node_id in nodes],
+        'edges': unique_edges,
+    }
+
 def build_symbol_database(root_dir=ROOT):
     """
     Traverses the codebase and builds:
@@ -996,7 +1213,9 @@ def cmd_update(args):
     print(f"[SCAN] Indexing symbols across codebase ({ROOT})...")
     file_map, symbol_lookup = build_symbol_database(ROOT)
     symbol_index = build_symbol_index(ROOT)
+    dependency_graph = build_dependency_graph(symbol_index, ROOT)
     total_syms = len(symbol_index['symbols'])
+    total_edges = len(dependency_graph['edges'])
     print(f"       Found {len(file_map)} files with {total_syms} identifiable symbols.")
 
     # 1. Update line numbers
@@ -1012,6 +1231,7 @@ def cmd_update(args):
 
     if args.dry_run:
         print(f"[DRY-RUN] Would write {total_syms} symbols to {LCM_DIRNAME}/{INDEX_FILENAME}.")
+        print(f"[DRY-RUN] Would write {total_edges} dependency edges to {LCM_DIRNAME}/{GRAPH_FILENAME}.")
         print("[DRY-RUN] Changes preview complete. No files modified.")
         return 0
 
@@ -1026,6 +1246,8 @@ def cmd_update(args):
 
     write_symbol_index(symbol_index)
     print(f"[INDEX] Wrote {LCM_DIRNAME}/{INDEX_FILENAME} (schema v{INDEX_SCHEMA_VERSION}, {total_syms} symbols).")
+    write_dependency_graph(dependency_graph)
+    print(f"[GRAPH] Wrote {LCM_DIRNAME}/{GRAPH_FILENAME} (schema v{GRAPH_SCHEMA_VERSION}, {total_edges} edges).")
 
     # 4. Auto-generate mini compact map for AI Agents
     generate_min_map(MAP_PATH, MIN_MAP_PATH)
@@ -1097,16 +1319,29 @@ def cmd_impact(args, is_deep=False):
     - Default (Lean Mode): Capped at depth 2 (<15 lines) to save LLM context tokens.
     - Deep Mode (--deep or deep-impact): Exhaustive 6-layer architecture dependency tree.
     """
-    if not os.path.exists(MAP_PATH):
-        print(f"[ERR] {MAP_FILENAME} not found at {MAP_PATH}")
+    if not os.path.exists(MAP_PATH) and not os.path.exists(GRAPH_PATH):
+        print(f"[ERR] Neither {MAP_FILENAME} nor {LCM_DIRNAME}/{GRAPH_FILENAME} exists. Run 'update' first.")
         return 1
 
-    with open(MAP_PATH, 'r', encoding='utf-8', errors='replace') as f:
-        content = f.read()
+    content = ''
+    if os.path.exists(MAP_PATH):
+        with open(MAP_PATH, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
 
     target = args.target
     report = analyze_symbol_impact(target, content)
-    blast_count = len(report['locations']) + len(report['ui_triggers']) + len(report['api_routes']) + len(report['db_tables'])
+    graph_report = {'seeds': [], 'nodes': [], 'edges': []}
+    if os.path.exists(GRAPH_PATH):
+        try:
+            with open(GRAPH_PATH, 'r', encoding='utf-8') as f:
+                graph_report = analyze_graph_impact(target, json.load(f), max_depth=max(1, getattr(args, 'depth', 2)))
+        except (OSError, ValueError, KeyError) as exc:
+            print(f"[WARN] Could not read dependency graph: {exc}")
+    graph_links = len(graph_report['edges'])
+    blast_count = (
+        len(report['locations']) + len(report['ui_triggers']) +
+        len(report['api_routes']) + len(report['db_tables']) + graph_links
+    )
     has_constraints = bool(report['constraints'])
     risk_level = "🔴 CRITICAL" if (blast_count > 10 or has_constraints) else ("🟡 MEDIUM" if blast_count > 3 else "🟢 LOW")
 
@@ -1120,6 +1355,11 @@ def cmd_impact(args, is_deep=False):
         print("=" * 75)
 
         layers = [
+            ("Graph: Confirmed & Inferred Dependencies", [
+                f"{edge['relation']} {edge['source']} -> {edge['target']} "
+                f"(confidence {edge['confidence']:.2f}, {edge['evidence']['path']}:{edge['evidence']['line']})"
+                for edge in graph_report['edges']
+            ], "Edge"),
             ("Layer 1: Code Definitions & Call Sites", report['locations'], "Code"),
             ("Layer 2: API Contracts & Routing", report['api_routes'], "API"),
             ("Layer 3: UI Triggers & DOM Selectors", report['ui_triggers'], "DOM"),
@@ -1171,6 +1411,17 @@ def cmd_impact(args, is_deep=False):
             total_hidden += hidden
         extra = f" (+{hidden} more)" if hidden > 0 else ""
         print(f"• Code:        {', '.join(loc_sample)}{extra}")
+    if graph_report['edges']:
+        graph_sample = []
+        for edge in graph_report['edges'][:depth]:
+            target_node = edge['target'].split('::')[-1]
+            marker = 'confirmed' if edge['confidence'] >= 0.95 else 'likely'
+            graph_sample.append(f"{edge['relation']} {target_node} [{marker} {edge['confidence']:.2f}]")
+        hidden = len(graph_report['edges']) - depth
+        if hidden > 0:
+            total_hidden += hidden
+        extra = f" (+{hidden} more)" if hidden > 0 else ""
+        print(f"• Graph:       {', '.join(graph_sample)}{extra}")
     if report['ui_triggers']:
         ui_sample = [u.split(':')[0].strip() for u in report['ui_triggers'][:depth]]
         hidden = len(report['ui_triggers']) - depth
@@ -1205,7 +1456,13 @@ def cmd_impact(args, is_deep=False):
         extra = f" (+{hidden} more)" if hidden > 0 else ""
         print(f"• Features:    {', '.join(f_ids)}{extra}")
 
-    print(f"💡 Action:     {'Verify Module 4 constraints before editing.' if has_constraints else 'Safe to proceed with minimal blast radius.'}")
+    if risk_level.startswith("🔴"):
+        action = "Review graph evidence and constraints; run integration tests before editing."
+    elif risk_level.startswith("🟡"):
+        action = "Inspect linked callers/callees and run targeted tests."
+    else:
+        action = "Proceed with a minimal change and targeted verification."
+    print(f"💡 Action:     {action}")
     if total_hidden > 0:
         print(f"⚠️  ... Hidden {total_hidden} deeper items to SAVE AI CONTEXT TOKENS.")
         print(f"🤖 For exhaustive 6-layer architecture dependency tree, run: map deep-impact {target} (or --deep)")

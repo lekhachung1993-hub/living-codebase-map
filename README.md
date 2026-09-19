@@ -15,6 +15,7 @@
 | Benefit | Real-World Impact |
 |---|---|
 | 🎯 **Stable Symbol Index** | `.lcm/index.json` identifies symbols by language, repository path, and qualified name; line ranges remain refreshable navigation metadata. |
+| 🕸️ **Evidence-backed Dependency Graph** | `.lcm/graph.json` records dependency edges with confidence and source evidence; ambiguous call targets are not guessed. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -39,8 +40,8 @@ You **do not need to open a terminal** or find the Python script. Just type conv
 
 | What you type in Chat | What the AI Agent does automatically |
 |---|---|
-| `map update` | Runs `living_map.py update`, refreshes locations, writes `.lcm/index.json`, generates `PROJECT_MAP.min.md`, and leaves commits under developer control. |
-| `map impact <symbol>` | Runs `living_map.py impact <symbol>` in concise Lean Mode (<15 lines) across the documented map layers. |
+| `map update` | Runs `living_map.py update`, refreshes locations, writes `.lcm/index.json` and `.lcm/graph.json`, generates `PROJECT_MAP.min.md`, and leaves commits under developer control. |
+| `map impact <symbol>` | Traverses graph callers/callees and combines them with the documented map layers in concise Lean Mode. |
 | `map deep-impact <symbol>` | Runs `living_map.py deep-impact <symbol>`, **Deep Mode** generating an exhaustive 6-layer tree view (`├──`, `└──`) for complex refactoring. |
 | `map check` | Runs the Smart Drift MD5 Check and falls back to symbol verification when needed. |
 | `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
@@ -92,7 +93,7 @@ When the user sends these keywords in chat, execute the corresponding action aut
 
 | Command Syntax | Operational Purpose | Token Saving & Safety Mechanism |
 |---|---|---|
-| `python living_map.py update` | Write `.lcm/index.json`, refresh line coordinates, and generate `.min.md` | Keeps machine identity separate from human/LLM projections. |
+| `python living_map.py update` | Write `.lcm/index.json` and `.lcm/graph.json`, refresh line coordinates, and generate `.min.md` | Keeps machine identity and dependencies separate from human/LLM projections. |
 | `python living_map.py update --auto-commit` | Synchronize map state directly into Git history | Creates atomic memory checkpoint locking code and map. |
 | `python living_map.py impact <symbol>` | Quick cross-layer blast radius scan (Lean Mode) | Default: limits output under 15 lines to prevent AI context overflow. |
 | `python living_map.py deep-impact <symbol>` | Exhaustive 6-layer architecture dependency tree | Full tree analysis (`├──`, `└──`) for high-stakes refactoring. |
@@ -139,7 +140,7 @@ pip install 'living-codebase-map[mcp]'
 ### 3. Native Tools Exposed to Agents:
 | Native MCP Tool | Parameters | Operational Capability |
 |---|---|---|
-| `update_map` | `directory`, `auto_commit` | Scans workspace, writes the stable symbol index, updates location caches, and generates `PROJECT_MAP.min.md`. |
+| `update_map` | `directory`, `auto_commit` | Scans workspace, writes the stable symbol index and dependency graph, updates location caches, and generates `PROJECT_MAP.min.md`. |
 | `check_drift` | `full_ast` | Smart Drift verification using MD5, with optional full symbol scanning. |
 | `analyze_code_impact` | `symbol`, `deep_mode` | Dual-mode blast radius: Lean mode (<15 lines) vs Deep 6-layer dependency tree. |
 | `register_feature` | `prompt`, `auto_commit` | Natural language auto-parsing: extracts `Fxxx`, DOM selector, API route into Module 5. |
@@ -163,6 +164,16 @@ pip install 'living-codebase-map[mcp]'
 
 </details>
 
+### Dependency graph confidence
+
+Phase 2 extracts Python `CALLS`, `TESTED_BY`, and route `HANDLES` relationships with AST evidence. FastAPI/Flask-style HTTP decorators also become API nodes:
+
+- `1.0`: exact qualified target in the same file, including `self.method()`.
+- `0.9`: the called name has exactly one candidate across the repository.
+- unresolved: ambiguous or dynamic calls are omitted rather than reported as facts.
+
+Each edge stores its extractor plus the evidence `path:line`. Other languages continue to use the stable symbol index and Markdown impact fallback until dedicated graph extractors are added.
+
 <details>
 <summary><h3>📁 Repository Structure</h3></summary>
 
@@ -174,6 +185,7 @@ living-codebase-map/
 ├── LICENSE                           # MIT License
 ├── scripts/living_map.py             # Zero-dependency core CLI engine (v3)
 ├── .lcm/index.json                    # Generated machine-readable stable symbol index
+├── .lcm/graph.json                    # Generated confidence-scored dependency graph
 ├── tests/test_symbol_index.py         # Stable-ID and collision regression tests
 └── templates/
     ├── PROJECT_MAP.template.md       # Universal Living Map template
