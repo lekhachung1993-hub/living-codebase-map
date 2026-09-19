@@ -24,7 +24,7 @@ triggers:
 
 > **Philosophy:** AI coding models fail in production codebases not from lack of intelligence, but from **blind surgery** — missing implicit business constraints, hallucinating outdated line numbers, and severing unseen cross-layer connections between UI DOM, API contracts, and database states.
 >
-> **The Solution:** A machine-readable stable symbol index (`.lcm/index.json`) plus a living architecture compass (`PROJECT_MAP.md`). The CLI refreshes navigation locations without confusing line numbers with identity; commits remain explicit.
+> **The Solution:** A stable symbol index (`.lcm/index.json`), evidence-backed dependency graph (`.lcm/graph.json`), and living architecture compass (`PROJECT_MAP.md`). The CLI refreshes navigation locations without confusing line numbers with identity; commits remain explicit.
 
 ---
 
@@ -34,8 +34,8 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 
 | User Chat Command | Agent Autonomous Action |
 |---|---|
-| `map update` | Run `living_map.py update`, write `.lcm/index.json`, refresh location caches, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. Never auto-commit unless requested. |
-| `map impact <symbol>` | Run `living_map.py impact <symbol> --lean`, trace 6-tier blast radius in <10 lines to prevent AI token bloat. |
+| `map update` | Run `living_map.py update`, write `.lcm/index.json` and `.lcm/graph.json`, refresh location caches, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. Never auto-commit unless requested. |
+| `map impact <symbol>` | Traverse graph callers/callees, merge documented cross-layer links, and return a concise report with confidence. |
 | `map check` | Run Smart Drift Check (MD5) to verify synchronization (or auto-repair if invoked with `--fix`). |
 | `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
 | `map rollback [hash]` | Inspect map commit history or safely restore map checkpoint (source code is never touched). |
@@ -135,6 +135,15 @@ Before modifying any symbol, query its documented blast radius via CLI:
 
 This traces the multi-tier dependency chain:
 ```
+
+When `.lcm/graph.json` exists, classify edges by confidence:
+
+- `>= 0.95`: confirmed by an exact AST resolution.
+- `0.70–0.94`: likely; inspect the stored evidence before relying on it.
+- `< 0.70`: uncertain; never present it as confirmed behavior.
+- Missing ambiguous targets are unknown, not safe.
+
+Currently generated graph relations are Python AST `CALLS`, `TESTED_BY`, and HTTP route `HANDLES`. Continue using the Markdown cross-layer map as fallback for languages and relationships without a dedicated extractor.
 [UI Trigger: #dom-id] ➔ [Event Handler: func()] ➔ [API Endpoint: /api/...] ➔ [DB Table/Query]
                                   │
                                   ▼
@@ -191,7 +200,7 @@ Once changes are in place and local tests pass:
 
 ## STEP 5: ATOMIC GIT CHECKPOINT (CODE & MAP IN LOCKSTEP)
 
-**The Golden Rule:** When a code change affects the map, commit code, `.lcm/index.json`, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` together. `map update` itself must not create a commit.
+**The Golden Rule:** When a code change affects the map, commit code, `.lcm/index.json`, `.lcm/graph.json`, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` together. `map update` itself must not create a commit.
 
 - **Option A (Automated via CLI):**
   ```bash
@@ -221,7 +230,7 @@ Once changes are in place and local tests pass:
    ```
 3. Stage the refreshed map and commit normally:
    ```bash
-   git add .lcm/index.json PROJECT_MAP.md PROJECT_MAP.min.md
+   git add .lcm/index.json .lcm/graph.json PROJECT_MAP.md PROJECT_MAP.min.md
    git commit -m "docs: sync living map"
    ```
 

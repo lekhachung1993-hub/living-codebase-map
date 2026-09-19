@@ -98,6 +98,86 @@ class StableSymbolIndexTests(unittest.TestCase):
             self.assertEqual(saved['schema_version'], 3)
             self.assertEqual(saved['symbols'][0]['id'], 'py:app.py::run')
 
+    def test_graph_extracts_python_calls_with_evidence(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'service.py',
+                'def validate():\n    return True\n\n'
+                'def create():\n    return validate()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+
+            self.assertEqual(graph['schema_version'], 1)
+            self.assertEqual(len(graph['edges']), 1)
+            edge = graph['edges'][0]
+            self.assertEqual(edge['source'], 'py:service.py::create')
+            self.assertEqual(edge['target'], 'py:service.py::validate')
+            self.assertEqual(edge['relation'], 'CALLS')
+            self.assertEqual(edge['confidence'], 1.0)
+            self.assertEqual(edge['evidence']['path'], 'service.py')
+            self.assertEqual(edge['evidence']['line'], 5)
+
+    def test_graph_resolves_self_method_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'service.py',
+                'class Service:\n'
+                '    def validate(self):\n        return True\n\n'
+                '    def create(self):\n        return self.validate()\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = graph['edges'][0]
+            self.assertEqual(edge['source'], 'py:service.py::Service.create')
+            self.assertEqual(edge['target'], 'py:service.py::Service.validate')
+            self.assertEqual(edge['confidence'], 1.0)
+
+    def test_graph_creates_api_node_from_python_route_decorator(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                'api.py',
+                '@router.post("/customers")\n'
+                'def create_customer():\n    return True\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            api_node = next(node for node in graph['nodes'] if node['type'] == 'api')
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'HANDLES')
+            self.assertEqual(api_node['id'], 'api:POST /customers')
+            self.assertEqual(edge['source'], 'api:POST /customers')
+            self.assertEqual(edge['target'], 'py:api.py::create_customer')
+            self.assertEqual(edge['confidence'], 1.0)
+
+    def test_graph_does_not_guess_ambiguous_call_target(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'a.py', 'def save():\n    pass\n')
+            self._write(root, 'b.py', 'def save():\n    pass\n')
+            self._write(root, 'caller.py', 'def run():\n    save()\n')
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            self.assertEqual(graph['edges'], [])
+
+    def test_graph_impact_traverses_incoming_and_outgoing_edges(self):
+        graph = {
+            'nodes': [
+                {'id': 'py:a.py::first', 'name': 'first', 'qualified_name': 'first'},
+                {'id': 'py:a.py::middle', 'name': 'middle', 'qualified_name': 'middle'},
+                {'id': 'py:a.py::last', 'name': 'last', 'qualified_name': 'last'},
+            ],
+            'edges': [
+                {'source': 'py:a.py::first', 'target': 'py:a.py::middle', 'relation': 'CALLS'},
+                {'source': 'py:a.py::middle', 'target': 'py:a.py::last', 'relation': 'CALLS'},
+            ],
+        }
+        result = living_map.analyze_graph_impact('middle', graph, max_depth=1)
+        self.assertEqual(set(result['seeds']), {'py:a.py::middle'})
+        self.assertEqual(len(result['edges']), 2)
+        self.assertEqual(len(result['nodes']), 3)
+
 
 if __name__ == '__main__':
     unittest.main()
