@@ -293,6 +293,50 @@ class StableSymbolIndexTests(unittest.TestCase):
             self.assertEqual(edge['target'], 'ts:tests/service.spec.ts::testCreateOrder')
             self.assertEqual(edge['confidence'], 0.9)
 
+    def test_javascript_named_import_alias_disambiguates_duplicate_names(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'a.ts', 'export function save() { return "a" }\n')
+            self._write(root, 'b.ts', 'export function save() { return "b" }\n')
+            self._write(
+                root,
+                'caller.ts',
+                'import { save as persist } from "./a.js"\n'
+                'export function run() {\n  return persist()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+
+            self.assertEqual(edge['source'], 'ts:caller.ts::run')
+            self.assertEqual(edge['target'], 'ts:a.ts::save')
+            self.assertEqual(edge['confidence'], 1.0)
+
+    def test_javascript_namespace_import_resolves_index_module(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'orders/index.ts', 'export function save() { return true }\n')
+            self._write(
+                root,
+                'caller.ts',
+                'import * as orders from "./orders"\n'
+                'export function run() {\n  return orders.save()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+
+            self.assertEqual(edge['target'], 'ts:orders/index.ts::save')
+            self.assertEqual(edge['evidence']['source'], 'javascript_import')
+
+    def test_javascript_module_resolution_preserves_ambiguity(self):
+        known = {'a.js', 'a.ts'}
+        self.assertIsNone(
+            living_map._resolve_javascript_module_path('caller.ts', './a', known)
+        )
+        self.assertEqual(
+            living_map._resolve_javascript_module_path('caller.ts', './a.js', known),
+            'a.js',
+        )
+
     def test_graph_impact_traverses_incoming_and_outgoing_edges(self):
         graph = {
             'nodes': [
