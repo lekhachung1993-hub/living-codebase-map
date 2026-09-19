@@ -22,6 +22,7 @@
 | 🐹 **Go Graph Intelligence** | Receiver-qualified methods, local-module import aliases, cross-package calls and handlers, `_test.go` links, `net/http`, and common routers become evidence-backed graph relationships. |
 | 🦀 **Rust Graph Intelligence** | Ranged functions, `impl` methods, module-aware `use` aliases and calls, `#[test]`, Axum, Actix, and Rocket routes become evidence-backed relationships. |
 | 🔷 **C# Graph Intelligence** | Namespace/class-qualified methods, `using` aliases, calls, xUnit/NUnit/MSTest, ASP.NET controllers, and Minimal APIs become evidence-backed relationships. |
+| ☕ **Java Graph Intelligence** | Package/class-qualified methods, calls, JUnit links, Spring mappings, and JAX-RS paths become evidence-backed relationships. |
 | ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
 | 📜 **Structured Constraints** | `.lcm/constraints.json` stores lifecycle, severity, stable-symbol scope, reason, owner, and provenance; active rules become graph edges. |
 | 🛡️ **Change Safety Engine** | `map plan` explains risk before editing; `map verify-change` checks the diff against linked tests and constraints afterward. |

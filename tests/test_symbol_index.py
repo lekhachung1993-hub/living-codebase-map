@@ -612,6 +612,61 @@ class StableSymbolIndexTests(unittest.TestCase):
             edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
             self.assertEqual(edge['target'], 'csharp:Services/Orders.cs::Shop.Services.Orders.Save')
 
+    def test_java_methods_have_package_class_qualified_ranges(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = self._write(
+                root, 'src/Orders.java',
+                'package shop.services;\npublic class Orders {\n'
+                '  public boolean save() {\n    return true;\n  }\n}\n',
+            )
+            records = living_map.scan_file_symbol_records(path, 'src/Orders.java')
+            method = next(record for record in records if record['name'] == 'save')
+            self.assertEqual(method['id'], 'java:src/Orders.java::shop.services.Orders.save')
+            self.assertEqual((method['line'], method['end_line']), (3, 5))
+
+    def test_java_graph_resolves_this_method_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'src/Orders.java',
+                'package shop;\npublic class Orders {\n'
+                '  private boolean validate() { return true; }\n'
+                '  public boolean save() { return this.validate(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['source'], 'java:src/Orders.java::shop.Orders.save')
+            self.assertEqual(edge['target'], 'java:src/Orders.java::shop.Orders.validate')
+
+    def test_java_junit_call_becomes_tested_by(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'src/Service.java', 'public class Service {\n  public boolean save() { return true; }\n}\n')
+            self._write(
+                root, 'src/ServiceTest.java',
+                'public class ServiceTest {\n  @Test\n'
+                '  public void saveWorks() { save(); }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'TESTED_BY')
+            self.assertEqual(edge['source'], 'java:src/Service.java::Service.save')
+            self.assertEqual(edge['target'], 'java:src/ServiceTest.java::ServiceTest.saveWorks')
+
+    def test_java_graph_extracts_spring_and_jaxrs_routes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root, 'src/Orders.java',
+                'public class Orders {\n'
+                '  @GetMapping("/orders")\n  public Object list() { return null; }\n'
+                '  @POST\n  @Path("/orders")\n  public Object create() { return null; }\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            handles = [edge for edge in graph['edges'] if edge['relation'] == 'HANDLES']
+            self.assertEqual({edge['source'] for edge in handles}, {
+                'api:GET /orders', 'api:POST /orders',
+            })
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
