@@ -36,7 +36,7 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 |---|---|
 | `map update` | Run `living_map.py update`, write `.lcm/index.json` and `.lcm/graph.json`, refresh location caches, generate `PROJECT_MAP.min.md`, and report a 3-bullet summary. Never auto-commit unless requested. |
 | `map impact <symbol>` | Traverse graph callers/callees, merge documented cross-layer links, and return a concise report with confidence. |
-| `map check` | Run Smart Drift Check (MD5) to verify synchronization (or auto-repair if invoked with `--fix`). |
+| `map check` | Deterministically verify Markdown, symbol index, and dependency graph synchronization; rebuild every generated artifact with `--fix`. |
 | `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
 | `map rollback [hash]` | Inspect map commit history or safely restore map checkpoint (source code is never touched). |
 | `map init` | Autodetect workspace stack and bootstrap a new `PROJECT_MAP.md`. |
@@ -191,10 +191,11 @@ Once changes are in place and local tests pass:
      --db "table_name" \
      --constraints "C1,C3"
    ```
-3. **Smart Drift Check:**
+3. **Deterministic Integrity Check:**
    ```bash
    python scripts/living_map.py check
    ```
+   A passing check requires the current code hash, stable index, graph schema, graph evidence, and freshly rebuilt deterministic content to match.
 
 ---
 
