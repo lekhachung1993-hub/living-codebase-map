@@ -329,6 +329,70 @@ class StableSymbolIndexTests(unittest.TestCase):
             })
             self.assertTrue(all(edge['evidence']['source'] == 'go_static' for edge in handles))
 
+    def test_go_import_alias_resolves_cross_package_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'go.mod', 'module example.com/shop\n')
+            self._write(
+                root, 'pkg/orders/orders.go',
+                'package orders\n\nfunc Save() bool { return true }\n',
+            )
+            self._write(
+                root, 'cmd/main.go',
+                'package main\n\nimport orderSvc "example.com/shop/pkg/orders"\n\n'
+                'func Run() bool {\n  return orderSvc.Save()\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'CALLS')
+            self.assertEqual(edge['source'], 'go:cmd/main.go::Run')
+            self.assertEqual(edge['target'], 'go:pkg/orders/orders.go::Save')
+            self.assertEqual(edge['confidence'], 1.0)
+            self.assertEqual(edge['evidence']['source'], 'go_import')
+
+    def test_go_grouped_default_import_resolves_route_handler(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'go.mod', 'module example.com/shop\n\ngo 1.22\n')
+            self._write(
+                root, 'pkg/orders/http.go',
+                'package orders\n\nfunc List() {}\n',
+            )
+            self._write(
+                root, 'cmd/main.go',
+                'package main\n\nimport (\n  "example.com/shop/pkg/orders"\n  "fmt"\n)\n\n'
+                'func Routes() {\n  router.GET("/orders", orders.List)\n}\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            edge = next(edge for edge in graph['edges'] if edge['relation'] == 'HANDLES')
+            self.assertEqual(edge['source'], 'api:GET /orders')
+            self.assertEqual(edge['target'], 'go:pkg/orders/http.go::List')
+            self.assertEqual(edge['evidence']['source'], 'go_import')
+
+    def test_go_external_import_is_not_resolved(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'go.mod', 'module example.com/shop\n')
+            self._write(root, 'local/fmt.go', 'package local\n\nfunc Println() {}\n')
+            self._write(
+                root, 'main.go',
+                'package main\n\nimport "fmt"\n\nfunc Run() { fmt.Println("ok") }\n',
+            )
+            index = living_map.build_symbol_index(root)
+            graph = living_map.build_dependency_graph(index, root)
+            self.assertFalse(any(edge['relation'] == 'CALLS' for edge in graph['edges']))
+
+    def test_go_import_resolution_requires_go_mod(self):
+        known_dirs = {'pkg/orders'}
+        self.assertIsNone(
+            living_map._resolve_go_import_dir(
+                'example.com/shop/pkg/orders', None, known_dirs,
+            )
+        )
+        self.assertIsNone(
+            living_map._resolve_go_import_dir(
+                'example.net/other/pkg/orders', 'example.com/shop', known_dirs,
+            )
+        )
+
     def test_graph_does_not_guess_ambiguous_call_target(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'a.py', 'def save():\n    pass\n')
