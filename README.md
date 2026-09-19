@@ -21,6 +21,7 @@
 | 🛡️ **Change Safety Engine** | `map plan` explains risk before editing; `map verify-change` checks the diff against linked tests and constraints afterward. |
 | 🧩 **Dynamic Context Compiler** | `map context` selects task-relevant symbols and relationships within a real token budget; `map explain` gives one-symbol orientation. |
 | 🕰️ **Git Temporal Memory** | `map why` connects a symbol to its introducing and modifying commits plus active architectural constraints. |
+| 🔌 **MCP Capability Parity** | Planning, verification, context compilation, symbol explanation, and temporal history are available as native MCP tools, not only CLI commands. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -112,7 +113,7 @@ When the user sends these keywords in chat, execute the corresponding action aut
 | `python living_map.py check` | Rebuild and compare Markdown, symbol index, and graph state | Detects missing files, schema mismatch, stale hashes, malformed edges, and content drift. |
 | `python living_map.py install-hook` | Auto-install Git Pre-commit guard | Zero-drift enforcement, blocks commits if map is out of sync. |
 | `python living_map.py rollback --to <hash>` | Restore map to previous checkpoint | Safe Lock: Strictly restores `PROJECT_MAP.md`; source code is never touched. |
-| `python living_map.py mcp` | Launch as Model Context Protocol (MCP) Server | Runs stdio server exposing 6 native tools to Cursor, Claude, Antigravity, Windsurf. |
+| `python living_map.py mcp` | Launch as Model Context Protocol (MCP) Server | Runs stdio server exposing 11 native tools to Cursor, Claude, Antigravity, Windsurf. |
 
 </details>
 
@@ -120,7 +121,7 @@ When the user sends these keywords in chat, execute the corresponding action aut
 
 ## 🔌 Model Context Protocol (MCP) Native Server Integration
 
-Living Codebase Map can run as an official **MCP Stdio Server**, providing 6 Native Tools to AI Agents in **Antigravity IDE, Cursor, Claude Desktop, Windsurf, and Cline**:
+Living Codebase Map can run as an official **MCP Stdio Server**, providing 11 Native Tools to AI Agents in **Antigravity IDE, Cursor, Claude Desktop, Windsurf, and Cline**:
 
 ### 1. Install MCP SDK (optional, only needed for MCP Server mode):
 ```bash
@@ -153,6 +154,11 @@ pip install 'living-codebase-map[mcp]'
 | `update_map` | `directory`, `auto_commit` | Scans workspace, writes the stable symbol index and dependency graph, updates location caches, and generates `PROJECT_MAP.min.md`. |
 | `check_drift` | `full_ast` | Smart Drift verification using MD5, with optional full symbol scanning. |
 | `analyze_code_impact` | `symbol`, `deep_mode` | Dual-mode blast radius: Lean mode (<15 lines) vs Deep 6-layer dependency tree. |
+| `plan_change` | `task` | Build a graph-backed pre-flight plan with an explainable risk score. |
+| `verify_change` | `base`, `strict` | Compare the Git diff with graph-linked tests and constraints; preserves CLI gate status. |
+| `compile_context` | `task`, `budget` | Produce a task-specific context packet within the requested token budget. |
+| `explain_symbol` | `symbol` | Resolve one Stable Symbol and show its callers, callees, tests, routes, and constraints. |
+| `explain_symbol_history` | `symbol`, `limit` | Retrieve Git-backed changes and active constraints for a symbol. |
 | `register_feature` | `prompt`, `auto_commit` | Natural language auto-parsing: extracts `Fxxx`, DOM selector, API route into Module 5. |
 | `register_constraint` | `description`, `constraint_id` | Enforces implicit business traps & domain invariants in Module 4. |
 | `get_map_summary` | *(none)* | Instant session warmup with lightweight architecture overview in ~300 tokens. |

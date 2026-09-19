@@ -1,6 +1,6 @@
-# LIVING PROJECT MAP: living-codebase-map v3.6.0
+# LIVING PROJECT MAP: living-codebase-map v3.7.0
 > **Purpose:** Agent's primary working memory and architectural compass. Read this file BEFORE scanning code.
-> **Last Updated:** 2026-09-19 | Commit: 8dcce7a
+> **Last Updated:** 2026-09-19 | Commit: 3073099
 >
 > **AGENT PROTOCOL:**
 > 1. Read MODULE 5 (Feature Cross-Reference) to identify components related to current task.
@@ -19,7 +19,7 @@
 | Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `943fe1c19a3ed382ee2212eb62f35b3f` |
+| Codebase-MD5 | `2c61713413886896c7a1733e3190e10f` |
 
 ---
 
@@ -30,38 +30,49 @@
 
 | Line | Symbol | Description |
 |------|--------|-------------|
-| L68 | `find_project_root()` | Locates the project root directory reliably |
-| L126 | `calculate_codebase_hash()` | MD5 hash computation over all source files |
-| L159 | `generate_min_map()` | Generates token-efficient PROJECT_MAP.min.md |
-| L255 | `analyze_symbol_impact()` | Cross-layer blast radius analysis |
-| L394 | `_git()` | Safe git subprocess runner |
-| L409 | `git_get_head_info()` | Fetches current commit hash and date |
-| L418 | `git_log_map()` | Reads git commit history of PROJECT_MAP.md |
-| L434 | `git_commit_map()` | Commits map updates with atomic git message |
-| L451 | `git_rollback_map()` | Reverts PROJECT_MAP.md safely to older commit |
-| L497 | `scan_file_symbols()` | Regex/AST symbol extractor for multi-language files |
-| L592 | `build_symbol_database()` | Full codebase symbol scanner and lookup table builder |
-| L622 | `update_map_line_numbers()` | Synchronizes line numbers in MODULE 1 & 2 tables |
-| L671 | `update_map_header()` | Refreshes date, commit hash, and MD5 in header |
-| L704 | `inject_feature()` | Adds new entry into MODULE 5 Feature Traceability Matrix |
-| L736 | `inject_constraint()` | Appends new operational rule to MODULE 4 |
-| L772 | `cmd_init()` | CLI handler for `living-map init` |
-| L839 | `cmd_update()` | CLI handler for `living-map update` |
-| L884 | `cmd_check()` | CLI handler for CI/CD smart drift check |
-| L941 | `cmd_impact()` | CLI handler for blast radius impact analysis |
-| L1062 | `cmd_deep_impact()` | CLI handler for 6-layer architecture dependency tree |
-| L1066 | `cmd_install_hook()` | CLI handler for installing Git pre-commit / pre-push hooks |
-| L1114 | `cmd_add_feature()` | CLI handler for feature registration (supports NLP auto-parsing) |
-| L1239 | `cmd_add_constraint()` | CLI handler for adding constraints to Module 4 |
-| L1265 | `cmd_rollback()` | CLI handler for safe map rollback |
-| L1292 | `build_mcp_server()` | Factory initializing FastMCP or MCPServer instance |
-| L1308 | `update_map()` | MCP Tool: updates PROJECT_MAP.md via stdio/SSE |
-| L1321 | `check_drift()` | MCP Tool: fast MD5 drift check |
-| L1337 | `analyze_code_impact()` | MCP Tool: blast radius impact analysis |
-| L1350 | `register_feature()` | MCP Tool: feature traceability registration |
-| L1374 | `register_constraint()` | MCP Tool: implicit constraint registration |
-| L1392 | `get_map_summary()` | MCP Tool: returns token-saving minified summary |
-| L1400 | `cmd_mcp()` | CLI handler for launching MCP server over Stdio or SSE |
+| L77 | `find_project_root()` | Locates the project root directory reliably |
+| L138 | `calculate_codebase_hash()` | MD5 hash computation over all source files |
+| L171 | `generate_min_map()` | Generates token-efficient PROJECT_MAP.min.md |
+| L267 | `analyze_symbol_impact()` | Cross-layer blast radius analysis |
+| L406 | `_git()` | Safe git subprocess runner |
+| L421 | `git_get_head_info()` | Fetches current commit hash and date |
+| L430 | `git_log_map()` | Reads git commit history of PROJECT_MAP.md |
+| L446 | `git_commit_map()` | Commits map updates with atomic git message |
+| L471 | `git_rollback_map()` | Reverts PROJECT_MAP.md safely to older commit |
+| L517 | `scan_file_symbols()` | Regex/AST symbol extractor for multi-language files |
+| L1284 | `build_symbol_database()` | Full codebase symbol scanner and lookup table builder |
+| L1323 | `update_map_line_numbers()` | Synchronizes line numbers in MODULE 1 & 2 tables |
+| L1378 | `update_map_header()` | Refreshes date, commit hash, and MD5 in header |
+| L1411 | `inject_feature()` | Adds new entry into MODULE 5 Feature Traceability Matrix |
+| L1443 | `inject_constraint()` | Appends new operational rule to MODULE 4 |
+| L1479 | `cmd_init()` | CLI handler for `living-map init` |
+| L1546 | `cmd_update()` | CLI handler for `living-map update` |
+| L1617 | `cmd_check()` | CLI handler for CI/CD smart drift check |
+| L1691 | `cmd_impact()` | CLI handler for blast radius impact analysis |
+| L1847 | `cmd_deep_impact()` | CLI handler for 6-layer architecture dependency tree |
+| L1851 | `cmd_install_hook()` | CLI handler for installing Git pre-commit / pre-push hooks |
+| L1899 | `cmd_add_feature()` | CLI handler for feature registration (supports NLP auto-parsing) |
+| L2024 | `cmd_add_constraint()` | CLI handler for adding constraints to Module 4 |
+| L2087 | `cmd_plan()` | CLI handler for graph-backed change planning |
+| L2112 | `cmd_verify_change()` | CLI handler for diff/test/constraint verification |
+| L2135 | `cmd_context()` | CLI handler for budgeted task context compilation |
+| L2147 | `cmd_explain()` | CLI handler for one-symbol relationship explanation |
+| L2176 | `cmd_why()` | CLI handler for Git-backed symbol history |
+| L2207 | `cmd_rollback()` | CLI handler for safe map rollback |
+| L2234 | `capture_mcp_command()` | Preserves CLI exit status and output for native MCP tools |
+| L2245 | `build_mcp_server()` | Factory initializing FastMCP or MCPServer instance |
+| L2261 | `update_map()` | MCP Tool: updates PROJECT_MAP.md via stdio/SSE |
+| L2274 | `check_drift()` | MCP Tool: fast MD5 drift check |
+| L2290 | `analyze_code_impact()` | MCP Tool: blast radius impact analysis |
+| L2303 | `plan_change()` | MCP Tool: graph-backed pre-flight plan and risk score |
+| L2308 | `verify_change()` | MCP Tool: change/test/constraint consistency gate |
+| L2316 | `compile_context()` | MCP Tool: budgeted task context compiler |
+| L2324 | `explain_symbol()` | MCP Tool: unambiguous Stable Symbol explanation |
+| L2329 | `explain_symbol_history()` | MCP Tool: Git temporal memory and constraints |
+| L2337 | `register_feature()` | MCP Tool: feature traceability registration |
+| L2361 | `register_constraint()` | MCP Tool: implicit constraint registration |
+| L2378 | `get_map_summary()` | MCP Tool: returns token-saving minified summary |
+| L2394 | `cmd_mcp()` | CLI handler for launching MCP server over Stdio or SSE |
 
 ---
 

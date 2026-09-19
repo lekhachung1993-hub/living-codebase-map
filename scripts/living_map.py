@@ -1330,7 +1330,10 @@ def update_map_line_numbers(map_content, symbol_lookup):
     current_file = None
 
     re_file_header = re.compile(r'^###\s+([A-Za-z0-9_\-./\\]+\.[a-z]+)', re.MULTILINE)
-    re_table_row = re.compile(r'^\|\s*L(\d+)\s*\|\s*(\*{0,2}`([A-Za-z0-9_#\-]+)`\*{0,2})\s*\|', re.MULTILINE)
+    re_table_row = re.compile(
+        r'^\|\s*L(\d+)\s*\|\s*(\*{0,2}`([A-Za-z0-9_#\-]+)(?:\(\))?`\*{0,2})\s*\|',
+        re.MULTILINE,
+    )
 
     new_lines = []
     lines = map_content.splitlines()
@@ -2228,6 +2231,17 @@ def cmd_rollback(args):
 # MODEL CONTEXT PROTOCOL (MCP) SERVER INTEGRATION
 # ─────────────────────────────────────────────────────────────
 
+def capture_mcp_command(handler, args):
+    """Run a CLI handler for MCP while preserving its exit status and output."""
+    output = io.StringIO()
+    with contextlib.redirect_stdout(output):
+        code = handler(args) or 0
+    body = output.getvalue().strip()
+    state = "OK" if code == 0 else "ERROR"
+    header = f"[{state} exit={code}]"
+    return f"{header}\n{body}" if body else header
+
+
 def build_mcp_server():
     """
     Constructs an MCP Server instance exposing LCM capabilities as Native AI Tools.
@@ -2284,6 +2298,40 @@ def build_mcp_server():
             args = argparse.Namespace(target=symbol, deep=deep_mode, full=deep_mode, lean=not deep_mode, depth=2 if not deep_mode else 0)
             cmd_impact(args, is_deep=deep_mode)
         return f.getvalue().strip()
+
+    @server.tool()
+    def plan_change(task: str) -> str:
+        """Build a graph-backed pre-flight plan with an explainable risk score."""
+        return capture_mcp_command(cmd_plan, argparse.Namespace(task=task))
+
+    @server.tool()
+    def verify_change(base: str = "HEAD", strict: bool = False) -> str:
+        """Check the current Git diff against graph-linked tests and constraints."""
+        return capture_mcp_command(
+            cmd_verify_change,
+            argparse.Namespace(base=base, strict=strict),
+        )
+
+    @server.tool()
+    def compile_context(task: str, budget: int = 500) -> str:
+        """Compile task-specific graph context within an approximate token budget."""
+        return capture_mcp_command(
+            cmd_context,
+            argparse.Namespace(task=task, budget=max(1, budget)),
+        )
+
+    @server.tool()
+    def explain_symbol(symbol: str) -> str:
+        """Explain one unambiguous Stable Symbol and its one-hop relationships."""
+        return capture_mcp_command(cmd_explain, argparse.Namespace(symbol=symbol))
+
+    @server.tool()
+    def explain_symbol_history(symbol: str, limit: int = 10) -> str:
+        """Explain a symbol using Git history and active architectural constraints."""
+        return capture_mcp_command(
+            cmd_why,
+            argparse.Namespace(symbol=symbol, limit=max(1, limit)),
+        )
 
     @server.tool()
     def register_feature(prompt: str, auto_commit: bool = False) -> str:
