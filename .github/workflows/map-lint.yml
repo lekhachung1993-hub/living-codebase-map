@@ -62,6 +62,6 @@ jobs:
           echo "   1. Open local IDE or terminal."
           echo "   2. Run chat command: 'map update' or CLI: 'python scripts/living_map.py update'"
           echo "   3. (Optional) Auto-repair with: 'python scripts/living_map.py check --fix'"
-          echo "   4. Commit PROJECT_MAP.md, PROJECT_MAP.min.md, .lcm/index.json, and .lcm/graph.json."
+          echo "   4. Commit PROJECT_MAP.md, PROJECT_MAP.min.md, and all .lcm JSON artifacts."
           echo "=========================================================================="
           exit 1

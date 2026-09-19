@@ -24,7 +24,7 @@ triggers:
 
 > **Philosophy:** AI coding models fail in production codebases not from lack of intelligence, but from **blind surgery** — missing implicit business constraints, hallucinating outdated line numbers, and severing unseen cross-layer connections between UI DOM, API contracts, and database states.
 >
-> **The Solution:** A stable symbol index (`.lcm/index.json`), evidence-backed dependency graph (`.lcm/graph.json`), and living architecture compass (`PROJECT_MAP.md`). The CLI refreshes navigation locations without confusing line numbers with identity; commits remain explicit.
+> **The Solution:** A stable symbol index, evidence-backed dependency graph, lifecycle-managed constraints (`.lcm/constraints.json`), and living Markdown projection. The CLI refreshes navigation locations without confusing line numbers with identity; commits remain explicit.
 
 ---
 
@@ -144,6 +144,8 @@ When `.lcm/graph.json` exists, classify edges by confidence:
 - Missing ambiguous targets are unknown, not safe.
 
 Currently generated graph relations are Python AST `CALLS`, `TESTED_BY`, and HTTP route `HANDLES`. Continue using the Markdown cross-layer map as fallback for languages and relationships without a dedicated extractor.
+
+Structured constraints must use stable Symbol IDs in `scope`. Treat `ACTIVE` and `SUSPECT` rules as graph-enforced knowledge. Use `STALE` for historical rules whose symbols no longer exist, and `SUPERSEDED` only with a valid replacement constraint ID.
 [UI Trigger: #dom-id] ➔ [Event Handler: func()] ➔ [API Endpoint: /api/...] ➔ [DB Table/Query]
                                   │
                                   ▼
@@ -201,7 +203,7 @@ Once changes are in place and local tests pass:
 
 ## STEP 5: ATOMIC GIT CHECKPOINT (CODE & MAP IN LOCKSTEP)
 
-**The Golden Rule:** When a code change affects the map, commit code, `.lcm/index.json`, `.lcm/graph.json`, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` together. `map update` itself must not create a commit.
+**The Golden Rule:** When a code change affects the map, commit code, `.lcm/index.json`, `.lcm/graph.json`, `.lcm/constraints.json`, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` together. `map update` itself must not create a commit.
 
 - **Option A (Automated via CLI):**
   ```bash
