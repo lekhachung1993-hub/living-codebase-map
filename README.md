@@ -29,6 +29,7 @@
 | 🧩 **Dynamic Context Compiler** | `map context` selects task-relevant symbols and relationships within a real token budget; `map explain` gives one-symbol orientation. |
 | 🕰️ **Git Temporal Memory** | `map why` connects a symbol to its introducing and modifying commits plus active architectural constraints. |
 | 🔌 **MCP Capability Parity** | Planning, verification, context compilation, symbol explanation, and temporal history are available as native MCP tools, not only CLI commands. |
+| 📊 **Measurable Agent Value** | A versioned benchmark suite compares success, retrieval precision/recall, tokens, tool calls, duration, and missed dependencies/tests/constraints. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -236,6 +237,19 @@ python scripts/living_map.py why create_order --limit 10
 
 `why` resolves the symbol first, then searches its tracked file history for commits that added or removed the symbol name. It reports the oldest matching change, recent relevant changes, and linked structured constraints. Ambiguous names require a full Stable Symbol ID.
 
+### Benchmarking LCM
+
+```bash
+python scripts/benchmark.py \
+  --suite benchmarks/suites/lcm-self.json \
+  --run baseline=/path/to/baseline.json \
+  --run lcm=/path/to/lcm.json \
+  --markdown-output benchmark-report.md \
+  --json-output benchmark-report.json
+```
+
+The bundled suite contains ten repository-maintenance tasks. Compare runs only when they use the same repository commit, model, prompt, permissions, timeout, and acceptance checks. Template values are never product results; record observable agent runs before drawing conclusions.
+
 <details>
 <summary><h3>📁 Repository Structure</h3></summary>
 
@@ -246,10 +260,13 @@ living-codebase-map/
 ├── README.md                         # Documentation & Quickstart
 ├── LICENSE                           # MIT License
 ├── scripts/living_map.py             # Zero-dependency core CLI engine (v3)
+├── scripts/benchmark.py              # Deterministic benchmark evaluator
+├── benchmarks/                       # Versioned task suite, protocol, and run template
 ├── .lcm/index.json                    # Generated machine-readable stable symbol index
 ├── .lcm/graph.json                    # Generated confidence-scored dependency graph
 ├── .lcm/constraints.json              # Human-authored structured architectural constraints
 ├── tests/test_symbol_index.py         # Stable-ID and collision regression tests
+├── tests/test_benchmark.py            # Benchmark scoring and validation tests
 └── templates/
     ├── PROJECT_MAP.template.md       # Universal Living Map template
     └── PROJECT_MAP.min.template.md   # AI Token-Saver mini map template
@@ -262,7 +279,7 @@ living-codebase-map/
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit issues or PRs:
-- Adding regex / AST support for additional languages (C#, Swift, Java, Kotlin, PHP, Elixir)
+- Reproducible benchmark tasks and independently recorded comparison runs
 - Framework-specific extractors (Django, FastAPI, Next.js, Gin, Express)
 - Enhanced git hooks or CI/CD validation actions
 

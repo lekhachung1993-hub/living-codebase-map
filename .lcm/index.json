@@ -7,8 +7,18 @@
     },
     {
       "language": "py",
+      "path": "scripts/benchmark.py",
+      "sha256": "4898cba8022e63b62009968e16b078e4493bd029ce608373a66af107d59e0979"
+    },
+    {
+      "language": "py",
       "path": "scripts/living_map.py",
       "sha256": "df24b3207de52202521474c7b22210218fceb830ffde7039d2923784f079c035"
+    },
+    {
+      "language": "py",
+      "path": "tests/test_benchmark.py",
+      "sha256": "71359f9542b626de13757aa527d8272a6cf14fb2194f0cc504b3279d6ca6f706"
     },
     {
       "language": "py",
@@ -18,8 +28,118 @@
   ],
   "root": ".",
   "schema_version": 3,
-  "source_hash": "6f5042c97d6c5703de96ec3034efb9a6",
+  "source_hash": "35075bd00470432480d6afff7807f47c",
   "symbols": [
+    {
+      "end_line": 23,
+      "fingerprint": "6b8c2c84df2d0ad0",
+      "id": "py:scripts/benchmark.py::load_json",
+      "kind": "function",
+      "language": "py",
+      "line": 21,
+      "name": "load_json",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "load_json"
+    },
+    {
+      "end_line": 49,
+      "fingerprint": "4a217af4493238b8",
+      "id": "py:scripts/benchmark.py::validate_suite",
+      "kind": "function",
+      "language": "py",
+      "line": 26,
+      "name": "validate_suite",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "validate_suite"
+    },
+    {
+      "end_line": 78,
+      "fingerprint": "2f5dfa29a0a225e0",
+      "id": "py:scripts/benchmark.py::validate_run",
+      "kind": "function",
+      "language": "py",
+      "line": 52,
+      "name": "validate_run",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "validate_run"
+    },
+    {
+      "end_line": 94,
+      "fingerprint": "2207d34d7acd9a6f",
+      "id": "py:scripts/benchmark.py::_retrieval_metrics",
+      "kind": "function",
+      "language": "py",
+      "line": 81,
+      "name": "_retrieval_metrics",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "_retrieval_metrics"
+    },
+    {
+      "end_line": 145,
+      "fingerprint": "032d56458fd27649",
+      "id": "py:scripts/benchmark.py::evaluate_run",
+      "kind": "function",
+      "language": "py",
+      "line": 97,
+      "name": "evaluate_run",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "evaluate_run"
+    },
+    {
+      "end_line": 119,
+      "fingerprint": "2b77ecc911bcb762",
+      "id": "py:scripts/benchmark.py::evaluate_run.mean",
+      "kind": "method",
+      "language": "py",
+      "line": 118,
+      "name": "mean",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "evaluate_run.mean"
+    },
+    {
+      "end_line": 180,
+      "fingerprint": "16cca1f65a35fb2b",
+      "id": "py:scripts/benchmark.py::render_markdown",
+      "kind": "function",
+      "language": "py",
+      "line": 148,
+      "name": "render_markdown",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "render_markdown"
+    },
+    {
+      "end_line": 150,
+      "fingerprint": "9bfbc56bd0b039dd",
+      "id": "py:scripts/benchmark.py::render_markdown.percent",
+      "kind": "method",
+      "language": "py",
+      "line": 149,
+      "name": "percent",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "render_markdown.percent"
+    },
+    {
+      "end_line": 204,
+      "fingerprint": "08ef857daa3ae7e6",
+      "id": "py:scripts/benchmark.py::evaluate_files",
+      "kind": "function",
+      "language": "py",
+      "line": 183,
+      "name": "evaluate_files",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "evaluate_files"
+    },
+    {
+      "end_line": 229,
+      "fingerprint": "9459b44d2056e7ba",
+      "id": "py:scripts/benchmark.py::main",
+      "kind": "function",
+      "language": "py",
+      "line": 207,
+      "name": "main",
+      "path": "scripts/benchmark.py",
+      "qualified_name": "main"
+    },
     {
       "end_line": 105,
       "fingerprint": "44d3c59880a62d2f",
@@ -1229,6 +1349,50 @@
       "name": "main",
       "path": "scripts/living_map.py",
       "qualified_name": "main"
+    },
+    {
+      "end_line": 67,
+      "fingerprint": "c0e94f9cf7062f5c",
+      "id": "py:tests/test_benchmark.py::BenchmarkTests",
+      "kind": "class",
+      "language": "py",
+      "line": 9,
+      "name": "BenchmarkTests",
+      "path": "tests/test_benchmark.py",
+      "qualified_name": "BenchmarkTests"
+    },
+    {
+      "end_line": 37,
+      "fingerprint": "d6ef59016e310a0f",
+      "id": "py:tests/test_benchmark.py::BenchmarkTests.test_evaluate_run_scores_retrieval_and_efficiency",
+      "kind": "method",
+      "language": "py",
+      "line": 10,
+      "name": "test_evaluate_run_scores_retrieval_and_efficiency",
+      "path": "tests/test_benchmark.py",
+      "qualified_name": "BenchmarkTests.test_evaluate_run_scores_retrieval_and_efficiency"
+    },
+    {
+      "end_line": 43,
+      "fingerprint": "d5e1ac00218b8f1d",
+      "id": "py:tests/test_benchmark.py::BenchmarkTests.test_validation_rejects_missing_task_results",
+      "kind": "method",
+      "language": "py",
+      "line": 39,
+      "name": "test_validation_rejects_missing_task_results",
+      "path": "tests/test_benchmark.py",
+      "qualified_name": "BenchmarkTests.test_validation_rejects_missing_task_results"
+    },
+    {
+      "end_line": 67,
+      "fingerprint": "94c1f15ee44cca08",
+      "id": "py:tests/test_benchmark.py::BenchmarkTests.test_evaluate_files_and_render_report",
+      "kind": "method",
+      "language": "py",
+      "line": 45,
+      "name": "test_evaluate_files_and_render_report",
+      "path": "tests/test_benchmark.py",
+      "qualified_name": "BenchmarkTests.test_evaluate_files_and_render_report"
     },
     {
       "end_line": 1075,

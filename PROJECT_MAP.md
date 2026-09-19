@@ -1,6 +1,6 @@
-# LIVING PROJECT MAP: living-codebase-map v3.18.0
+# LIVING PROJECT MAP: living-codebase-map v3.19.0
 > **Purpose:** Agent's primary working memory and architectural compass. Read this file BEFORE scanning code.
-> **Last Updated:** 2026-09-20 | Commit: 1ff53b3
+> **Last Updated:** 2026-09-20 | Commit: 5888a86
 >
 > **AGENT PROTOCOL:**
 > 1. Read MODULE 5 (Feature Cross-Reference) to identify components related to current task.
@@ -19,7 +19,7 @@
 | Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `6f5042c97d6c5703de96ec3034efb9a6` |
+| Codebase-MD5 | `35075bd00470432480d6afff7807f47c` |
 
 ---
 
@@ -61,6 +61,9 @@
 | L1300 | `_rust_module_components()` | Derives crate-relative module components from Rust source paths |
 | L1315 | `_resolve_rust_module_path()` | Resolves crate, self, and super module paths conservatively |
 | L1343 | `_rust_import_bindings()` | Maps simple Rust use aliases to exact local symbols and modules |
+| L97 | `evaluate_run()` | Scores one recorded agent run against versioned benchmark ground truth |
+| L148 | `render_markdown()` | Produces comparable human-readable benchmark reports |
+| L183 | `evaluate_files()` | Validates and compares named baseline and LCM run files |
 | L2568 | `build_symbol_database()` | Full codebase symbol scanner and lookup table builder |
 | L2607 | `update_map_line_numbers()` | Synchronizes line numbers in MODULE 1 & 2 tables |
 | L2662 | `update_map_header()` | Refreshes date, commit hash, and MD5 in header |
