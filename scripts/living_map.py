@@ -70,10 +70,12 @@ MIN_MAP_FILENAME = 'PROJECT_MAP.min.md'
 INDEX_SCHEMA_VERSION = 3
 GRAPH_SCHEMA_VERSION = 1
 CONSTRAINT_SCHEMA_VERSION = 1
+FITNESS_SCHEMA_VERSION = 1
 LCM_DIRNAME = '.lcm'
 INDEX_FILENAME = 'index.json'
 GRAPH_FILENAME = 'graph.json'
 CONSTRAINT_FILENAME = 'constraints.json'
+FITNESS_FILENAME = 'fitness.json'
 
 def find_project_root():
     """Locates the project root directory reliably."""
@@ -110,6 +112,19 @@ MIN_MAP_PATH = os.path.join(ROOT, MIN_MAP_FILENAME)
 INDEX_PATH = os.path.join(ROOT, LCM_DIRNAME, INDEX_FILENAME)
 GRAPH_PATH = os.path.join(ROOT, LCM_DIRNAME, GRAPH_FILENAME)
 CONSTRAINT_PATH = os.path.join(ROOT, LCM_DIRNAME, CONSTRAINT_FILENAME)
+FITNESS_PATH = os.path.join(ROOT, LCM_DIRNAME, FITNESS_FILENAME)
+
+FITNESS_DEFAULTS = {
+    'schema_version': FITNESS_SCHEMA_VERSION,
+    'hub_min_incoming': 3,
+    'thresholds': {
+        'min_edge_coverage': 0.50,
+        'min_resolved_edge_ratio': 0.70,
+        'max_hub_concentration': 0.15,
+        'min_test_link_rate': 0.15,
+        'max_constraint_issues': 0,
+    },
+}
 
 CODE_EXTENSIONS = {
     '.go': 'go',
@@ -2343,6 +2358,125 @@ def validate_machine_state(root_dir=ROOT, index_path=INDEX_PATH, graph_path=GRAP
     return list(dict.fromkeys(issues)), expected_index, expected_graph
 
 
+def load_fitness_config(path=FITNESS_PATH):
+    """Load and validate versioned graph-fitness thresholds."""
+    config = FITNESS_DEFAULTS
+    if os.path.exists(path):
+        with open(path, 'r', encoding='utf-8') as handle:
+            config = json.load(handle)
+    if config.get('schema_version') != FITNESS_SCHEMA_VERSION:
+        raise ValueError(f"fitness schema_version must be {FITNESS_SCHEMA_VERSION}")
+    hub_min = config.get('hub_min_incoming')
+    if isinstance(hub_min, bool) or not isinstance(hub_min, int) or hub_min < 1:
+        raise ValueError('fitness hub_min_incoming must be a positive integer')
+    thresholds = config.get('thresholds')
+    expected = set(FITNESS_DEFAULTS['thresholds'])
+    if not isinstance(thresholds, dict) or set(thresholds) != expected:
+        raise ValueError('fitness thresholds must define exactly: ' + ', '.join(sorted(expected)))
+    for key, value in thresholds.items():
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+            raise ValueError(f'fitness threshold {key} must be non-negative')
+        if key != 'max_constraint_issues' and value > 1:
+            raise ValueError(f'fitness threshold {key} must be between 0 and 1')
+    return config
+
+
+def write_fitness_config(config=None, path=FITNESS_PATH):
+    """Persist deterministic graph-fitness policy for local and CI use."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as handle:
+        json.dump(config or FITNESS_DEFAULTS, handle, indent=2, sort_keys=True)
+        handle.write('\n')
+
+
+def analyze_graph_fitness(graph, constraint_issues=None, config=None):
+    """Measure graph coverage, confidence, hubs, tests, and constraint health."""
+    config = config or FITNESS_DEFAULTS
+    thresholds = config['thresholds']
+    symbol_nodes = {
+        node['id']: node for node in graph.get('nodes', [])
+        if node.get('type') == 'symbol'
+    }
+    structural_relations = {'CALLS', 'HANDLES', 'TRIGGERS', 'READS', 'WRITES'}
+    structural_edges = [
+        edge for edge in graph.get('edges', [])
+        if edge.get('relation') in structural_relations
+        and (edge.get('source') in symbol_nodes or edge.get('target') in symbol_nodes)
+    ]
+    connected = {
+        node_id for edge in structural_edges
+        for node_id in (edge['source'], edge['target'])
+        if node_id in symbol_nodes
+    }
+    incoming = {}
+    for edge in structural_edges:
+        if edge.get('target') in symbol_nodes:
+            incoming[edge['target']] = incoming.get(edge['target'], 0) + 1
+    hubs = {
+        node_id for node_id, count in incoming.items()
+        if count >= config['hub_min_incoming']
+    }
+    test_linked = {
+        edge['source'] for edge in graph.get('edges', [])
+        if edge.get('relation') == 'TESTED_BY' and edge.get('source') in symbol_nodes
+    }
+    production = {
+        node_id for node_id, node in symbol_nodes.items()
+        if not _is_test_path(node.get('path', ''))
+    }
+
+    def ratio(numerator, denominator):
+        return numerator / denominator if denominator else 0.0
+
+    metrics = {
+        'symbol_count': len(symbol_nodes),
+        'edge_count': len(graph.get('edges', [])),
+        'structural_edge_count': len(structural_edges),
+        'edge_coverage': ratio(len(connected), len(symbol_nodes)),
+        'resolved_edge_ratio': ratio(
+            sum(edge.get('confidence', 0) >= 0.95 for edge in structural_edges),
+            len(structural_edges),
+        ),
+        'hub_count': len(hubs),
+        'hub_concentration': ratio(len(hubs), len(symbol_nodes)),
+        'test_link_rate': ratio(len(production & test_linked), len(production)),
+        'untested_hub_count': len(hubs - test_linked),
+        'constraint_issues': len(constraint_issues or []),
+    }
+    checks = [
+        ('edge_coverage', '>=', thresholds['min_edge_coverage']),
+        ('resolved_edge_ratio', '>=', thresholds['min_resolved_edge_ratio']),
+        ('hub_concentration', '<=', thresholds['max_hub_concentration']),
+        ('test_link_rate', '>=', thresholds['min_test_link_rate']),
+        ('constraint_issues', '<=', thresholds['max_constraint_issues']),
+    ]
+    evaluated = []
+    for metric, operator, threshold in checks:
+        value = metrics[metric]
+        passed = value >= threshold if operator == '>=' else value <= threshold
+        evaluated.append({
+            'metric': metric, 'value': value, 'operator': operator,
+            'threshold': threshold, 'passed': passed,
+        })
+    ranked_hubs = sorted(
+        ({
+            'id': node_id,
+            'path': symbol_nodes[node_id].get('path', ''),
+            'incoming': incoming[node_id],
+            'tested': node_id in test_linked,
+        } for node_id in hubs),
+        key=lambda item: (-item['incoming'], item['id']),
+    )
+    return {
+        'schema_version': FITNESS_SCHEMA_VERSION,
+        'passed': all(check['passed'] for check in evaluated),
+        'metrics': metrics,
+        'checks': evaluated,
+        'hubs': ranked_hubs,
+        'constraint_issue_details': list(constraint_issues or []),
+    }
+
+
 def analyze_graph_impact(query, graph, max_depth=2):
     """Traverse incoming and outgoing dependency edges from matching symbols."""
     q = query.strip().lower()
@@ -2822,6 +2956,10 @@ def cmd_init(args):
     with open(MAP_PATH, 'w', encoding='utf-8') as f:
         f.write(rendered)
 
+    if not os.path.exists(FITNESS_PATH):
+        write_fitness_config()
+        print(f"[FITNESS] Initialized {LCM_DIRNAME}/{FITNESS_FILENAME}.")
+
     print(f"[OK] Generated {MAP_FILENAME} for project: {proj_name}")
     generate_min_map(MAP_PATH, MIN_MAP_PATH)
     print(f"     Next: run 'python living_map.py update' to index symbols.")
@@ -2890,6 +3028,9 @@ def cmd_update(args):
     if not os.path.exists(CONSTRAINT_PATH):
         write_constraints(constraints)
         print(f"[CONSTRAINTS] Initialized {LCM_DIRNAME}/{CONSTRAINT_FILENAME}.")
+    if not os.path.exists(FITNESS_PATH):
+        write_fitness_config()
+        print(f"[FITNESS] Initialized {LCM_DIRNAME}/{FITNESS_FILENAME}.")
 
     # 4. Auto-generate mini compact map for AI Agents
     generate_min_map(MAP_PATH, MIN_MAP_PATH)
@@ -3368,6 +3509,55 @@ def cmd_add_constraint(args):
     return 0
 
 
+def cmd_fitness(args):
+    """Report measurable graph quality and optionally enforce configured gates."""
+    try:
+        with open(GRAPH_PATH, 'r', encoding='utf-8') as handle:
+            graph = json.load(handle)
+        with open(INDEX_PATH, 'r', encoding='utf-8') as handle:
+            index = json.load(handle)
+        constraints = load_constraints(CONSTRAINT_PATH)
+        config_path = getattr(args, 'config', None)
+        if config_path and not os.path.exists(config_path):
+            raise OSError(f'fitness config not found: {config_path}')
+        config = load_fitness_config(config_path or FITNESS_PATH)
+        constraint_issues = validate_constraints(constraints, index)
+        report = analyze_graph_fitness(graph, constraint_issues, config)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"[ERR] Could not evaluate codebase fitness: {exc}")
+        return 1
+
+    if getattr(args, 'json', False):
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        state = 'PASS' if report['passed'] else 'FAIL'
+        metrics = report['metrics']
+        print(f"CODEBASE FITNESS | {state}")
+        print(
+            f"Graph: {metrics['symbol_count']} symbols / {metrics['structural_edge_count']} structural edges "
+            f"({metrics['edge_count']} total)"
+        )
+        for check in report['checks']:
+            value = check['value']
+            threshold = check['threshold']
+            if check['metric'] != 'constraint_issues':
+                value = f'{value:.1%}'
+                threshold = f'{threshold:.1%}'
+            marker = 'PASS' if check['passed'] else 'FAIL'
+            label = check['metric'].replace('_', ' ')
+            print(f"  [{marker}] {label}: {value} {check['operator']} {threshold}")
+        print(
+            f"Risk focus: {metrics['hub_count']} hubs; "
+            f"{metrics['untested_hub_count']} have no linked test evidence"
+        )
+        for hub in report['hubs'][:5]:
+            test_state = 'tested' if hub['tested'] else 'no linked test'
+            print(f"  - {hub['id']} ({hub['incoming']} incoming, {test_state})")
+        for issue in report['constraint_issue_details']:
+            print(f"  - constraint: {issue}")
+    return 2 if getattr(args, 'strict', False) and not report['passed'] else 0
+
+
 def cmd_plan(args):
     """Create a graph-backed pre-flight plan for a requested change."""
     if not os.path.exists(GRAPH_PATH):
@@ -3589,6 +3779,14 @@ def build_mcp_server():
         return capture_mcp_command(cmd_plan, argparse.Namespace(task=task))
 
     @server.tool()
+    def fitness_report(strict: bool = False) -> str:
+        """Measure graph coverage, edge confidence, hubs, test links, and constraint health."""
+        return capture_mcp_command(
+            cmd_fitness,
+            argparse.Namespace(config=None, json=False, strict=strict),
+        )
+
+    @server.tool()
     def verify_change(base: str = "HEAD", strict: bool = False) -> str:
         """Check the current Git diff against graph-linked tests and constraints."""
         return capture_mcp_command(
@@ -3723,6 +3921,11 @@ def main():
     p_chk.add_argument("--full", action="store_true", help="Force full AST symbol scan, bypassing MD5 check")
     p_chk.add_argument("--fix", action="store_true", help="Auto-repair map if drift is detected")
 
+    p_fit = subparsers.add_parser("fitness", help="Report graph quality and enforce versioned health thresholds")
+    p_fit.add_argument("--config", help="Fitness JSON config (default: .lcm/fitness.json)")
+    p_fit.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    p_fit.add_argument("--strict", action="store_true", help="Exit non-zero when a configured threshold fails")
+
     # impact (Blast Radius Analysis - Lean Mode by Default)
     p_imp = subparsers.add_parser("impact", help="Quick cross-layer blast radius analysis (Lean mode by default)")
     p_imp.add_argument("target", help="Symbol name, DOM ID, or keyword to trace across layers")
@@ -3807,6 +4010,7 @@ def main():
         "init": cmd_init,
         "update": cmd_update,
         "check": cmd_check,
+        "fitness": cmd_fitness,
         "impact": cmd_impact,
         "deep-impact": cmd_deep_impact,
         "install-hook": cmd_install_hook,

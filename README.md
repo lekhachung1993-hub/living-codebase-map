@@ -30,6 +30,7 @@
 | 🕰️ **Git Temporal Memory** | `map why` connects a symbol to its introducing and modifying commits plus active architectural constraints. |
 | 🔌 **MCP Capability Parity** | Planning, verification, context compilation, symbol explanation, and temporal history are available as native MCP tools, not only CLI commands. |
 | 📊 **Measurable Agent Value** | A versioned benchmark suite compares success, retrieval precision/recall, tokens, tool calls, duration, and missed dependencies/tests/constraints. |
+| 🩺 **Codebase Fitness Gates** | `map fitness` measures graph coverage, resolved edges, hub concentration, linked-test evidence, and constraint health against versioned thresholds. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -250,6 +251,16 @@ python scripts/benchmark.py \
 
 The bundled suite contains ten repository-maintenance tasks. Compare runs only when they use the same repository commit, model, prompt, permissions, timeout, and acceptance checks. Template values are never product results; record observable agent runs before drawing conclusions.
 
+### Codebase fitness
+
+```bash
+python scripts/living_map.py fitness
+python scripts/living_map.py fitness --json
+python scripts/living_map.py fitness --strict
+```
+
+The report turns `.lcm/graph.json` and structured constraints into five reproducible health checks: structural-edge coverage, resolved-edge ratio, hub concentration, linked-test rate, and constraint validity. Thresholds live in `.lcm/fitness.json`; `--strict` exits non-zero when any gate fails, making the same policy usable by agents, local hooks, and CI. Hub and test-link metrics are graph evidence—not a substitute for runtime coverage.
+
 <details>
 <summary><h3>📁 Repository Structure</h3></summary>
 
@@ -265,6 +276,7 @@ living-codebase-map/
 ├── .lcm/index.json                    # Generated machine-readable stable symbol index
 ├── .lcm/graph.json                    # Generated confidence-scored dependency graph
 ├── .lcm/constraints.json              # Human-authored structured architectural constraints
+├── .lcm/fitness.json                  # Versioned graph-health thresholds
 ├── tests/test_symbol_index.py         # Stable-ID and collision regression tests
 ├── tests/test_benchmark.py            # Benchmark scoring and validation tests
 └── templates/
