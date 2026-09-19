@@ -1,7 +1,10 @@
 import json
 import os
+import sys
 import tempfile
+import types
 import unittest
+from unittest import mock
 
 from scripts import living_map
 
@@ -85,6 +88,20 @@ class StableSymbolIndexTests(unittest.TestCase):
             self.assertEqual(count, 2)
             self.assertIn('| L3 | `save` | A |', updated)
             self.assertIn('| L5 | `save` | B |', updated)
+
+    def test_map_refreshes_documented_function_call_syntax(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'service.py', '\n\ndef save():\n    pass\n')
+            _, lookup = living_map.build_symbol_database(root)
+            content = (
+                '### service.py\n| Line | Symbol | Description |\n'
+                '|---|---|---|\n| L1 | `save()` | Save data |'
+            )
+
+            updated, count, _ = living_map.update_map_line_numbers(content, lookup)
+
+            self.assertEqual(count, 1)
+            self.assertIn('| L3 | `save()` | Save data |', updated)
 
     def test_index_can_be_persisted_as_schema_v3_json(self):
         with tempfile.TemporaryDirectory() as root:
@@ -330,6 +347,50 @@ class StableSymbolIndexTests(unittest.TestCase):
         self.assertEqual(entries[0]['short'], 'aaaaaaa')
         self.assertEqual(entries[0]['subject'], 'Fix retry race')
         self.assertEqual(entries[1]['date'], '2025-12-01')
+
+    def test_mcp_command_adapter_preserves_cli_status_and_output(self):
+        def command(args):
+            print(f'checked {args.target}')
+            return 2
+
+        result = living_map.capture_mcp_command(
+            command,
+            type('Args', (), {'target': 'checkout'})(),
+        )
+        self.assertEqual(result, '[ERROR exit=2]\nchecked checkout')
+
+    def test_mcp_server_registers_cli_parity_tools(self):
+        class FakeFastMCP:
+            def __init__(self, name):
+                self.name = name
+                self.tools = []
+
+            def tool(self):
+                def register(function):
+                    self.tools.append(function.__name__)
+                    return function
+                return register
+
+        mcp_module = types.ModuleType('mcp')
+        mcp_module.__path__ = []
+        server_module = types.ModuleType('mcp.server')
+        server_module.__path__ = []
+        fastmcp_module = types.ModuleType('mcp.server.fastmcp')
+        fastmcp_module.FastMCP = FakeFastMCP
+        modules = {
+            'mcp': mcp_module,
+            'mcp.server': server_module,
+            'mcp.server.fastmcp': fastmcp_module,
+        }
+        with mock.patch.dict(sys.modules, modules):
+            server = living_map.build_mcp_server()
+
+        self.assertEqual(set(server.tools), {
+            'update_map', 'check_drift', 'analyze_code_impact',
+            'plan_change', 'verify_change', 'compile_context',
+            'explain_symbol', 'explain_symbol_history',
+            'register_feature', 'register_constraint', 'get_map_summary',
+        })
 
 
 if __name__ == '__main__':

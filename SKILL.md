@@ -307,4 +307,4 @@ Living Codebase Map can be connected to any MCP-compliant AI coding assistant (A
   }
 }
 ```
-Exposes 6 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `register_feature`, `register_constraint`, `get_map_summary`.
+Exposes 11 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `plan_change`, `verify_change`, `compile_context`, `explain_symbol`, `explain_symbol_history`, `register_feature`, `register_constraint`, `get_map_summary`.
