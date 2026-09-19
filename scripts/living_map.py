@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-living_map.py -- Universal Living Codebase Map Engine (v2.2)
+living_map.py -- Universal Living Codebase Map Engine (v3)
 Part of the 'living-codebase-map' skill for AI Coding Agents.
 
 Zero-dependency CLI tool to maintain, update, lint, and version-control PROJECT_MAP.md.
@@ -8,7 +8,7 @@ Zero-dependency CLI tool to maintain, update, lint, and version-control PROJECT_
 Features:
   - Token-Efficient Compact Map: Automatically generates PROJECT_MAP.min.md (saves ~65% tokens)
   - Fast Blast Radius Scanner: Instant cross-layer impact analysis (--impact-of <symbol>)
-  - Smart Drift Checker: MD5 hash-based fast verification (runs in 0.02s for Git Hooks)
+  - Smart Drift Checker: MD5 hash-based verification suitable for Git Hooks
   - Multi-language AST/Regex Scanners: Go, Python, TypeScript, JavaScript, HTML, Rust, C#, Java, PHP, Vue
   - Framework Support: Next.js (App & Pages Router), FastAPI, Django, Flask, Gin, Fiber, Express, NestJS, Spring, ASP.NET, Laravel
   - CI/CD Drift Linting: Blocks PRs and Git commits if map is out of sync with code
@@ -21,7 +21,7 @@ Usage:
   # Instant blast radius / impact analysis before editing a symbol:
   python living_map.py impact <symbol_or_keyword>
 
-  # Fast Smart Drift Lint (compares MD5 hash in 0.02s):
+  # Fast Smart Drift Lint (compares the stored MD5):
   python living_map.py check [--full] [--fix]
 
   # Install Git Pre-Commit / Pre-Push hook:
@@ -39,6 +39,8 @@ Usage:
   python living_map.py rollback --to <COMMIT_HASH>
 """
 
+import ast
+import json
 import re
 import os
 import io
@@ -64,6 +66,9 @@ if hasattr(sys.stderr, 'reconfigure'):
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MAP_FILENAME = 'PROJECT_MAP.md'
 MIN_MAP_FILENAME = 'PROJECT_MAP.min.md'
+INDEX_SCHEMA_VERSION = 3
+LCM_DIRNAME = '.lcm'
+INDEX_FILENAME = 'index.json'
 
 def find_project_root():
     """Locates the project root directory reliably."""
@@ -97,6 +102,7 @@ def find_project_root():
 ROOT = find_project_root()
 MAP_PATH = os.path.join(ROOT, MAP_FILENAME)
 MIN_MAP_PATH = os.path.join(ROOT, MIN_MAP_FILENAME)
+INDEX_PATH = os.path.join(ROOT, LCM_DIRNAME, INDEX_FILENAME)
 
 CODE_EXTENSIONS = {
     '.go': 'go',
@@ -126,7 +132,7 @@ IGNORED_DIRS = {
 def calculate_codebase_hash(root_dir=ROOT):
     """
     Computes a deterministic combined MD5 hash of all code files.
-    Runs in 0.02 - 0.05 seconds to enable instant drift checking.
+    Uses streaming reads and deterministic path ordering for drift checking.
     """
     hasher = hashlib.md5()
     file_list = []
@@ -165,7 +171,7 @@ def generate_min_map(full_map_path=MAP_PATH, min_map_path=MIN_MAP_PATH):
       - UI DOM triggers and API targets
       - Implicit Constraints [C1]..[Cn]
       - Feature Cross-Reference matrix
-    Saves ~60-70% tokens on every session warmup.
+    Reduces repeated context compared with loading the full map.
     """
     if not os.path.exists(full_map_path):
         return None
@@ -589,6 +595,136 @@ def scan_file_symbols(file_path):
 
     return symbols
 
+
+def _symbol_fingerprint(kind, qualified_name, declaration):
+    """Return a stable content fingerprint that is independent of line numbers."""
+    normalized = re.sub(r'\s+', ' ', declaration.strip())
+    payload = f"{kind}|{qualified_name}|{normalized}".encode('utf-8')
+    return hashlib.sha256(payload).hexdigest()[:16]
+
+
+def _python_symbol_records(file_path):
+    """Extract qualified Python symbols with the standard-library AST parser."""
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            source = f.read()
+        tree = ast.parse(source, filename=file_path)
+    except (OSError, SyntaxError, UnicodeError):
+        return []
+
+    source_lines = source.splitlines()
+    records = []
+
+    class Visitor(ast.NodeVisitor):
+        def __init__(self):
+            self.scope = []
+
+        def _add(self, node, kind):
+            qualified_name = '.'.join(self.scope + [node.name])
+            declaration = source_lines[node.lineno - 1] if node.lineno <= len(source_lines) else node.name
+            records.append({
+                'name': node.name,
+                'qualified_name': qualified_name,
+                'kind': kind,
+                'line': node.lineno,
+                'end_line': getattr(node, 'end_lineno', node.lineno),
+                'fingerprint': _symbol_fingerprint(kind, qualified_name, declaration),
+            })
+
+        def visit_ClassDef(self, node):
+            self._add(node, 'class')
+            self.scope.append(node.name)
+            self.generic_visit(node)
+            self.scope.pop()
+
+        def visit_FunctionDef(self, node):
+            self._visit_function(node)
+
+        def visit_AsyncFunctionDef(self, node):
+            self._visit_function(node)
+
+        def _visit_function(self, node):
+            kind = 'method' if self.scope else 'function'
+            self._add(node, kind)
+            self.scope.append(node.name)
+            self.generic_visit(node)
+            self.scope.pop()
+
+    Visitor().visit(tree)
+    return records
+
+
+def scan_file_symbol_records(file_path, rel_path=None):
+    """Return structured symbols used by the v3 index.
+
+    Stable IDs use language + repository-relative path + qualified symbol name.
+    The current line range is navigation metadata, never the identity.
+    """
+    rel_path = (rel_path or os.path.basename(file_path)).replace('\\', '/')
+    ext = os.path.splitext(file_path)[1].lower()
+    language = CODE_EXTENSIONS.get(ext, ext.lstrip('.') or 'unknown')
+
+    if ext == '.py':
+        records = _python_symbol_records(file_path)
+    else:
+        records = []
+        for name, line in scan_file_symbols(file_path).items():
+            kind = 'dom_id' if name.startswith('#') else 'symbol'
+            records.append({
+                'name': name,
+                'qualified_name': name,
+                'kind': kind,
+                'line': line,
+                'end_line': line,
+                'fingerprint': _symbol_fingerprint(kind, name, name),
+            })
+
+    for record in records:
+        record['id'] = f"{language}:{rel_path}::{record['qualified_name']}"
+        record['language'] = language
+        record['path'] = rel_path
+    return records
+
+
+def build_symbol_index(root_dir=ROOT):
+    """Build the machine-readable v3 symbol index without writing it to disk."""
+    files = []
+    symbols = []
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        dirnames[:] = sorted(d for d in dirnames if d not in IGNORED_DIRS)
+        for fname in sorted(filenames):
+            ext = os.path.splitext(fname)[1].lower()
+            if ext not in CODE_EXTENSIONS:
+                continue
+            full_path = os.path.join(dirpath, fname)
+            rel_path = os.path.relpath(full_path, root_dir).replace('\\', '/')
+            records = scan_file_symbol_records(full_path, rel_path)
+            try:
+                with open(full_path, 'rb') as f:
+                    file_hash = hashlib.sha256(f.read()).hexdigest()
+            except OSError:
+                file_hash = None
+            files.append({'path': rel_path, 'language': CODE_EXTENSIONS[ext], 'sha256': file_hash})
+            symbols.extend(records)
+
+    return {
+        'schema_version': INDEX_SCHEMA_VERSION,
+        'generated_at': datetime.now().astimezone().isoformat(timespec='seconds'),
+        'root': '.',
+        'files': files,
+        'symbols': symbols,
+    }
+
+
+def write_symbol_index(index, index_path=INDEX_PATH):
+    """Atomically persist the v3 machine index."""
+    os.makedirs(os.path.dirname(index_path), exist_ok=True)
+    temp_path = index_path + '.tmp'
+    with open(temp_path, 'w', encoding='utf-8') as f:
+        json.dump(index, f, ensure_ascii=False, indent=2, sort_keys=True)
+        f.write('\n')
+    os.replace(temp_path, index_path)
+
 def build_symbol_database(root_dir=ROOT):
     """
     Traverses the codebase and builds:
@@ -597,6 +733,7 @@ def build_symbol_database(root_dir=ROOT):
     """
     file_map = {}
     symbol_lookup = {}
+    candidates = {}
 
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames[:] = [d for d in dirnames if d not in IGNORED_DIRS]
@@ -610,8 +747,16 @@ def build_symbol_database(root_dir=ROOT):
                     file_map[rel_path] = symbols
                     for sym, line in symbols.items():
                         base_fname = os.path.basename(rel_path)
-                        symbol_lookup[(base_fname, sym)] = (rel_path, line)
-                        symbol_lookup[sym] = (rel_path, line)
+                        location = (rel_path, line)
+                        for key in ((rel_path, sym), (base_fname, sym), sym):
+                            candidates.setdefault(key, []).append(location)
+
+    # Backward-compatible lookup shape, but ambiguous keys are deliberately
+    # omitted instead of silently pointing at whichever file was scanned last.
+    for key, locations in candidates.items():
+        unique_locations = list(dict.fromkeys(locations))
+        if len(unique_locations) == 1:
+            symbol_lookup[key] = unique_locations[0]
 
     return file_map, symbol_lookup
 
@@ -637,7 +782,7 @@ def update_map_line_numbers(map_content, symbol_lookup):
     for line in lines:
         m_hdr = re_file_header.match(line)
         if m_hdr:
-            current_file = os.path.basename(m_hdr.group(1).strip())
+            current_file = m_hdr.group(1).strip().replace('\\', '/')
 
         m_row = re_table_row.match(line)
         if m_row:
@@ -646,8 +791,11 @@ def update_map_line_numbers(map_content, symbol_lookup):
             sym_name = m_row.group(3)
 
             matched_loc = None
-            if current_file and (current_file, sym_name) in symbol_lookup:
-                matched_loc = symbol_lookup[(current_file, sym_name)]
+            normalized_file = current_file.replace('\\', '/') if current_file else None
+            if normalized_file and (normalized_file, sym_name) in symbol_lookup:
+                matched_loc = symbol_lookup[(normalized_file, sym_name)]
+            elif normalized_file and (os.path.basename(normalized_file), sym_name) in symbol_lookup:
+                matched_loc = symbol_lookup[(os.path.basename(normalized_file), sym_name)]
             elif sym_name in symbol_lookup:
                 matched_loc = symbol_lookup[sym_name]
 
@@ -772,7 +920,7 @@ def inject_constraint(map_content, constraint_desc, custom_id=None):
 def cmd_init(args):
     """Initializes a fresh PROJECT_MAP.md from template."""
     print("=" * 60)
-    print("Living Codebase Map -- Initializer (v2.2)")
+    print("Living Codebase Map -- Initializer (v3)")
     print("=" * 60)
 
     if os.path.exists(MAP_PATH) and not args.force:
@@ -847,7 +995,8 @@ def cmd_update(args):
 
     print(f"[SCAN] Indexing symbols across codebase ({ROOT})...")
     file_map, symbol_lookup = build_symbol_database(ROOT)
-    total_syms = len(symbol_lookup)
+    symbol_index = build_symbol_index(ROOT)
+    total_syms = len(symbol_index['symbols'])
     print(f"       Found {len(file_map)} files with {total_syms} identifiable symbols.")
 
     # 1. Update line numbers
@@ -862,6 +1011,7 @@ def cmd_update(args):
     new_content = update_map_header(new_content, codebase_hash)
 
     if args.dry_run:
+        print(f"[DRY-RUN] Would write {total_syms} symbols to {LCM_DIRNAME}/{INDEX_FILENAME}.")
         print("[DRY-RUN] Changes preview complete. No files modified.")
         return 0
 
@@ -874,6 +1024,9 @@ def cmd_update(args):
         f.write(new_content)
     print(f"[WRITE] Successfully refreshed {MAP_FILENAME}.")
 
+    write_symbol_index(symbol_index)
+    print(f"[INDEX] Wrote {LCM_DIRNAME}/{INDEX_FILENAME} (schema v{INDEX_SCHEMA_VERSION}, {total_syms} symbols).")
+
     # 4. Auto-generate mini compact map for AI Agents
     generate_min_map(MAP_PATH, MIN_MAP_PATH)
 
@@ -884,7 +1037,7 @@ def cmd_update(args):
 def cmd_check(args):
     """
     CI/CD Lint: Verifies if map is in sync.
-    Smart Mode: compares MD5 in 0.02s. If drift or --full is specified, runs full AST scan.
+    Smart Mode compares MD5. If drift or --full is specified, runs a full symbol scan.
     """
     if not os.path.exists(MAP_PATH):
         print(f"❌ [LIVING MAP LINT ERR] {MAP_FILENAME} not found at {MAP_PATH}")
@@ -1434,7 +1587,7 @@ def main():
         sys.exit(cmd_mcp())
 
     parser = argparse.ArgumentParser(
-        description="Universal Living Codebase Map CLI (v2.5) -- Surgical Precision, Smart Drift & MCP Server."
+        description="Universal Living Codebase Map CLI (v3) -- Stable Symbol Index, Smart Drift & MCP Server."
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
