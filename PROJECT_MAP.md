@@ -1,6 +1,6 @@
-# LIVING PROJECT MAP: living-codebase-map v3.16.0
+# LIVING PROJECT MAP: living-codebase-map v3.17.0
 > **Purpose:** Agent's primary working memory and architectural compass. Read this file BEFORE scanning code.
-> **Last Updated:** 2026-09-20 | Commit: 59ebc55
+> **Last Updated:** 2026-09-20 | Commit: f5edc48
 >
 > **AGENT PROTOCOL:**
 > 1. Read MODULE 5 (Feature Cross-Reference) to identify components related to current task.
@@ -19,7 +19,7 @@
 | Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `694fcb730458cc3f4b6267d97a87887b` |
+| Codebase-MD5 | `fec2550ea9ba89bc3dbc83a6f496439c` |
 
 ---
 
@@ -47,52 +47,53 @@
 | L807 | `_go_symbol_records()` | Extracts receiver-qualified Go methods, functions, types, and ranges |
 | L849 | `_rust_symbol_records()` | Extracts ranged Rust functions, impl-qualified methods, and types |
 | L909 | `_csharp_symbol_records()` | Extracts ranged, class-qualified C# methods and types |
+| L964 | `_java_symbol_records()` | Extracts ranged, package/class-qualified Java methods and types |
 | L901 | `_csharp_namespace_name()` | Reads a single C# namespace for stable symbol qualification |
-| L1054 | `_is_test_path()` | Recognizes Python and JavaScript test path conventions |
-| L1069 | `_next_route_path()` | Derives Next.js App Router public paths from route modules |
-| L1080 | `_resolve_javascript_module_path()` | Resolves relative ESM specifiers to indexed JS/TS source modules |
-| L1099 | `_javascript_import_bindings()` | Maps named aliases and namespace imports to exact Stable Symbols |
-| L1137 | `_resolve_python_module_path()` | Resolves absolute, relative, package, and unique source-root modules |
-| L1161 | `_python_import_bindings()` | Maps Python import aliases and module bindings to exact Stable Symbols |
-| L1194 | `_read_go_module_name()` | Reads the local module identity from go.mod without requiring Go |
-| L1205 | `_resolve_go_import_dir()` | Resolves local-module Go imports to indexed repository packages |
-| L1218 | `_go_import_bindings()` | Maps default and explicit Go aliases to local indexed packages |
-| L1259 | `_rust_module_components()` | Derives crate-relative module components from Rust source paths |
-| L1274 | `_resolve_rust_module_path()` | Resolves crate, self, and super module paths conservatively |
-| L1302 | `_rust_import_bindings()` | Maps simple Rust use aliases to exact local symbols and modules |
-| L2392 | `build_symbol_database()` | Full codebase symbol scanner and lookup table builder |
-| L2431 | `update_map_line_numbers()` | Synchronizes line numbers in MODULE 1 & 2 tables |
-| L2486 | `update_map_header()` | Refreshes date, commit hash, and MD5 in header |
-| L2519 | `inject_feature()` | Adds new entry into MODULE 5 Feature Traceability Matrix |
-| L2551 | `inject_constraint()` | Appends new operational rule to MODULE 4 |
-| L2587 | `cmd_init()` | CLI handler for `living-map init` |
-| L2654 | `cmd_update()` | CLI handler for `living-map update` |
-| L2725 | `cmd_check()` | CLI handler for CI/CD smart drift check |
-| L2799 | `cmd_impact()` | CLI handler for blast radius impact analysis |
-| L2955 | `cmd_deep_impact()` | CLI handler for 6-layer architecture dependency tree |
-| L2959 | `cmd_install_hook()` | CLI handler for installing Git pre-commit / pre-push hooks |
-| L3007 | `cmd_add_feature()` | CLI handler for feature registration (supports NLP auto-parsing) |
-| L3132 | `cmd_add_constraint()` | CLI handler for adding constraints to Module 4 |
-| L3195 | `cmd_plan()` | CLI handler for graph-backed change planning |
-| L3220 | `cmd_verify_change()` | CLI handler for diff/test/constraint verification |
-| L3243 | `cmd_context()` | CLI handler for budgeted task context compilation |
-| L3255 | `cmd_explain()` | CLI handler for one-symbol relationship explanation |
-| L3284 | `cmd_why()` | CLI handler for Git-backed symbol history |
-| L3315 | `cmd_rollback()` | CLI handler for safe map rollback |
-| L3342 | `capture_mcp_command()` | Preserves CLI exit status and output for native MCP tools |
-| L3353 | `build_mcp_server()` | Factory initializing FastMCP or MCPServer instance |
-| L3369 | `update_map()` | MCP Tool: updates PROJECT_MAP.md via stdio/SSE |
-| L3382 | `check_drift()` | MCP Tool: fast MD5 drift check |
-| L3398 | `analyze_code_impact()` | MCP Tool: blast radius impact analysis |
-| L3411 | `plan_change()` | MCP Tool: graph-backed pre-flight plan and risk score |
-| L3416 | `verify_change()` | MCP Tool: change/test/constraint consistency gate |
-| L3424 | `compile_context()` | MCP Tool: budgeted task context compiler |
-| L3432 | `explain_symbol()` | MCP Tool: unambiguous Stable Symbol explanation |
-| L3437 | `explain_symbol_history()` | MCP Tool: Git temporal memory and constraints |
-| L3445 | `register_feature()` | MCP Tool: feature traceability registration |
-| L3469 | `register_constraint()` | MCP Tool: implicit constraint registration |
-| L3486 | `get_map_summary()` | MCP Tool: returns token-saving minified summary |
-| L3502 | `cmd_mcp()` | CLI handler for launching MCP server over Stdio or SSE |
+| L1095 | `_is_test_path()` | Recognizes Python and JavaScript test path conventions |
+| L1110 | `_next_route_path()` | Derives Next.js App Router public paths from route modules |
+| L1121 | `_resolve_javascript_module_path()` | Resolves relative ESM specifiers to indexed JS/TS source modules |
+| L1140 | `_javascript_import_bindings()` | Maps named aliases and namespace imports to exact Stable Symbols |
+| L1178 | `_resolve_python_module_path()` | Resolves absolute, relative, package, and unique source-root modules |
+| L1202 | `_python_import_bindings()` | Maps Python import aliases and module bindings to exact Stable Symbols |
+| L1235 | `_read_go_module_name()` | Reads the local module identity from go.mod without requiring Go |
+| L1246 | `_resolve_go_import_dir()` | Resolves local-module Go imports to indexed repository packages |
+| L1259 | `_go_import_bindings()` | Maps default and explicit Go aliases to local indexed packages |
+| L1300 | `_rust_module_components()` | Derives crate-relative module components from Rust source paths |
+| L1315 | `_resolve_rust_module_path()` | Resolves crate, self, and super module paths conservatively |
+| L1343 | `_rust_import_bindings()` | Maps simple Rust use aliases to exact local symbols and modules |
+| L2529 | `build_symbol_database()` | Full codebase symbol scanner and lookup table builder |
+| L2568 | `update_map_line_numbers()` | Synchronizes line numbers in MODULE 1 & 2 tables |
+| L2623 | `update_map_header()` | Refreshes date, commit hash, and MD5 in header |
+| L2656 | `inject_feature()` | Adds new entry into MODULE 5 Feature Traceability Matrix |
+| L2688 | `inject_constraint()` | Appends new operational rule to MODULE 4 |
+| L2724 | `cmd_init()` | CLI handler for `living-map init` |
+| L2791 | `cmd_update()` | CLI handler for `living-map update` |
+| L2862 | `cmd_check()` | CLI handler for CI/CD smart drift check |
+| L2936 | `cmd_impact()` | CLI handler for blast radius impact analysis |
+| L3092 | `cmd_deep_impact()` | CLI handler for 6-layer architecture dependency tree |
+| L3096 | `cmd_install_hook()` | CLI handler for installing Git pre-commit / pre-push hooks |
+| L3144 | `cmd_add_feature()` | CLI handler for feature registration (supports NLP auto-parsing) |
+| L3269 | `cmd_add_constraint()` | CLI handler for adding constraints to Module 4 |
+| L3332 | `cmd_plan()` | CLI handler for graph-backed change planning |
+| L3357 | `cmd_verify_change()` | CLI handler for diff/test/constraint verification |
+| L3380 | `cmd_context()` | CLI handler for budgeted task context compilation |
+| L3392 | `cmd_explain()` | CLI handler for one-symbol relationship explanation |
+| L3421 | `cmd_why()` | CLI handler for Git-backed symbol history |
+| L3452 | `cmd_rollback()` | CLI handler for safe map rollback |
+| L3479 | `capture_mcp_command()` | Preserves CLI exit status and output for native MCP tools |
+| L3490 | `build_mcp_server()` | Factory initializing FastMCP or MCPServer instance |
+| L3506 | `update_map()` | MCP Tool: updates PROJECT_MAP.md via stdio/SSE |
+| L3519 | `check_drift()` | MCP Tool: fast MD5 drift check |
+| L3535 | `analyze_code_impact()` | MCP Tool: blast radius impact analysis |
+| L3548 | `plan_change()` | MCP Tool: graph-backed pre-flight plan and risk score |
+| L3553 | `verify_change()` | MCP Tool: change/test/constraint consistency gate |
+| L3561 | `compile_context()` | MCP Tool: budgeted task context compiler |
+| L3569 | `explain_symbol()` | MCP Tool: unambiguous Stable Symbol explanation |
+| L3574 | `explain_symbol_history()` | MCP Tool: Git temporal memory and constraints |
+| L3582 | `register_feature()` | MCP Tool: feature traceability registration |
+| L3606 | `register_constraint()` | MCP Tool: implicit constraint registration |
+| L3623 | `get_map_summary()` | MCP Tool: returns token-saving minified summary |
+| L3639 | `cmd_mcp()` | CLI handler for launching MCP server over Stdio or SSE |
 
 ---
 
