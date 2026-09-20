@@ -26,7 +26,12 @@ class StableSymbolIndexTests(unittest.TestCase):
             pyproject_version = re.search(r'^version = "([^"]+)"', handle.read(), re.MULTILINE).group(1)
         with open(os.path.join(root, 'PROJECT_MAP.md'), 'r', encoding='utf-8') as handle:
             map_version = re.search(r'v(\d+\.\d+\.\d+)', handle.readline()).group(1)
-        self.assertEqual({manifest_version, pyproject_version, map_version}, {'3.23.0'})
+        with open(os.path.join(root, '.well-known', 'mcp', 'server-card.json'), 'r', encoding='utf-8') as handle:
+            server_version = json.load(handle)['serverInfo']['version']
+        self.assertEqual(
+            {manifest_version, pyproject_version, map_version, server_version},
+            {'3.30.0'},
+        )
 
     def test_python_ids_are_qualified_and_line_independent(self):
         with tempfile.TemporaryDirectory() as root:
@@ -114,7 +119,7 @@ class StableSymbolIndexTests(unittest.TestCase):
             self.assertEqual(count, 1)
             self.assertIn('| L3 | `save()` | Save data |', updated)
 
-    def test_index_can_be_persisted_as_schema_v3_json(self):
+    def test_index_can_be_persisted_as_schema_v4_json(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, 'app.py', 'def run():\n    return True\n')
             index = living_map.build_symbol_index(root)
@@ -123,7 +128,7 @@ class StableSymbolIndexTests(unittest.TestCase):
 
             with open(output, 'r', encoding='utf-8') as handle:
                 saved = json.load(handle)
-            self.assertEqual(saved['schema_version'], 3)
+            self.assertEqual(saved['schema_version'], 4)
             self.assertEqual(saved['symbols'][0]['id'], 'py:app.py::run')
 
     def test_graph_extracts_python_calls_with_evidence(self):
@@ -137,7 +142,7 @@ class StableSymbolIndexTests(unittest.TestCase):
             index = living_map.build_symbol_index(root)
             graph = living_map.build_dependency_graph(index, root)
 
-            self.assertEqual(graph['schema_version'], 1)
+            self.assertEqual(graph['schema_version'], 2)
             self.assertEqual(len(graph['edges']), 1)
             edge = graph['edges'][0]
             self.assertEqual(edge['source'], 'py:service.py::create')
@@ -1240,6 +1245,7 @@ class StableSymbolIndexTests(unittest.TestCase):
             'plan_change', 'fitness_report', 'test_gap_hotspots', 'guard_change',
             'verify_change', 'compile_context',
             'explain_symbol', 'explain_symbol_history',
+            'export_calm_architecture', 'reconcile_calm_architecture',
             'register_feature', 'register_constraint', 'get_map_summary',
         })
 

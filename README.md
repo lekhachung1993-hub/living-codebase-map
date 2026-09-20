@@ -11,6 +11,8 @@ Living Codebase Map (LCM) turns a repository into a versioned model that coding 
 
 LCM is designed to complement an agent's normal code search and reasoning. It does not replace a compiler, language server, test suite, or human review.
 
+The project's independent scope and its optional relationship with Architecture-as-Code standards are defined in the [LCM Product Doctrine](docs/architecture/product-doctrine.md).
+
 ## Why LCM
 
 AI coding agents often start each task with incomplete repository context. File search can find text, but it does not preserve stable symbol identity, explain why a rule exists, or reliably show which callers, tests, routes, and constraints are connected to a proposed change.
@@ -32,6 +34,7 @@ LCM adds a deterministic repository layer that can be committed and reviewed wit
 | `.lcm/graph.json` | Typed relationships with source evidence and confidence scores |
 | `.lcm/constraints.json` | Structured architectural constraints and lifecycle metadata |
 | `.lcm/fitness.json` | Versioned thresholds for graph, test-link, and constraint health |
+| `.lcm/cache.json` | Local, ignored file-hash cache for incremental symbol extraction |
 | `PROJECT_MAP.md` | Human-readable architecture, integrations, constraints, and feature registry |
 | `PROJECT_MAP.min.md` | Compact generated map for broad agent orientation |
 
@@ -104,6 +107,12 @@ Graph relationships include source evidence and a confidence score:
 
 The graph supports callers, callees, test links, routes, imports, and active constraints. `impact`, `deep-impact`, `explain`, `plan`, and `verify-change` build on the same generated evidence.
 
+Every symbol, relationship, and structured constraint also records its knowledge type and freshness state. LCM distinguishes directly extracted facts, deterministic derivations, human declarations, runtime observations, and unverified inference instead of treating every relationship as equally authoritative.
+
+### Incremental indexing
+
+`living-map update` caches file hashes and symbol records locally. Unchanged files reuse their previous extraction result while the final committed index and graph remain deterministic. Cache state is operational data and is not committed.
+
 ### Structured constraints
 
 `living-map add-constraint` records rules in `.lcm/constraints.json` with:
@@ -128,7 +137,11 @@ These commands provide explainable signals; they do not claim that a change is s
 
 ### Focused and temporal context
 
-`living-map context` compiles a task-specific context packet under a token budget. `living-map explain` provides one-symbol orientation, while `living-map why` combines Git history with active constraints to show how a symbol evolved and which rules currently govern it.
+`living-map context` compiles a hierarchical, risk-weighted context packet under a token budget, including evidence and freshness. `living-map explain` provides one-symbol orientation, while `living-map why` combines Git history with active constraints to show how a symbol evolved and which rules currently govern it.
+
+### Optional CALM interoperability
+
+LCM remains independent and has no CALM runtime dependency. `living-map calm-export` can project observed repository components into a CALM 1.2 document, while `living-map calm-reconcile` compares a declared CALM architecture with LCM-observed components and relationships. This adapter treats CALM as an interoperability target, not as LCM's internal data model.
 
 ### Benchmark and regression gates
 
@@ -154,6 +167,8 @@ Benchmark templates are not product-performance evidence by themselves. Meaningf
 | `living-map plan` | Find likely symbols, blast radius, constraints, tests, and risk before editing |
 | `living-map verify-change` | Validate the current diff against graph-linked evidence |
 | `living-map context` | Compile task-specific context under a token budget |
+| `living-map calm-export` | Export an optional CALM 1.2 projection from LCM evidence |
+| `living-map calm-reconcile` | Detect drift between declared CALM architecture and observed code |
 | `living-map explain` | Explain a symbol, its relationships, routes, tests, and constraints |
 | `living-map why` | Show Git history and active constraints for a symbol |
 | `living-map rollback` | Inspect or restore generated-map checkpoints |
@@ -163,7 +178,7 @@ Run `living-map <command> --help` for command-specific options.
 
 ## MCP integration
 
-The optional MCP server exposes 14 tools so compatible clients can use the same model without parsing terminal output.
+The optional MCP server exposes 16 tools so compatible clients can use the same model without parsing terminal output.
 
 | Workflow | MCP tools |
 |---|---|
@@ -173,6 +188,7 @@ The optional MCP server exposes 14 tools so compatible clients can use the same 
 | Health and coverage | `fitness_report`, `test_gap_hotspots` |
 | Symbol understanding | `explain_symbol`, `explain_symbol_history` |
 | Repository knowledge | `register_feature`, `register_constraint` |
+| Architecture interoperability | `export_calm_architecture`, `reconcile_calm_architecture` |
 
 Start the server with:
 
@@ -204,6 +220,7 @@ PHP, HTML, and Vue files can contribute stable map and symbol information, but t
 - Framework detection is pattern-based and intentionally conservative.
 - A linked test is evidence of coverage, not proof that the relevant behavior is asserted.
 - Git history features require the repository and relevant commits to be available locally.
+- CALM export is a conservative component-level projection; it does not replace architecture review or claim that every runtime dependency is observable from source.
 - Large polyglot repositories should tune fitness and guard thresholds to their architecture rather than treating the defaults as universal.
 
 ## Agent integration
@@ -228,7 +245,7 @@ After editing code:
 ```text
 living-codebase-map/
 ├── scripts/living_map.py        # CLI entry point and core workflows
-├── scripts/mcp_server.py        # Optional MCP server
+├── scripts/lcm_core/            # Schemas, evidence, cache, semantics, and adapters
 ├── tests/                       # Unit and integration tests
 ├── benchmarks/                  # Benchmark tasks, schemas, and evaluator
 ├── .github/workflows/           # CI and release automation

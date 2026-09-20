@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "living-codebase-map",
-  "version": "3.23.0",
+  "version": "3.30.0",
   "description": "Deterministic codebase intelligence and change-safety tooling for AI coding agents",
   "author": {
     "name": "Le Khac Hung",

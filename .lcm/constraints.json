@@ -1,4 +1,95 @@
 {
-  "constraints": [],
-  "schema_version": 1
+  "constraints": [
+    {
+      "evidence": [],
+      "id": "C001",
+      "introduced_by": "legacy-project-map",
+      "knowledge_type": "DECLARED",
+      "owner": "maintainers",
+      "reason": "Keep repository-local use available without mandatory package installation.",
+      "rule": "Core CLI commands must run with the Python standard library only.",
+      "scope": [],
+      "severity": "critical",
+      "source": {
+        "kind": "human",
+        "path": ".lcm/constraints.json"
+      },
+      "staleness": "FRESH",
+      "status": "ACTIVE",
+      "superseded_by": null,
+      "verification": [
+        "Install and run the core CLI with optional dependencies absent."
+      ]
+    },
+    {
+      "evidence": [],
+      "id": "C002",
+      "introduced_by": "legacy-project-map",
+      "knowledge_type": "DECLARED",
+      "owner": "maintainers",
+      "reason": "Core commands must remain usable when MCP support is not installed.",
+      "rule": "MCP server mode must degrade gracefully when the optional mcp package is missing.",
+      "scope": [
+        "py:scripts/living_map.py::build_mcp_server",
+        "py:scripts/living_map.py::cmd_mcp"
+      ],
+      "severity": "high",
+      "source": {
+        "kind": "human",
+        "path": ".lcm/constraints.json"
+      },
+      "staleness": "FRESH",
+      "status": "ACTIVE",
+      "superseded_by": null,
+      "verification": [
+        "Verify cmd_mcp returns a clear installation error when imports fail."
+      ]
+    },
+    {
+      "evidence": [],
+      "id": "C003",
+      "introduced_by": "legacy-project-map",
+      "knowledge_type": "DECLARED",
+      "owner": "maintainers",
+      "reason": "Rollback must never discard user source changes.",
+      "rule": "Rollback may restore generated map projections only and must never revert source code.",
+      "scope": [
+        "py:scripts/living_map.py::git_rollback_map",
+        "py:scripts/living_map.py::cmd_rollback"
+      ],
+      "severity": "critical",
+      "source": {
+        "kind": "human",
+        "path": ".lcm/constraints.json"
+      },
+      "staleness": "FRESH",
+      "status": "ACTIVE",
+      "superseded_by": null,
+      "verification": [
+        "Confirm rollback touches only PROJECT_MAP.md and PROJECT_MAP.min.md."
+      ]
+    },
+    {
+      "evidence": [],
+      "id": "C004",
+      "introduced_by": "legacy-project-map",
+      "knowledge_type": "DECLARED",
+      "owner": "maintainers",
+      "reason": "Windows CP1252 terminals otherwise fail on diagnostic Unicode output.",
+      "rule": "CLI stdout and stderr must use UTF-8 with replacement-safe error handling.",
+      "scope": [],
+      "severity": "medium",
+      "source": {
+        "kind": "human",
+        "path": ".lcm/constraints.json"
+      },
+      "staleness": "FRESH",
+      "status": "ACTIVE",
+      "superseded_by": null,
+      "verification": [
+        "Run CLI diagnostics under a non-UTF-8 Windows console."
+      ]
+    }
+  ],
+  "schema_version": 2
 }
