@@ -1,313 +1,256 @@
-# Living Codebase Map (LCM)
+# Living Codebase Map
 
-> **Stable Symbol Identity, Implicit Constraints & Persistent Working Memory for AI Coding Agents.**
-> *Treat line numbers as navigation hints—not identity—while preserving cross-layer knowledge and production constraints.*
+Deterministic codebase intelligence and change-safety tooling for AI coding agents.
 
+[![CI](https://github.com/lekhachung1993-hub/living-codebase-map/actions/workflows/ci.yml/badge.svg)](https://github.com/lekhachung1993-hub/living-codebase-map/actions/workflows/ci.yml)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-3776AB.svg)](https://www.python.org/)
+[![Core dependencies](https://img.shields.io/badge/core%20dependencies-0-brightgreen.svg)](#installation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)]()
-[![Compatible with](https://img.shields.io/badge/agents-Claude%20Code%20%7C%20Cursor%20%7C%20Antigravity%20%7C%20Windsurf%20%7C%20Copilot-orange.svg)]()
 
----
+Living Codebase Map (LCM) turns a repository into a versioned model that coding agents can inspect before a change and verify afterward. It combines stable symbol identities, an evidence-backed dependency graph, structured architectural constraints, focused context retrieval, risk analysis, and CI gates in one local-first tool.
 
-## ✨ 5 Breakthrough Benefits for Developers & AI
+LCM is designed to complement an agent's normal code search and reasoning. It does not replace a compiler, language server, test suite, or human review.
 
-| Benefit | Real-World Impact |
+## Why LCM
+
+AI coding agents often start each task with incomplete repository context. File search can find text, but it does not preserve stable symbol identity, explain why a rule exists, or reliably show which callers, tests, routes, and constraints are connected to a proposed change.
+
+LCM adds a deterministic repository layer that can be committed and reviewed with the code:
+
+- **Stable symbol IDs** remain consistent when line numbers move.
+- **Evidence-backed graph edges** connect calls, imports, tests, routes, and constraints without guessing ambiguous targets.
+- **Change planning and verification** expose likely blast radius before editing and missing evidence afterward.
+- **Structured constraints** preserve architectural and operational rules with ownership, severity, scope, and provenance.
+- **Focused context packets** give agents task-relevant symbols and relationships within a token budget.
+- **Fitness and guard gates** make map quality and change risk enforceable in CI.
+
+## Generated repository model
+
+| Artifact | Purpose |
 |---|---|
-| 🎯 **Stable Symbol Index** | `.lcm/index.json` identifies symbols by language, repository path, and qualified name; line ranges remain refreshable navigation metadata. |
-| 🕸️ **Evidence-backed Dependency Graph** | `.lcm/graph.json` records dependency edges with confidence and source evidence; ambiguous call targets are not guessed. |
-| 🌐 **JavaScript/TypeScript Graph** | Zero-dependency static analysis extracts named calls, test links, Express routes, and Next.js App Router handlers. |
-| 📦 **Import-Aware Resolution** | Relative ESM named and namespace imports resolve aliases and duplicate symbol names to the correct JS/TS module. |
-| 🐍 **Python Import Resolution** | AST-backed absolute, relative, aliased, module, package, and unique `src/` imports resolve duplicate Python symbols safely. |
-| 🐹 **Go Graph Intelligence** | Receiver-qualified methods, local-module import aliases, cross-package calls and handlers, `_test.go` links, `net/http`, and common routers become evidence-backed graph relationships. |
-| 🦀 **Rust Graph Intelligence** | Ranged functions, `impl` methods, module-aware `use` aliases and calls, `#[test]`, Axum, Actix, and Rocket routes become evidence-backed relationships. |
-| 🔷 **C# Graph Intelligence** | Namespace/class-qualified methods, `using` aliases, calls, xUnit/NUnit/MSTest, ASP.NET controllers, and Minimal APIs become evidence-backed relationships. |
-| ☕ **Java Graph Intelligence** | Package/class-qualified methods, class and static imports, calls, JUnit links, Spring mappings, and JAX-RS paths become evidence-backed relationships. |
-| ✅ **Deterministic Integrity Check** | `map check` rebuilds and compares the map, symbol index, and graph; missing, stale, malformed, or manually altered artifacts fail CI. |
-| 📜 **Structured Constraints** | `.lcm/constraints.json` stores lifecycle, severity, stable-symbol scope, reason, owner, and provenance; active rules become graph edges. |
-| 🛡️ **Change Safety Engine** | `map plan` explains risk before editing; `map verify-change` checks the diff against linked tests and constraints afterward. |
-| 🧩 **Dynamic Context Compiler** | `map context` selects task-relevant symbols and relationships within a real token budget; `map explain` gives one-symbol orientation. |
-| 🕰️ **Git Temporal Memory** | `map why` connects a symbol to its introducing and modifying commits plus active architectural constraints. |
-| 🔌 **MCP Capability Parity** | Planning, verification, context compilation, symbol explanation, and temporal history are available as native MCP tools, not only CLI commands. |
-| 📊 **Measurable Agent Value** | A versioned benchmark suite compares success, retrieval precision/recall, tokens, tool calls, duration, and missed dependencies/tests/constraints. |
-| 🩺 **Codebase Fitness Gates** | `map fitness` measures graph coverage, resolved edges, hub concentration, linked-test evidence, and constraint health against versioned thresholds. |
-| 🚧 **Risk-Aware Diff Guard** | `map guard` maps exact Git diff hunks to symbols and blocks configured risk levels using fan-in, APIs, constraints, edge confidence, and linked tests. |
-| 🧪 **Test-Gap Prioritization** | `map test-gaps` ranks untested hubs by fan-in, fan-out, API exposure, and constraint severity. |
-| 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
-| 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
-| 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
-| 🛡️ **Zero-Drift Git Guard** | The map versions in lockstep with your codebase. Includes pre-commit hooks and GitHub Actions CI/CD to block drifted PRs automatically. |
+| `.lcm/index.json` | Stable symbol identities, current locations, language, kind, signature, and content hashes |
+| `.lcm/graph.json` | Typed relationships with source evidence and confidence scores |
+| `.lcm/constraints.json` | Structured architectural constraints and lifecycle metadata |
+| `.lcm/fitness.json` | Versioned thresholds for graph, test-link, and constraint health |
+| `PROJECT_MAP.md` | Human-readable architecture, integrations, constraints, and feature registry |
+| `PROJECT_MAP.min.md` | Compact generated map for broad agent orientation |
 
----
+These artifacts are deterministic outputs. Regenerate them with LCM instead of editing generated data manually.
 
-### ⚖️ Before vs. After Living Codebase Map
+## Installation
 
-| Dimension | Standard AI Agent (Zero Context) | With Living Codebase Map (LCM) |
-|---|---|---|
-| **Surgical Precision** | Treats stale line numbers as identity | Resolves a stable Symbol ID, then uses current `file:line` as a cache |
-| **Hidden Business Traps** | Repeats previously solved production bugs | Permanently anchored in Module 4 constraints |
-| **Cross-Layer Awareness** | Renaming UI button can silently break API & DB | Map-assisted 6-tier blast-radius report |
-| **Developer Effort** | Remember CLI syntax, juggle terminal windows | Conversational commands directly in IDE chat |
+LCM's core CLI uses only the Python standard library and supports Python 3.8 or newer.
 
----
+### Repository-local installation
 
-## 💬 Chat-Native Interface (Zero-Terminal Experience)
+This layout works well when the map should travel with a project and be discoverable by coding agents:
 
-You **do not need to open a terminal** or find the Python script. Just type conversational commands directly in your IDE chat (Claude, Cursor, Antigravity, Windsurf, Copilot):
-
-| What you type in Chat | What the AI Agent does automatically |
-|---|---|
-| `map update` | Runs `living_map.py update`, refreshes locations, writes `.lcm/index.json` and `.lcm/graph.json`, generates `PROJECT_MAP.min.md`, and leaves commits under developer control. |
-| `map impact <symbol>` | Traverses graph callers/callees and combines them with the documented map layers in concise Lean Mode. |
-| `map deep-impact <symbol>` | Runs `living_map.py deep-impact <symbol>`, **Deep Mode** generating an exhaustive 6-layer tree view (`├──`, `└──`) for complex refactoring. |
-| `map check` | Deterministically verifies `PROJECT_MAP.md`, `.lcm/index.json`, and `.lcm/graph.json`; `--fix` rebuilds all four generated artifacts. |
-| `map plan "<task>"` | Finds likely symbols/files, traverses their blast radius, and reports an explainable GREEN/YELLOW/RED risk score. |
-| `map verify-change` | Compares the current Git diff with graph-linked tests and constraints; use `--strict` as a quality gate. |
-| `map context "<task>" --budget 500` | Produces a task-specific context packet rather than using one static mini-map for every task. |
-| `map explain <symbol>` | Shows the exact Stable Symbol ID, location, incoming callers, outgoing calls, tests, routes, and constraints. |
-| `map why <symbol>` | Uses Git pickaxe history to show why a symbol appeared, how it changed, and which active constraints govern it. |
-| `map constraint <text>` | Registers a hard-learned implicit rule into Module 4 with automatic `[Cx]` ID assignment. |
-| `map add-feature "<prompt>"` | Natural language auto-parsing: extracts feature ID (`Fxxx`), DOM selector, API route, and registers into Module 5. |
-| `map rollback [hash]` | Safe Rollback Lock: Inspects map history or restores map checkpoint (**source code is 100% untouched**). |
-| `map init` | Scans workspace and bootstraps `PROJECT_MAP.md` tailored to your stack. |
-
----
-
-## 🚀 3-Step Quickstart
-
-### Step 1: Install into your project
 ```bash
-git clone https://github.com/lekhachung1993-hub/living-codebase-map.git .agents/skills/living-codebase-map
-```
+git clone https://github.com/lekhachung1993-hub/living-codebase-map.git \
+  .agents/skills/living-codebase-map
 
-### Step 2: Initialize & Scan
-```bash
 python .agents/skills/living-codebase-map/scripts/living_map.py init
 python .agents/skills/living-codebase-map/scripts/living_map.py update
+python .agents/skills/living-codebase-map/scripts/living_map.py check
 ```
 
-### Step 3: Add to your Agent rules
-Add this directive to your project's agent instruction file (e.g. `.cursorrules`, `CLAUDE.md`, `.github/copilot-instructions.md`, or `AGENTS.md`):
-
-```markdown
-<!-- living-codebase-map:start -->
-# Living Codebase Map Protocol & Chat Interface
-Before making ANY code changes:
-1. Read `PROJECT_MAP.min.md` (or `PROJECT_MAP.md`) to understand architecture, DOM bindings, and implicit constraints.
-2. Check Module 4 (Implicit Constraints) to avoid known production traps.
-3. Resolve code targets by Symbol ID; use Module 1 & 2 `file:line` values only for navigation.
-
-### Chat Commands (Never make the user run python scripts):
-When the user sends these keywords in chat, execute the corresponding action automatically:
-- `map update`: Run `python scripts/living_map.py update` and report summary; do not commit unless explicitly requested.
-- `map impact <symbol>`: Run `python scripts/living_map.py impact <symbol>` (default Lean mode, <15 lines).
-- `map deep-impact <symbol>`: Run `python scripts/living_map.py deep-impact <symbol>` (exhaustive 6-layer tree).
-- `map check`: Run `python scripts/living_map.py check` to verify zero drift.
-- `map constraint <text>`: Append new implicit rule to Module 4.
-- `map rollback [commit]`: View history or rollback map safely (source code untouched).
-<!-- living-codebase-map:end -->
-```
-
----
-
-<details>
-<summary><h3>🛠️ Advanced CLI Command Reference (Optimized for AI Agents)</h3></summary>
-
-| Command Syntax | Operational Purpose | Token Saving & Safety Mechanism |
-|---|---|---|
-| `python living_map.py update` | Write `.lcm/index.json` and `.lcm/graph.json`, refresh line coordinates, and generate `.min.md` | Keeps machine identity and dependencies separate from human/LLM projections. |
-| `python living_map.py update --auto-commit` | Synchronize map state directly into Git history | Creates atomic memory checkpoint locking code and map. |
-| `python living_map.py impact <symbol>` | Quick cross-layer blast radius scan (Lean Mode) | Default: limits output under 15 lines to prevent AI context overflow. |
-| `python living_map.py deep-impact <symbol>` | Exhaustive 6-layer architecture dependency tree | Full tree analysis (`├──`, `└──`) for high-stakes refactoring. |
-| `python living_map.py add-feature "<prompt>"` | Auto-parse feature from natural language | Extracts ID, UI selector (`#id`, `.class`), API, and cleans description. |
-| `python living_map.py add-constraint "<text>"` | Register implicit business traps into Module 4 | Automatically assigns incremental `[Cx]` identifiers. |
-| `python living_map.py check` | Rebuild and compare Markdown, symbol index, and graph state | Detects missing files, schema mismatch, stale hashes, malformed edges, and content drift. |
-| `python living_map.py install-hook` | Auto-install Git Pre-commit guard | Zero-drift enforcement, blocks commits if map is out of sync. |
-| `python living_map.py rollback --to <hash>` | Restore map to previous checkpoint | Safe Lock: Strictly restores `PROJECT_MAP.md`; source code is never touched. |
-| `python living_map.py mcp` | Launch as Model Context Protocol (MCP) Server | Runs stdio server exposing 11 native tools to Cursor, Claude, Antigravity, Windsurf. |
-
-</details>
-
----
-
-## 🔌 Model Context Protocol (MCP) Native Server Integration
-
-Living Codebase Map can run as an official **MCP Stdio Server**, providing 11 Native Tools to AI Agents in **Antigravity IDE, Cursor, Claude Desktop, Windsurf, and Cline**:
-
-### 1. Install MCP SDK (optional, only needed for MCP Server mode):
-```bash
-pip install 'living-codebase-map[mcp]'
-```
-*(Note: Core CLI commands remain 100% zero-dependency even without `mcp` installed).*
-
-### 2. Configure in your IDE:
-
-**Claude Desktop (`claude_desktop_config.json`):**
-```json
-{
-  "mcpServers": {
-    "living-codebase-map": {
-      "command": "python",
-      "args": ["/absolute/path/to/scripts/living_map.py", "mcp"]
-    }
-  }
-}
-```
-
-**Cursor / Antigravity IDE (`Settings -> Features -> MCP -> Add New MCP Server`):**
-- **Name:** `living-codebase-map`
-- **Type:** `stdio`
-- **Command:** `python /absolute/path/to/scripts/living_map.py mcp`
-
-### 3. Native Tools Exposed to Agents:
-| Native MCP Tool | Parameters | Operational Capability |
-|---|---|---|
-| `update_map` | `directory`, `auto_commit` | Scans workspace, writes the stable symbol index and dependency graph, updates location caches, and generates `PROJECT_MAP.min.md`. |
-| `check_drift` | `full_ast` | Smart Drift verification using MD5, with optional full symbol scanning. |
-| `analyze_code_impact` | `symbol`, `deep_mode` | Dual-mode blast radius: Lean mode (<15 lines) vs Deep 6-layer dependency tree. |
-| `plan_change` | `task` | Build a graph-backed pre-flight plan with an explainable risk score. |
-| `verify_change` | `base`, `strict` | Compare the Git diff with graph-linked tests and constraints; preserves CLI gate status. |
-| `compile_context` | `task`, `budget` | Produce a task-specific context packet within the requested token budget. |
-| `explain_symbol` | `symbol` | Resolve one Stable Symbol and show its callers, callees, tests, routes, and constraints. |
-| `explain_symbol_history` | `symbol`, `limit` | Retrieve Git-backed changes and active constraints for a symbol. |
-| `register_feature` | `prompt`, `auto_commit` | Natural language auto-parsing: extracts `Fxxx`, DOM selector, API route into Module 5. |
-| `register_constraint` | `description`, `constraint_id` | Enforces implicit business traps & domain invariants in Module 4. |
-| `get_map_summary` | *(none)* | Instant session warmup with lightweight architecture overview in ~300 tokens. |
-
-<details>
-<summary><h3>🧩 Supported Languages & Framework Extractors (Click to expand)</h3></summary>
-
-| Language | Frameworks & Architectures Supported | Extracted Symbols |
-|---|---|---|
-| **Go** | net/http, Gin, Fiber, Echo, Chi | Functions, receiver methods, structs, interfaces |
-| **Python** | FastAPI, Django, Flask, PyTorch | `def`, `async def`, `class`, route decorators (`@app.get`, `@router.post`) |
-| **TypeScript / JS** | Next.js (App & Pages Router), React, Vue | Next.js route handlers (`GET`, `POST`), Server Actions, `function`, arrow funcs |
-| **Node.js Backend** | Express, NestJS, Fastify | `app.get()`, `router.post()`, `@Controller()`, `@Injectable()`, services |
-| **Rust** | Actix-web, Axum, Rocket | `fn`, `async fn`, `pub fn`, `struct`, `impl`, route macros |
-| **C# / .NET** | ASP.NET Core MVC & Web API | Controllers, actions, methods, `[HttpGet]`, `[HttpPost]` |
-| **Java** | Spring Boot, Jakarta EE | Controllers, services, `@GetMapping`, `@PostMapping` |
-| **PHP** | Laravel, Symfony | Routes (`Route::get`), classes, methods |
-| **HTML / DOM** | HTML5, Vue Templates, JSX | Element IDs (`id="..."`), class bindings |
-
-</details>
-
-### Dependency graph confidence
-
-The graph extracts Python, JavaScript/TypeScript, Go, Rust, and C# `CALLS`, `TESTED_BY`, and route `HANDLES` relationships with file-and-line evidence. Python uses the standard-library AST and resolves top-level absolute, relative, aliased, module, package, and uniquely matched `src/` imports. JS/TS uses a conservative zero-dependency static pass supporting named functions, block-bodied arrow functions, Express-style routes, and Next.js App Router handlers. Relative ESM named imports, aliases, namespace imports, extensionless modules, directory `index` modules, and NodeNext-style `.js` specifiers are resolved against indexed source files. Go receiver methods use receiver-qualified Stable IDs; same-package and receiver calls remain exact, while `go.mod`-scoped default or explicit import aliases resolve cross-package function calls and route handlers without requiring a Go toolchain. Rust functions receive exact body ranges, methods are qualified by their `impl` type, and `crate`, `self`, `super`, simple `use` aliases, same-module calls, test attributes, Axum routes, plus Actix/Rocket route attributes are linked conservatively. C# symbols include namespace and class identity; regular `using` directives and type aliases disambiguate static calls across files, while direct, `this`, test, controller action, and Minimal API links remain exact.
-
-- `1.0`: exact qualified target in the same file, including `self.method()`.
-- `0.9`: the called name has exactly one candidate across the repository.
-- unresolved: ambiguous or dynamic calls are omitted rather than reported as facts.
-
-Each edge stores its extractor plus the evidence `path:line`. Calls inside comments and string literals are masked before JS/TS, Go, Rust, and C# analysis. Python wildcard imports, runtime imports, JS/TS package aliases, external or dot-imported Go packages, Rust external crates, glob or nested imports, C# dynamic dispatch and dependency-injected instance calls, anonymous inline handlers, and unbound member calls are deliberately omitted when they cannot be resolved safely. Other languages continue to use the stable symbol index and Markdown impact fallback until dedicated graph extractors are added.
-
-### Structured constraint lifecycle
+### Editable package installation
 
 ```bash
-python scripts/living_map.py add-constraint "Writes must be idempotent" \
-  --severity high \
-  --scope py:src/service.py::OrderService.create \
-  --reason "Workers retry failed jobs" \
-  --owner backend
+python -m pip install -e .
+living-map --help
 ```
 
-Constraints use `ACTIVE`, `SUSPECT`, `STALE`, or `SUPERSEDED`. Active constraints with missing Symbol IDs fail `map check`; stale constraints may retain deleted scope as historical knowledge. Active and suspect scopes produce `CONSTRAINED_BY` graph edges.
-
-### Safety workflow
+MCP support is optional:
 
 ```bash
-python scripts/living_map.py plan "change order creation API"
-# edit code and tests
-python scripts/living_map.py verify-change --base HEAD --strict
-python scripts/living_map.py guard --base HEAD --fail-on high
+python -m pip install -e '.[mcp]'
+living-map mcp
 ```
 
-Risk scores explain their inputs: API exposure, constraint severity, graph blast radius, inferred dependencies, and missing linked tests. `verify-change` checks changed files; `guard` narrows the decision to symbols intersecting exact diff hunks and becomes a CI gate at the configured `medium` or `high` level.
-
-### Dynamic context
+## Recommended workflow
 
 ```bash
-python scripts/living_map.py context "fix order validation" --budget 500
-python scripts/living_map.py explain create_order
+# Refresh the repository model.
+living-map update
+
+# Inspect likely scope and risk before editing.
+living-map plan "change authentication token validation"
+living-map context "change authentication token validation" --budget 800
+living-map impact <symbol-id-or-name>
+
+# Make the code change, then validate its evidence.
+living-map verify-change --strict
+living-map guard --fail-on high
+
+# Commit regenerated artifacts with the code.
+living-map update
+living-map check
 ```
 
-The budget is enforced using a conservative character-to-token estimate. Ambiguous `explain` queries fail and list Stable Symbol IDs instead of silently selecting one.
+For CI, run the project's tests together with `living-map check`, `living-map fitness --strict`, and the guard policy appropriate for the repository.
 
-### Temporal memory
+## Core capabilities
+
+### Stable symbol index and dependency graph
+
+LCM identifies symbols by language, repository path, and qualified name. Line ranges are refreshable navigation metadata rather than identity.
+
+Graph relationships include source evidence and a confidence score:
+
+- `1.0` — exact module-, package-, namespace-, or type-aware resolution.
+- `0.9` — conservative repository-wide resolution when exactly one candidate exists.
+- Unresolved or ambiguous targets are omitted rather than guessed.
+
+The graph supports callers, callees, test links, routes, imports, and active constraints. `impact`, `deep-impact`, `explain`, `plan`, and `verify-change` build on the same generated evidence.
+
+### Structured constraints
+
+`living-map add-constraint` records rules in `.lcm/constraints.json` with:
+
+- a stable constraint ID;
+- lifecycle state and severity;
+- symbol or path scope;
+- reason, owner, and provenance;
+- optional verification guidance.
+
+Active symbol-scoped rules are projected into the graph so they appear in planning, explanation, guard, and verification output.
+
+### Change-safety analysis
+
+`living-map guard` maps Git diff hunks to symbols and scores risk using graph fan-in, public routes, active constraints, edge confidence, and linked tests. `living-map verify-change` then checks whether the current diff has corresponding test and constraint evidence.
+
+These commands provide explainable signals; they do not claim that a change is semantically correct.
+
+### Fitness and test-gap reporting
+
+`living-map fitness` evaluates the generated model against versioned thresholds. `living-map test-gaps` ranks untested hubs using dependency centrality, API exposure, and constraint severity so teams can prioritize high-value coverage work.
+
+### Focused and temporal context
+
+`living-map context` compiles a task-specific context packet under a token budget. `living-map explain` provides one-symbol orientation, while `living-map why` combines Git history with active constraints to show how a symbol evolved and which rules currently govern it.
+
+### Benchmark and regression gates
+
+The benchmark evaluator compares observed agent runs using task success, retrieval precision and recall, token use, tool calls, duration, and missed dependencies, tests, or constraints. Baseline and delta gates can detect regressions across releases.
+
+Benchmark templates are not product-performance evidence by themselves. Meaningful claims require recorded runs on representative repositories and tasks.
+
+## CLI reference
+
+| Command | Purpose |
+|---|---|
+| `living-map init` | Bootstrap LCM artifacts for a repository |
+| `living-map update` | Regenerate the map, symbol index, graph, and compact map |
+| `living-map check` | Rebuild and compare generated artifacts to detect drift |
+| `living-map fitness` | Measure model quality against configured thresholds |
+| `living-map test-gaps` | Rank high-impact symbols without linked test evidence |
+| `living-map guard` | Score the current Git diff and enforce a risk policy |
+| `living-map impact` | Show direct graph impact for a symbol |
+| `living-map deep-impact` | Traverse a broader dependency tree |
+| `living-map install-hook` | Install the repository pre-commit drift check |
+| `living-map add-feature` | Register a feature in the human-readable map |
+| `living-map add-constraint` | Create or update a structured constraint |
+| `living-map plan` | Find likely symbols, blast radius, constraints, tests, and risk before editing |
+| `living-map verify-change` | Validate the current diff against graph-linked evidence |
+| `living-map context` | Compile task-specific context under a token budget |
+| `living-map explain` | Explain a symbol, its relationships, routes, tests, and constraints |
+| `living-map why` | Show Git history and active constraints for a symbol |
+| `living-map rollback` | Inspect or restore generated-map checkpoints |
+| `living-map mcp` | Start the optional MCP server |
+
+Run `living-map <command> --help` for command-specific options.
+
+## MCP integration
+
+The optional MCP server exposes 14 tools so compatible clients can use the same model without parsing terminal output.
+
+| Workflow | MCP tools |
+|---|---|
+| Model maintenance | `update_map`, `check_drift`, `get_map_summary` |
+| Planning and impact | `analyze_code_impact`, `plan_change`, `compile_context` |
+| Change verification | `guard_change`, `verify_change` |
+| Health and coverage | `fitness_report`, `test_gap_hotspots` |
+| Symbol understanding | `explain_symbol`, `explain_symbol_history` |
+| Repository knowledge | `register_feature`, `register_constraint` |
+
+Start the server with:
 
 ```bash
-python scripts/living_map.py why create_order --limit 10
+living-map mcp
 ```
 
-`why` resolves the symbol first, then searches its tracked file history for commits that added or removed the symbol name. It reports the oldest matching change, recent relevant changes, and linked structured constraints. Ambiguous names require a full Stable Symbol ID.
+Configure the MCP client to launch that command from the repository root. The exact configuration format depends on the client.
 
-### Benchmarking LCM
+## Language coverage
 
-```bash
-python scripts/benchmark.py \
-  --suite benchmarks/suites/lcm-self.json \
-  --run baseline=/path/to/baseline.json \
-  --run lcm=/path/to/lcm.json \
-  --baseline baseline \
-  --gate --max-token-increase-pct 0.10 \
-  --markdown-output benchmark-report.md \
-  --json-output benchmark-report.json
+LCM uses conservative, zero-core-dependency static analysis. Dedicated graph extractors currently cover:
+
+| Language | Current graph evidence |
+|---|---|
+| Python | AST-backed imports, aliases, calls, tests, and common route patterns |
+| JavaScript / TypeScript | Relative ESM imports, aliases, calls, tests, Express routes, and Next.js App Router handlers |
+| Go | `go.mod` package resolution, import aliases, receiver methods, tests, `net/http`, and common routers |
+| Rust | `crate` / `self` / `super` modules, `use` aliases, calls, tests, Axum, Actix, and Rocket routes |
+| C# | Namespaces, `using` aliases, methods, tests, ASP.NET controllers, and Minimal APIs |
+| Java | Packages, class and static imports, calls, JUnit links, Spring mappings, and JAX-RS paths |
+
+PHP, HTML, and Vue files can contribute stable map and symbol information, but they do not yet have the same dedicated import-aware graph coverage as the languages above.
+
+## Known limitations
+
+- Dynamic imports, reflection, generated code, dependency-injection dispatch, runtime monkey-patching, wildcard-heavy resolution, and indirect calls may not produce graph edges.
+- LCM performs static repository analysis with the Python standard library; it is not a compiler, type checker, or language server.
+- Framework detection is pattern-based and intentionally conservative.
+- A linked test is evidence of coverage, not proof that the relevant behavior is asserted.
+- Git history features require the repository and relevant commits to be available locally.
+- Large polyglot repositories should tune fitness and guard thresholds to their architecture rather than treating the defaults as universal.
+
+## Agent integration
+
+A repository-level instruction can make the workflow explicit for any coding agent:
+
+```md
+Before editing code:
+1. Run `living-map check` and refresh with `living-map update` if needed.
+2. Run `living-map plan "<task>"` and inspect relevant constraints.
+3. Use `living-map context "<task>"` or `living-map explain <symbol>` for focused context.
+
+After editing code:
+1. Run the relevant project tests.
+2. Run `living-map verify-change --strict` and the repository guard policy.
+3. Run `living-map update`, then `living-map check`.
+4. Commit generated LCM artifacts with the source change.
 ```
 
-The bundled suite contains ten repository-maintenance tasks. Comparison reports include success, recall, token, tool-call, and duration deltas. `--gate` rejects success or recall regression; the optional token limit is enforced only after quality. Compare runs only when they use the same repository commit, model, prompt, permissions, timeout, and acceptance checks. Template values are never product results; record observable agent runs before drawing conclusions.
+## Repository layout
 
-### Codebase fitness
-
-```bash
-python scripts/living_map.py fitness
-python scripts/living_map.py fitness --json
-python scripts/living_map.py fitness --strict
-```
-
-The report turns `.lcm/graph.json` and structured constraints into five reproducible health checks: structural-edge coverage, resolved-edge ratio, hub concentration, linked-test rate, and constraint validity. Thresholds live in `.lcm/fitness.json`; `--strict` exits non-zero when any gate fails, making the same policy usable by agents, local hooks, and CI. Hub and test-link metrics are graph evidence—not a substitute for runtime coverage.
-
-```bash
-python scripts/living_map.py test-gaps --limit 10
-```
-
-Use the ranked hotspots to add direct regression tests where graph fan-in makes failures most expensive.
-
-<details>
-<summary><h3>📁 Repository Structure</h3></summary>
-
-```
+```text
 living-codebase-map/
-├── .github/workflows/map-lint.yml    # CI/CD GitHub Action for pull requests
-├── SKILL.md                          # Standard Agent Skill Definition (Chat-Native)
-├── README.md                         # Documentation & Quickstart
-├── LICENSE                           # MIT License
-├── scripts/living_map.py             # Zero-dependency core CLI engine (v3)
-├── scripts/benchmark.py              # Deterministic benchmark evaluator
-├── benchmarks/                       # Versioned task suite, protocol, and run template
-├── .lcm/index.json                    # Generated machine-readable stable symbol index
-├── .lcm/graph.json                    # Generated confidence-scored dependency graph
-├── .lcm/constraints.json              # Human-authored structured architectural constraints
-├── .lcm/fitness.json                  # Versioned graph-health thresholds
-├── tests/test_symbol_index.py         # Stable-ID and collision regression tests
-├── tests/test_benchmark.py            # Benchmark scoring and validation tests
-└── templates/
-    ├── PROJECT_MAP.template.md       # Universal Living Map template
-    └── PROJECT_MAP.min.template.md   # AI Token-Saver mini map template
+├── scripts/living_map.py        # CLI entry point and core workflows
+├── scripts/mcp_server.py        # Optional MCP server
+├── tests/                       # Unit and integration tests
+├── benchmarks/                  # Benchmark tasks, schemas, and evaluator
+├── .github/workflows/           # CI and release automation
+├── SKILL.md                     # Coding-agent skill instructions
+├── manifest.json                # Skill metadata
+└── pyproject.toml               # Python package metadata
 ```
 
-</details>
+## Contributing
 
----
+Contributions should preserve deterministic output and conservative resolution. Before opening a pull request, run:
 
-## 🤝 Contributing
+```bash
+python -m unittest discover -s tests -v
+python scripts/living_map.py update
+python scripts/living_map.py check
+python scripts/living_map.py fitness --strict
+git diff --check
+```
 
-Contributions are welcome! Please feel free to submit issues or PRs:
-- Reproducible benchmark tasks and independently recorded comparison runs
-- Framework-specific extractors (Django, FastAPI, Next.js, Gin, Express)
-- Enhanced git hooks or CI/CD validation actions
+When adding graph coverage, include fixtures for aliases, duplicate symbol names, unresolved targets, test links, and framework routes where applicable.
 
----
+## License
 
-## 📄 License
-
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
+[MIT](LICENSE)

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "living-codebase-map"
 version = "3.23.0"
-description = "Universal Living Codebase Map & MCP Server for AI Coding Agents."
+description = "Deterministic codebase intelligence and change-safety tooling for AI coding agents."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "lekhachung1993-hub" }]
