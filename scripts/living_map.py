@@ -56,6 +56,29 @@ import contextlib
 import posixpath
 from datetime import datetime
 
+try:
+    from .lcm_core.calm_adapter import export_calm, reconcile_calm
+    from .lcm_core.evidence import make_provenance, validate_provenance
+    from .lcm_core.incremental import build_incremental_records
+    from .lcm_core.schema import (
+        CONSTRAINT_SCHEMA_VERSION,
+        GRAPH_SCHEMA_VERSION,
+        INDEX_SCHEMA_VERSION,
+        migrate_constraints,
+    )
+    from .lcm_core.semantics import validate_markdown_semantics
+except ImportError:  # Direct execution: python scripts/living_map.py
+    from lcm_core.calm_adapter import export_calm, reconcile_calm
+    from lcm_core.evidence import make_provenance, validate_provenance
+    from lcm_core.incremental import build_incremental_records
+    from lcm_core.schema import (
+        CONSTRAINT_SCHEMA_VERSION,
+        GRAPH_SCHEMA_VERSION,
+        INDEX_SCHEMA_VERSION,
+        migrate_constraints,
+    )
+    from lcm_core.semantics import validate_markdown_semantics
+
 # Reconfigure stdout/stderr for Unicode safety across Windows/Linux terminals
 if hasattr(sys.stdout, 'reconfigure'):
     try:
@@ -71,15 +94,13 @@ if hasattr(sys.stderr, 'reconfigure'):
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MAP_FILENAME = 'PROJECT_MAP.md'
 MIN_MAP_FILENAME = 'PROJECT_MAP.min.md'
-INDEX_SCHEMA_VERSION = 3
-GRAPH_SCHEMA_VERSION = 1
-CONSTRAINT_SCHEMA_VERSION = 1
 FITNESS_SCHEMA_VERSION = 1
 LCM_DIRNAME = '.lcm'
 INDEX_FILENAME = 'index.json'
 GRAPH_FILENAME = 'graph.json'
 CONSTRAINT_FILENAME = 'constraints.json'
 FITNESS_FILENAME = 'fitness.json'
+CACHE_FILENAME = 'cache.json'
 
 def find_project_root():
     """Locates the project root directory reliably."""
@@ -117,6 +138,7 @@ INDEX_PATH = os.path.join(ROOT, LCM_DIRNAME, INDEX_FILENAME)
 GRAPH_PATH = os.path.join(ROOT, LCM_DIRNAME, GRAPH_FILENAME)
 CONSTRAINT_PATH = os.path.join(ROOT, LCM_DIRNAME, CONSTRAINT_FILENAME)
 FITNESS_PATH = os.path.join(ROOT, LCM_DIRNAME, FITNESS_FILENAME)
+CACHE_PATH = os.path.join(ROOT, LCM_DIRNAME, CACHE_FILENAME)
 
 FITNESS_DEFAULTS = {
     'schema_version': FITNESS_SCHEMA_VERSION,
@@ -218,7 +240,12 @@ def generate_min_map(full_map_path=MAP_PATH, min_map_path=MIN_MAP_PATH):
     current_file_name = None
 
     re_file_hdr = re.compile(r'^###\s+([A-Za-z0-9_\-./\\]+\.[a-z]+)')
-    re_table_row = re.compile(r'^\|\s*L\d+\s*\|\s*\*{0,2}`([A-Za-z0-9_#\-]+)`\*{0,2}\s*\|(.*)')
+    re_table_row = re.compile(r'^\|\s*L\d+\s*\|\s*\*{0,2}`([^`]+)`\*{0,2}\s*\|(.*)')
+    retained_sections = (
+        'META', 'CODE LOCATION INDEX', 'ARCHITECTURAL CONSTRAINTS',
+        'IMPLICIT CONSTRAINTS', 'FEATURE TRACEABILITY', 'CROSS-REFERENCE',
+        'QUALITY GATE',
+    )
 
     for line in lines:
         raw = line.strip()
@@ -231,8 +258,9 @@ def generate_min_map(full_map_path=MAP_PATH, min_map_path=MIN_MAP_PATH):
                 current_file_name = None
                 current_file_symbols = []
             current_section = raw
-            min_lines.append("")
-            min_lines.append(raw)
+            if any(name in current_section for name in retained_sections):
+                min_lines.append("")
+                min_lines.append(raw)
             continue
 
         # Detect file headers in Code Location Index
@@ -256,7 +284,8 @@ def generate_min_map(full_map_path=MAP_PATH, min_map_path=MIN_MAP_PATH):
 
         # In other modules: preserve headers, constraints, cross-reference tables
         if any(sec in current_section for sec in [
-            "META", "IMPLICIT CONSTRAINTS", "UI & DOM", "CROSS-REFERENCE", "QUALITY GATE"
+            "META", "IMPLICIT CONSTRAINTS", "ARCHITECTURAL CONSTRAINTS",
+            "UI & DOM", "CROSS-REFERENCE", "FEATURE TRACEABILITY", "QUALITY GATE"
         ]):
             # Skip separator lines
             if raw.startswith('|---') or raw.startswith('| Line |') or raw.startswith('| Dòng |'):
@@ -1020,7 +1049,7 @@ def _java_symbol_records(file_path):
 
 
 def scan_file_symbol_records(file_path, rel_path=None):
-    """Return structured symbols used by the v3 index.
+    """Return structured symbols used by the versioned machine index.
 
     Stable IDs use language + repository-relative path + qualified symbol name.
     The current line range is navigation metadata, never the identity.
@@ -1061,8 +1090,22 @@ def scan_file_symbol_records(file_path, rel_path=None):
     return records
 
 
+def _enrich_symbol_evidence(files, symbols):
+    """Attach deterministic evidence semantics to symbol records."""
+    hashes = {item['path']: item.get('sha256') for item in files}
+    for symbol in symbols:
+        symbol.update(make_provenance(
+            'FACT',
+            f"{symbol.get('language', 'unknown')}_symbol_extractor",
+            symbol['path'],
+            hashes.get(symbol['path']),
+            symbol.get('line'),
+        ))
+    return symbols
+
+
 def build_symbol_index(root_dir=ROOT):
-    """Build the machine-readable v3 symbol index without writing it to disk."""
+    """Build the machine-readable symbol index without writing it to disk."""
     files = []
     symbols = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
@@ -1082,6 +1125,7 @@ def build_symbol_index(root_dir=ROOT):
             files.append({'path': rel_path, 'language': CODE_EXTENSIONS[ext], 'sha256': file_hash})
             symbols.extend(records)
 
+    _enrich_symbol_evidence(files, symbols)
     return {
         'schema_version': INDEX_SCHEMA_VERSION,
         'source_hash': calculate_codebase_hash(root_dir),
@@ -1091,8 +1135,23 @@ def build_symbol_index(root_dir=ROOT):
     }
 
 
+def build_symbol_index_incremental(root_dir=ROOT, cache_path=CACHE_PATH):
+    """Build the same deterministic index while reusing unchanged file records."""
+    files, symbols, stats = build_incremental_records(
+        root_dir, CODE_EXTENSIONS, IGNORED_DIRS, scan_file_symbol_records, cache_path,
+    )
+    _enrich_symbol_evidence(files, symbols)
+    return {
+        'schema_version': INDEX_SCHEMA_VERSION,
+        'source_hash': calculate_codebase_hash(root_dir),
+        'root': '.',
+        'files': files,
+        'symbols': symbols,
+    }, stats
+
+
 def write_symbol_index(index, index_path=INDEX_PATH):
-    """Atomically persist the v3 machine index."""
+    """Atomically persist the machine-readable symbol index."""
     os.makedirs(os.path.dirname(index_path), exist_ok=True)
     temp_path = index_path + '.tmp'
     with open(temp_path, 'w', encoding='utf-8') as f:
@@ -1416,6 +1475,9 @@ def build_dependency_graph(index, root_dir=ROOT):
             'path': symbol['path'],
             'line': symbol['line'],
             'end_line': symbol['end_line'],
+            'knowledge_type': symbol.get('knowledge_type', 'FACT'),
+            'staleness': symbol.get('staleness', 'FRESH'),
+            'source_hash': symbol.get('source_hash'),
         }
         nodes.append(node)
         node_ids.add(node['id'])
@@ -1432,12 +1494,15 @@ def build_dependency_graph(index, root_dir=ROOT):
         if source == target or key in edge_keys:
             return
         edge_keys.add(key)
+        knowledge_type = 'FACT' if confidence >= 1.0 else 'DERIVED'
         edges.append({
             'source': source,
             'target': target,
             'relation': relation,
             'confidence': confidence,
             'evidence': {'path': path, 'line': line, 'source': source_type},
+            'knowledge_type': knowledge_type,
+            'staleness': 'FRESH',
         })
 
     def resolve_target(rel_path, called):
@@ -2209,7 +2274,7 @@ def load_constraints(constraint_path=CONSTRAINT_PATH):
     if not os.path.exists(constraint_path):
         return {'schema_version': CONSTRAINT_SCHEMA_VERSION, 'constraints': []}
     with open(constraint_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        return migrate_constraints(json.load(f))
 
 
 def write_constraints(constraints, constraint_path=CONSTRAINT_PATH):
@@ -2223,6 +2288,7 @@ def write_constraints(constraints, constraint_path=CONSTRAINT_PATH):
 
 def validate_constraints(payload, index):
     """Validate constraint lifecycle and references to stable symbol IDs."""
+    payload = migrate_constraints(payload)
     issues = []
     if payload.get('schema_version') != CONSTRAINT_SCHEMA_VERSION:
         issues.append(f"constraint schema must be {CONSTRAINT_SCHEMA_VERSION}")
@@ -2247,6 +2313,9 @@ def validate_constraints(payload, index):
             issues.append(f"{cid}: invalid severity")
         if not str(entry.get('rule', '')).strip():
             issues.append(f"{cid}: rule is required")
+        issues.extend(validate_provenance(entry, cid))
+        if not isinstance(entry.get('verification', []), list):
+            issues.append(f"{cid}: verification must be a list")
         scope = entry.get('scope', [])
         if not isinstance(scope, list):
             issues.append(f"{cid}: scope must be a list")
@@ -2274,6 +2343,8 @@ def apply_constraints_to_graph(graph, payload):
                 'rule': entry['rule'],
                 'status': entry['status'],
                 'severity': entry['severity'],
+                'knowledge_type': entry.get('knowledge_type', 'DECLARED'),
+                'staleness': entry.get('staleness', 'FRESH'),
             })
             node_ids.add(constraint_id)
         if entry.get('status') not in {'ACTIVE', 'SUSPECT'}:
@@ -2287,6 +2358,8 @@ def apply_constraints_to_graph(graph, payload):
                 'relation': 'CONSTRAINED_BY',
                 'confidence': 1.0,
                 'evidence': {'path': f'{LCM_DIRNAME}/{CONSTRAINT_FILENAME}', 'line': 0, 'source': 'human'},
+                'knowledge_type': 'DECLARED',
+                'staleness': entry.get('staleness', 'FRESH'),
             })
     return graph
 
@@ -2831,7 +2904,7 @@ def explain_graph_symbol(query, graph):
 
 
 def compile_task_context(task, graph, budget=500):
-    """Compile task-specific graph context within an approximate token budget."""
+    """Compile hierarchical, risk-weighted context within an approximate budget."""
     plan = build_change_plan(task, graph)
     node_by_id = {node['id']: node for node in plan['nodes']}
     lines = [
@@ -2841,16 +2914,42 @@ def compile_task_context(task, graph, budget=500):
     ]
     if plan['reasons']:
         lines.append('Risk reasons: ' + ', '.join(f"{p} {r}" for p, r in plan['reasons']))
+    hierarchy = {}
+    for node in plan['nodes']:
+        path = node.get('path', '')
+        parts = [part for part in path.split('/') if part]
+        component = parts[0] if len(parts) > 1 else 'root'
+        module = '/'.join(parts[:-1]) if len(parts) > 1 else (parts[0] if parts else 'declared-knowledge')
+        hierarchy.setdefault(component, set()).add(module)
+    if hierarchy:
+        lines.append('Architecture scope:')
+        for component in sorted(hierarchy):
+            modules = ', '.join(sorted(hierarchy[component]))
+            lines.append(f"- {component}: {modules}")
     lines.append('Relevant nodes:')
-    for node in sorted(plan['nodes'], key=lambda item: (item.get('type', ''), item['id'])):
+    type_priority = {'constraint': 0, 'api': 1, 'symbol': 2}
+    for node in sorted(
+        plan['nodes'],
+        key=lambda item: (type_priority.get(item.get('type'), 3), item['id']),
+    ):
         detail = node.get('path') or node.get('rule') or ''
-        lines.append(f"- [{node.get('type', 'node')}] {node['id']} {detail}".rstrip())
+        evidence_state = f"{node.get('knowledge_type', 'UNKNOWN')}/{node.get('staleness', 'UNKNOWN')}"
+        lines.append(
+            f"- [{node.get('type', 'node')} {evidence_state}] {node['id']} {detail}".rstrip()
+        )
     if plan['edges']:
         lines.append('Relationships:')
         for edge in plan['edges']:
             source = node_by_id.get(edge['source'], {}).get('name', edge['source'])
             target = node_by_id.get(edge['target'], {}).get('name', edge['target'])
-            lines.append(f"- {source} --{edge['relation']}--> {target} ({edge['confidence']:.2f})")
+            evidence = edge.get('evidence', {})
+            evidence_ref = evidence.get('path', '?')
+            if evidence.get('line'):
+                evidence_ref += f":{evidence['line']}"
+            lines.append(
+                f"- {source} --{edge['relation']}--> {target} "
+                f"({edge['confidence']:.2f}, {edge.get('knowledge_type', 'UNKNOWN')}, {evidence_ref})"
+            )
 
     max_chars = max(200, int(budget) * 4)
     selected = []
@@ -2936,6 +3035,28 @@ def build_symbol_database(root_dir=ROOT):
         if len(unique_locations) == 1:
             symbol_lookup[key] = unique_locations[0]
 
+    return file_map, symbol_lookup
+
+
+def build_symbol_database_from_index(index):
+    """Build legacy line lookup tables from already extracted index records."""
+    file_map = {}
+    candidates = {}
+    for record in index.get('symbols', []):
+        rel_path = record.get('path')
+        symbol = record.get('name')
+        line = record.get('line')
+        if not rel_path or not symbol or not isinstance(line, int):
+            continue
+        file_map.setdefault(rel_path, {})[symbol] = line
+        location = (rel_path, line)
+        for key in ((rel_path, symbol), (os.path.basename(rel_path), symbol), symbol):
+            candidates.setdefault(key, []).append(location)
+    symbol_lookup = {}
+    for key, locations in candidates.items():
+        unique_locations = list(dict.fromkeys(locations))
+        if len(unique_locations) == 1:
+            symbol_lookup[key] = unique_locations[0]
     return file_map, symbol_lookup
 
 # ─────────────────────────────────────────────────────────────
@@ -3179,8 +3300,8 @@ def cmd_update(args):
         content = f.read()
 
     print(f"[SCAN] Indexing symbols across codebase ({ROOT})...")
-    file_map, symbol_lookup = build_symbol_database(ROOT)
-    symbol_index = build_symbol_index(ROOT)
+    symbol_index, incremental_stats = build_symbol_index_incremental(ROOT, CACHE_PATH)
+    file_map, symbol_lookup = build_symbol_database_from_index(symbol_index)
     try:
         constraints = load_constraints(CONSTRAINT_PATH)
     except (OSError, ValueError) as exc:
@@ -3198,6 +3319,12 @@ def cmd_update(args):
     total_syms = len(symbol_index['symbols'])
     total_edges = len(dependency_graph['edges'])
     print(f"       Found {len(file_map)} files with {total_syms} identifiable symbols.")
+    print(
+        "       Incremental scan: "
+        f"{incremental_stats['scanned']} scanned, "
+        f"{incremental_stats['reused']} reused, "
+        f"{incremental_stats['removed']} removed."
+    )
 
     # 1. Update line numbers
     new_content, updated_lines, drift_details = update_map_line_numbers(content, symbol_lookup)
@@ -3229,9 +3356,8 @@ def cmd_update(args):
     print(f"[INDEX] Wrote {LCM_DIRNAME}/{INDEX_FILENAME} (schema v{INDEX_SCHEMA_VERSION}, {total_syms} symbols).")
     write_dependency_graph(dependency_graph)
     print(f"[GRAPH] Wrote {LCM_DIRNAME}/{GRAPH_FILENAME} (schema v{GRAPH_SCHEMA_VERSION}, {total_edges} edges).")
-    if not os.path.exists(CONSTRAINT_PATH):
-        write_constraints(constraints)
-        print(f"[CONSTRAINTS] Initialized {LCM_DIRNAME}/{CONSTRAINT_FILENAME}.")
+    write_constraints(constraints)
+    print(f"[CONSTRAINTS] Wrote {LCM_DIRNAME}/{CONSTRAINT_FILENAME} (schema v{CONSTRAINT_SCHEMA_VERSION}).")
     if not os.path.exists(FITNESS_PATH):
         write_fitness_config()
         print(f"[FITNESS] Initialized {LCM_DIRNAME}/{FITNESS_FILENAME}.")
@@ -3253,6 +3379,15 @@ def cmd_check(args):
         content = f.read()
 
     machine_issues, expected_index, expected_graph = validate_machine_state(ROOT, INDEX_PATH, GRAPH_PATH)
+    try:
+        constraints = load_constraints(CONSTRAINT_PATH)
+    except (OSError, ValueError):
+        constraints = {'schema_version': CONSTRAINT_SCHEMA_VERSION, 'constraints': []}
+    compact_content = None
+    if os.path.exists(MIN_MAP_PATH):
+        with open(MIN_MAP_PATH, 'r', encoding='utf-8', errors='replace') as handle:
+            compact_content = handle.read()
+    machine_issues.extend(validate_markdown_semantics(content, constraints, compact_content))
     current_hash = expected_index['source_hash']
     m_hash = re.search(r'Codebase-MD5:\s*([a-f0-9]{32})', content)
     if not m_hash:
@@ -3678,9 +3813,13 @@ def cmd_add_constraint(args):
         'scope': scope,
         'reason': getattr(args, 'reason', '') or '',
         'evidence': [],
+        'verification': [],
         'owner': getattr(args, 'owner', '') or '',
         'introduced_by': git_get_head_info()[0],
         'superseded_by': None,
+        'knowledge_type': 'DECLARED',
+        'staleness': 'FRESH',
+        'source': {'kind': 'human', 'path': f'{LCM_DIRNAME}/{CONSTRAINT_FILENAME}'},
     }
     candidate_constraints = {
         'schema_version': CONSTRAINT_SCHEMA_VERSION,
@@ -3888,6 +4027,55 @@ def cmd_context(args):
     print(result['text'])
     print(f"Context budget: ~{result['estimated_tokens']}/{args.budget} tokens")
     return 0 if result['plan']['seeds'] else 2
+
+
+def _load_index_graph():
+    with open(INDEX_PATH, 'r', encoding='utf-8') as handle:
+        index = json.load(handle)
+    with open(GRAPH_PATH, 'r', encoding='utf-8') as handle:
+        graph = json.load(handle)
+    return index, graph
+
+
+def cmd_calm_export(args):
+    """Export an optional CALM 1.2 architecture projection from LCM evidence."""
+    try:
+        index, graph = _load_index_graph()
+    except (OSError, ValueError) as exc:
+        print(f"[ERR] Could not read LCM state: {exc}")
+        return 1
+    name = getattr(args, 'name', None) or os.path.basename(ROOT)
+    payload = export_calm(index, graph, name)
+    output = getattr(args, 'output', None)
+    rendered = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n'
+    if output:
+        with open(output, 'w', encoding='utf-8') as handle:
+            handle.write(rendered)
+        print(f"[OK] Wrote optional CALM projection: {output}")
+    else:
+        print(rendered, end='')
+    return 0
+
+
+def cmd_calm_reconcile(args):
+    """Compare a declared CALM model with LCM-observed architecture evidence."""
+    try:
+        with open(args.architecture, 'r', encoding='utf-8') as handle:
+            declared = json.load(handle)
+        index, graph = _load_index_graph()
+        observed = export_calm(index, graph, getattr(args, 'name', None) or os.path.basename(ROOT))
+    except (OSError, ValueError) as exc:
+        print(f"[ERR] Could not reconcile architecture: {exc}")
+        return 1
+    report = reconcile_calm(declared, observed)
+    if getattr(args, 'json', False):
+        print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        print('CALM RECONCILIATION | ' + ('IN SYNC' if report['in_sync'] else 'DRIFT'))
+        print('Declared not observed: ' + (', '.join(report['declared_not_observed']) or 'none'))
+        print('Implemented not declared: ' + (', '.join(report['implemented_not_declared']) or 'none'))
+        print(f"Relationship drift: {len(report['relationship_drift'])}")
+    return 0 if report['in_sync'] or not getattr(args, 'strict', False) else 2
 
 
 def cmd_explain(args):
@@ -4106,6 +4294,27 @@ def build_mcp_server():
         )
 
     @server.tool()
+    def export_calm_architecture(name: str = "") -> str:
+        """Project deterministic LCM evidence into an optional CALM 1.2 document."""
+        return capture_mcp_command(
+            cmd_calm_export,
+            argparse.Namespace(name=name or os.path.basename(ROOT), output=None),
+        )
+
+    @server.tool()
+    def reconcile_calm_architecture(architecture: str, strict: bool = False) -> str:
+        """Compare a declared CALM file with the architecture observed by LCM."""
+        return capture_mcp_command(
+            cmd_calm_reconcile,
+            argparse.Namespace(
+                architecture=architecture,
+                name=os.path.basename(ROOT),
+                json=False,
+                strict=strict,
+            ),
+        )
+
+    @server.tool()
     def register_feature(prompt: str, auto_commit: bool = False) -> str:
         """
         Auto-parse a feature from natural language prompt and register into Module 5.
@@ -4281,6 +4490,22 @@ def main():
     p_context.add_argument("task", help="Natural-language task")
     p_context.add_argument("--budget", type=int, default=500, help="Approximate output token budget")
 
+    p_calm_export = subparsers.add_parser(
+        "calm-export",
+        help="Export an optional CALM 1.2 projection from verified LCM evidence",
+    )
+    p_calm_export.add_argument("--name", help="Architecture name (default: repository name)")
+    p_calm_export.add_argument("--output", help="Write JSON to this path instead of stdout")
+
+    p_calm_reconcile = subparsers.add_parser(
+        "calm-reconcile",
+        help="Compare a declared CALM model with LCM-observed architecture",
+    )
+    p_calm_reconcile.add_argument("architecture", help="Path to a CALM architecture JSON file")
+    p_calm_reconcile.add_argument("--name", help="Observed architecture name")
+    p_calm_reconcile.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    p_calm_reconcile.add_argument("--strict", action="store_true", help="Fail when drift is present")
+
     p_explain = subparsers.add_parser("explain", help="Explain one symbol and its one-hop relationships")
     p_explain.add_argument("symbol", help="Symbol name, qualified name, or Stable Symbol ID")
 
@@ -4321,6 +4546,8 @@ def main():
         "plan": cmd_plan,
         "verify-change": cmd_verify_change,
         "context": cmd_context,
+        "calm-export": cmd_calm_export,
+        "calm-reconcile": cmd_calm_reconcile,
         "explain": cmd_explain,
         "why": cmd_why,
         "rollback": cmd_rollback,

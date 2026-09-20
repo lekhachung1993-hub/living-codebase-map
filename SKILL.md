@@ -1,11 +1,10 @@
 ---
 name: living-codebase-map
 description: >
-  Living Codebase Map & Surgical Precision Workflow for AI Coding Agents.
-  Maintains a stable machine symbol index plus PROJECT_MAP.md working memory; tracks
-  Symbol IDs independently from cached file:line locations,
-  DOM-to-DB cross-layer mappings, implicit constraints, and enforces risk-gated triage
-  with automated git-backed synchronization.
+  Deterministic codebase intelligence and change-safety workflow for AI coding agents.
+  Maintains stable symbol identity, evidence-backed relationships, structured knowledge,
+  incremental indexing, focused context, and risk gates independently from cached
+  file:line navigation data.
 triggers:
   - map
   - lcm
@@ -39,6 +38,8 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 | `map plan "<task>"` | Compile a task-focused file/symbol plan and explainable risk score before editing. |
 | `map verify-change` | Compare the Git diff with linked tests and constraints after editing; use strict mode for a gate. |
 | `map context "<task>" --budget 500` | Compile only task-relevant nodes and edges within the requested context budget. |
+| `map calm-export` | Optionally project observed LCM evidence into a CALM 1.2 architecture document. |
+| `map calm-reconcile <file>` | Compare declared CALM architecture with components and relationships observed by LCM. |
 | `map explain <symbol>` | Explain one exact symbol; require a Stable Symbol ID when a short name is ambiguous. |
 | `map why <symbol>` | Retrieve Git-backed temporal context and constraints explaining why a symbol exists. |
 | `map fitness` | Measure graph coverage, confidence, hubs, linked tests, and constraint health; use `--strict` as a quality gate. |
@@ -154,7 +155,7 @@ When `.lcm/graph.json` exists, classify edges by confidence:
 - `< 0.70`: uncertain; never present it as confirmed behavior.
 - Missing ambiguous targets are unknown, not safe.
 
-Currently generated graph relations are Python AST `CALLS`, `TESTED_BY`, and HTTP route `HANDLES`. Continue using the Markdown cross-layer map as fallback for languages and relationships without a dedicated extractor.
+Dedicated conservative graph extractors cover Python, JavaScript/TypeScript, Go, Rust, C#, and Java calls, tests, imports, and supported route patterns. Continue using the Markdown cross-layer map as fallback for languages and relationships without a dedicated extractor.
 
 Structured constraints must use stable Symbol IDs in `scope`. Treat `ACTIVE` and `SUSPECT` rules as graph-enforced knowledge. Use `STALE` for historical rules whose symbols no longer exist, and `SUPERSEDED` only with a valid replacement constraint ID.
 [UI Trigger: #dom-id] ➔ [Event Handler: func()] ➔ [API Endpoint: /api/...] ➔ [DB Table/Query]
@@ -310,4 +311,4 @@ Living Codebase Map can be connected to any MCP-compliant AI coding assistant (A
   }
 }
 ```
-Exposes 11 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `plan_change`, `verify_change`, `compile_context`, `explain_symbol`, `explain_symbol_history`, `register_feature`, `register_constraint`, `get_map_summary`.
+Exposes 16 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `plan_change`, `fitness_report`, `test_gap_hotspots`, `guard_change`, `verify_change`, `compile_context`, `explain_symbol`, `explain_symbol_history`, `export_calm_architecture`, `reconcile_calm_architecture`, `register_feature`, `register_constraint`, and `get_map_summary`.

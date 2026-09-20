@@ -1,89 +1,174 @@
 {
-  "serverInfo": {
-    "name": "living-codebase-map",
-    "version": "2.5.0"
-  },
   "authentication": {
     "required": false
   },
+  "prompts": [],
+  "resources": [],
+  "serverInfo": {
+    "name": "living-codebase-map",
+    "version": "3.30.0"
+  },
   "tools": [
     {
-      "name": "update_map",
-      "description": "Smart full scan or incremental update of PROJECT_MAP.md. Automatically detects file changes, calculates checksums, and updates modules.",
+      "description": "Refresh deterministic map, index, graph, compact context, and incremental cache.",
       "inputSchema": {
-        "type": "object",
         "properties": {
-          "auto_commit": {
-            "type": "boolean",
-            "description": "Whether to auto-commit PROJECT_MAP.md to git after update."
-          }
-        }
-      }
-    },
-    {
-      "name": "check_drift",
-      "description": "Ultra-fast drift detection in 0.02s using cached MD5 hash checking.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {}
-      }
-    },
-    {
-      "name": "analyze_code_impact",
-      "description": "Blast radius impact analysis for a symbol across the entire codebase graph.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "target": {
-            "type": "string",
-            "description": "Symbol, function, or route name to analyze."
-          },
-          "mode": {
-            "type": "string",
-            "description": "Analysis mode: 'lean' (token-saving, <15 lines) or 'deep' (full 6-tier ASCII tree).",
-            "enum": ["lean", "deep"]
-          }
+          "auto_commit": {"type": "boolean"},
+          "directory": {"type": "string"}
         },
-        "required": ["target"]
-      }
+        "type": "object"
+      },
+      "name": "update_map"
     },
     {
-      "name": "register_feature",
-      "description": "Add or update a feature link in Module 5 (Feature Traceability Matrix) with smart NLP parsing.",
+      "description": "Validate generated artifacts, schemas, structured knowledge, and semantic projections.",
       "inputSchema": {
-        "type": "object",
+        "properties": {"full_ast": {"type": "boolean"}},
+        "type": "object"
+      },
+      "name": "check_drift"
+    },
+    {
+      "description": "Analyze the evidence-backed blast radius of a symbol or route.",
+      "inputSchema": {
         "properties": {
-          "raw_text": {
-            "type": "string",
-            "description": "Natural language or structured feature specification to register."
-          }
+          "deep_mode": {"type": "boolean"},
+          "symbol": {"type": "string"}
         },
-        "required": ["raw_text"]
-      }
+        "required": ["symbol"],
+        "type": "object"
+      },
+      "name": "analyze_code_impact"
     },
     {
-      "name": "register_constraint",
-      "description": "Add a new implicit architectural constraint or operational rule to Module 4.",
+      "description": "Build a graph-backed change plan and explainable risk score.",
       "inputSchema": {
-        "type": "object",
+        "properties": {"task": {"type": "string"}},
+        "required": ["task"],
+        "type": "object"
+      },
+      "name": "plan_change"
+    },
+    {
+      "description": "Measure graph, test-link, confidence, hub, and constraint health.",
+      "inputSchema": {
+        "properties": {"strict": {"type": "boolean"}},
+        "type": "object"
+      },
+      "name": "fitness_report"
+    },
+    {
+      "description": "Rank high-leverage graph hubs without linked test evidence.",
+      "inputSchema": {
+        "properties": {"limit": {"type": "integer"}},
+        "type": "object"
+      },
+      "name": "test_gap_hotspots"
+    },
+    {
+      "description": "Gate a Git diff using changed-symbol risk and linked-test evidence.",
+      "inputSchema": {
         "properties": {
-          "constraint": {
-            "type": "string",
-            "description": "The constraint or rule description to enforce."
-          }
+          "base": {"type": "string"},
+          "fail_on": {"enum": ["medium", "high", "none"], "type": "string"}
         },
-        "required": ["constraint"]
-      }
+        "type": "object"
+      },
+      "name": "guard_change"
     },
     {
-      "name": "get_map_summary",
-      "description": "Read the ultra-compact lean architecture summary (PROJECT_MAP.min.md) to warmup context without wasting tokens.",
+      "description": "Verify changed files against graph-linked tests and constraints.",
       "inputSchema": {
-        "type": "object",
-        "properties": {}
-      }
+        "properties": {
+          "base": {"type": "string"},
+          "strict": {"type": "boolean"}
+        },
+        "type": "object"
+      },
+      "name": "verify_change"
+    },
+    {
+      "description": "Compile hierarchical, evidence-aware task context within a token budget.",
+      "inputSchema": {
+        "properties": {
+          "budget": {"type": "integer"},
+          "task": {"type": "string"}
+        },
+        "required": ["task"],
+        "type": "object"
+      },
+      "name": "compile_context"
+    },
+    {
+      "description": "Explain one unambiguous stable symbol and its relationships.",
+      "inputSchema": {
+        "properties": {"symbol": {"type": "string"}},
+        "required": ["symbol"],
+        "type": "object"
+      },
+      "name": "explain_symbol"
+    },
+    {
+      "description": "Explain a symbol using Git history and active constraints.",
+      "inputSchema": {
+        "properties": {
+          "limit": {"type": "integer"},
+          "symbol": {"type": "string"}
+        },
+        "required": ["symbol"],
+        "type": "object"
+      },
+      "name": "explain_symbol_history"
+    },
+    {
+      "description": "Export an optional CALM 1.2 projection from deterministic LCM evidence.",
+      "inputSchema": {
+        "properties": {"name": {"type": "string"}},
+        "type": "object"
+      },
+      "name": "export_calm_architecture"
+    },
+    {
+      "description": "Compare a declared CALM architecture with LCM-observed architecture.",
+      "inputSchema": {
+        "properties": {
+          "architecture": {"type": "string"},
+          "strict": {"type": "boolean"}
+        },
+        "required": ["architecture"],
+        "type": "object"
+      },
+      "name": "reconcile_calm_architecture"
+    },
+    {
+      "description": "Register a feature in the human-readable traceability projection.",
+      "inputSchema": {
+        "properties": {
+          "auto_commit": {"type": "boolean"},
+          "prompt": {"type": "string"}
+        },
+        "required": ["prompt"],
+        "type": "object"
+      },
+      "name": "register_feature"
+    },
+    {
+      "description": "Register a lifecycle-managed architectural constraint.",
+      "inputSchema": {
+        "properties": {
+          "auto_commit": {"type": "boolean"},
+          "constraint_id": {"type": "string"},
+          "description": {"type": "string"}
+        },
+        "required": ["description"],
+        "type": "object"
+      },
+      "name": "register_constraint"
+    },
+    {
+      "description": "Read the compact repository orientation map.",
+      "inputSchema": {"properties": {}, "type": "object"},
+      "name": "get_map_summary"
     }
-  ],
-  "resources": [],
-  "prompts": []
+  ]
 }

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "living-codebase-map"
-version = "3.23.0"
-description = "Universal Living Codebase Map & MCP Server for AI Coding Agents."
+version = "3.30.0"
+description = "Deterministic codebase intelligence and change-safety tooling for AI coding agents."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "lekhachung1993-hub" }]
@@ -26,7 +26,7 @@ living-codebase-map = "scripts.living_map:main"
 living-map = "scripts.living_map:main"
 
 [tool.setuptools]
-packages = ["scripts"]
+packages = ["scripts", "scripts.lcm_core"]
 
 [project.urls]
 Homepage = "https://github.com/lekhachung1993-hub/living-codebase-map"
