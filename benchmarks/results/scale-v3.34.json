@@ -1,0 +1,271 @@
+{
+  "repositories": [
+    {
+      "measurements": [
+        {
+          "edges": 652,
+          "files": 38,
+          "graph_seconds": 1.454442,
+          "graph_stats": {
+            "files_recomputed": 38,
+            "mode": "full",
+            "reason": "cold-or-environment-change"
+          },
+          "index_seconds": 1.261798,
+          "index_stats": {
+            "changed_paths": [
+              "docs/_templates/sidebar.html",
+              "docs/_themes/flask_theme_support.py",
+              "docs/conf.py",
+              "setup.py",
+              "src/requests/__init__.py",
+              "src/requests/__version__.py",
+              "src/requests/_internal_utils.py",
+              "src/requests/_types.py",
+              "src/requests/adapters.py",
+              "src/requests/api.py",
+              "src/requests/auth.py",
+              "src/requests/certs.py",
+              "src/requests/compat.py",
+              "src/requests/cookies.py",
+              "src/requests/exceptions.py",
+              "src/requests/help.py",
+              "src/requests/hooks.py",
+              "src/requests/models.py",
+              "src/requests/packages.py",
+              "src/requests/sessions.py",
+              "src/requests/status_codes.py",
+              "src/requests/structures.py",
+              "src/requests/utils.py",
+              "tests/__init__.py",
+              "tests/compat.py",
+              "tests/conftest.py",
+              "tests/test_adapters.py",
+              "tests/test_help.py",
+              "tests/test_hooks.py",
+              "tests/test_lowlevel.py",
+              "tests/test_packages.py",
+              "tests/test_requests.py",
+              "tests/test_structures.py",
+              "tests/test_testserver.py",
+              "tests/test_utils.py",
+              "tests/testserver/__init__.py",
+              "tests/testserver/server.py",
+              "tests/utils.py"
+            ],
+            "removed": 0,
+            "removed_paths": [],
+            "reused": 0,
+            "scanned": 38
+          },
+          "iteration": 1,
+          "peak_bytes": 12924542,
+          "symbols": 807,
+          "total_seconds": 2.71624
+        },
+        {
+          "edges": 652,
+          "files": 38,
+          "graph_seconds": 0.043751,
+          "graph_stats": {
+            "files_recomputed": 0,
+            "mode": "reused"
+          },
+          "index_seconds": 0.133736,
+          "index_stats": {
+            "changed_paths": [],
+            "removed": 0,
+            "removed_paths": [],
+            "reused": 38,
+            "scanned": 0
+          },
+          "iteration": 2,
+          "peak_bytes": 3158269,
+          "symbols": 807,
+          "total_seconds": 0.177487
+        }
+      ],
+      "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+      "python": "3.12.14",
+      "repository": "https://github.com/psf/requests",
+      "repository_commit": "dae7ef63b4df6eded86637f251fc4e3a06c3b479",
+      "repository_dirty": false,
+      "schema_version": 1,
+      "summary": {
+        "cold_seconds": 2.71624,
+        "warm_graph_mode": "reused",
+        "warm_seconds": 0.177487,
+        "warm_speedup": 15.304
+      },
+      "tool_source_sha256": "1a98e7208089258d2cde824e9ccf9d59ad19b9f983ff17fc7e3b9e99f2464c1e"
+    },
+    {
+      "measurements": [
+        {
+          "edges": 17,
+          "files": 6,
+          "graph_seconds": 0.602464,
+          "graph_stats": {
+            "files_recomputed": 6,
+            "mode": "full",
+            "reason": "cold-or-environment-change"
+          },
+          "index_seconds": 0.461594,
+          "index_stats": {
+            "changed_paths": [
+              "assert-in-range.js",
+              "index.d.ts",
+              "index.js",
+              "index.test-d.ts",
+              "test-multiple-pmapskips-performance.js",
+              "test.js"
+            ],
+            "removed": 0,
+            "removed_paths": [],
+            "reused": 0,
+            "scanned": 6
+          },
+          "iteration": 1,
+          "peak_bytes": 448689,
+          "symbols": 29,
+          "total_seconds": 1.064059
+        },
+        {
+          "edges": 17,
+          "files": 6,
+          "graph_seconds": 0.001725,
+          "graph_stats": {
+            "files_recomputed": 0,
+            "mode": "reused"
+          },
+          "index_seconds": 0.006917,
+          "index_stats": {
+            "changed_paths": [],
+            "removed": 0,
+            "removed_paths": [],
+            "reused": 6,
+            "scanned": 0
+          },
+          "iteration": 2,
+          "peak_bytes": 105255,
+          "symbols": 29,
+          "total_seconds": 0.008642
+        }
+      ],
+      "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+      "python": "3.12.14",
+      "repository": "https://github.com/sindresorhus/p-map",
+      "repository_commit": "f0c43e358a449584c2045c89d1b9ae3cd5a9f293",
+      "repository_dirty": false,
+      "schema_version": 1,
+      "summary": {
+        "cold_seconds": 1.064059,
+        "warm_graph_mode": "reused",
+        "warm_seconds": 0.008642,
+        "warm_speedup": 123.126
+      },
+      "tool_source_sha256": "1a98e7208089258d2cde824e9ccf9d59ad19b9f983ff17fc7e3b9e99f2464c1e"
+    },
+    {
+      "measurements": [
+        {
+          "edges": 81,
+          "files": 39,
+          "graph_seconds": 0.90786,
+          "graph_stats": {
+            "files_recomputed": 39,
+            "mode": "full",
+            "reason": "cold-or-environment-change"
+          },
+          "index_seconds": 0.727844,
+          "index_stats": {
+            "changed_paths": [
+              "appengine-hello/app.go",
+              "appengine-hello/static/index.html",
+              "appengine-hello/static/script.js",
+              "gotypes/defsuses/main.go",
+              "gotypes/doc/main.go",
+              "gotypes/gen.go",
+              "gotypes/hello/hello.go",
+              "gotypes/hugeparam/main.go",
+              "gotypes/implements/main.go",
+              "gotypes/lookup/lookup.go",
+              "gotypes/nilfunc/main.go",
+              "gotypes/pkginfo/main.go",
+              "gotypes/skeleton/main.go",
+              "gotypes/typeandvalue/main.go",
+              "hello/hello.go",
+              "hello/reverse/example_test.go",
+              "hello/reverse/reverse.go",
+              "hello/reverse/reverse_test.go",
+              "helloserver/server.go",
+              "internal/cmd/weave/weave.go",
+              "outyet/main.go",
+              "outyet/main_test.go",
+              "ragserver/ragserver-genkit/json.go",
+              "ragserver/ragserver-genkit/main.go",
+              "ragserver/ragserver-langchaingo/json.go",
+              "ragserver/ragserver-langchaingo/main.go",
+              "ragserver/ragserver/json.go",
+              "ragserver/ragserver/main.go",
+              "ragserver/ragserver/weaviate.go",
+              "slog-handler-guide/indenthandler1/indent_handler.go",
+              "slog-handler-guide/indenthandler1/indent_handler_test.go",
+              "slog-handler-guide/indenthandler2/indent_handler.go",
+              "slog-handler-guide/indenthandler2/indent_handler_test.go",
+              "slog-handler-guide/indenthandler3/indent_handler.go",
+              "slog-handler-guide/indenthandler3/indent_handler_test.go",
+              "slog-handler-guide/indenthandler4/indent_handler.go",
+              "slog-handler-guide/indenthandler4/indent_handler_norace_test.go",
+              "slog-handler-guide/indenthandler4/indent_handler_test.go",
+              "template/main.go"
+            ],
+            "removed": 0,
+            "removed_paths": [],
+            "reused": 0,
+            "scanned": 39
+          },
+          "iteration": 1,
+          "peak_bytes": 361580,
+          "symbols": 133,
+          "total_seconds": 1.635705
+        },
+        {
+          "edges": 81,
+          "files": 39,
+          "graph_seconds": 0.006502,
+          "graph_stats": {
+            "files_recomputed": 0,
+            "mode": "reused"
+          },
+          "index_seconds": 0.034634,
+          "index_stats": {
+            "changed_paths": [],
+            "removed": 0,
+            "removed_paths": [],
+            "reused": 39,
+            "scanned": 0
+          },
+          "iteration": 2,
+          "peak_bytes": 495999,
+          "symbols": 133,
+          "total_seconds": 0.041136
+        }
+      ],
+      "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+      "python": "3.12.14",
+      "repository": "https://github.com/golang/example",
+      "repository_commit": "7f05d217867b2af52b0a28c6d1c91df97e1b5b39",
+      "repository_dirty": false,
+      "schema_version": 1,
+      "summary": {
+        "cold_seconds": 1.635705,
+        "warm_graph_mode": "reused",
+        "warm_seconds": 0.041136,
+        "warm_speedup": 39.763
+      },
+      "tool_source_sha256": "1a98e7208089258d2cde824e9ccf9d59ad19b9f983ff17fc7e3b9e99f2464c1e"
+    }
+  ],
+  "schema_version": 1
+}

@@ -30,7 +30,7 @@ class StableSymbolIndexTests(unittest.TestCase):
             server_version = json.load(handle)['serverInfo']['version']
         self.assertEqual(
             {manifest_version, pyproject_version, map_version, server_version},
-            {'3.30.0'},
+            {'3.34.0'},
         )
 
     def test_python_ids_are_qualified_and_line_independent(self):
@@ -142,7 +142,7 @@ class StableSymbolIndexTests(unittest.TestCase):
             index = living_map.build_symbol_index(root)
             graph = living_map.build_dependency_graph(index, root)
 
-            self.assertEqual(graph['schema_version'], 2)
+            self.assertEqual(graph['schema_version'], 3)
             self.assertEqual(len(graph['edges']), 1)
             edge = graph['edges'][0]
             self.assertEqual(edge['source'], 'py:service.py::create')
@@ -1246,6 +1246,7 @@ class StableSymbolIndexTests(unittest.TestCase):
             'verify_change', 'compile_context',
             'explain_symbol', 'explain_symbol_history',
             'export_calm_architecture', 'reconcile_calm_architecture',
+            'record_observation', 'evidence_status',
             'register_feature', 'register_constraint', 'get_map_summary',
         })
 

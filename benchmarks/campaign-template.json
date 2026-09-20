@@ -1,0 +1,24 @@
+{
+  "name": "replace-with-campaign-name",
+  "repositories": [
+    {
+      "name": "repository-name",
+      "url": "https://github.com/owner/repository",
+      "commit": "REQUIRED_COMMIT_SHA",
+      "runs": [
+        {
+          "name": "baseline",
+          "path": "runs/repository-baseline.json",
+          "role": "baseline"
+        },
+        {
+          "name": "lcm",
+          "path": "runs/repository-lcm.json",
+          "role": "candidate"
+        }
+      ],
+      "suite": "suites/repository.json"
+    }
+  ],
+  "schema_version": 1
+}

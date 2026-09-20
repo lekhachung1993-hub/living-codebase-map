@@ -2,7 +2,7 @@
 
 Deterministic codebase intelligence and change-safety tooling for AI coding agents.
 
-[![CI](https://github.com/lekhachung1993-hub/living-codebase-map/actions/workflows/ci.yml/badge.svg)](https://github.com/lekhachung1993-hub/living-codebase-map/actions/workflows/ci.yml)
+[![CI](https://github.com/lekhachung1993-hub/living-codebase-map/actions/workflows/map-lint.yml/badge.svg)](https://github.com/lekhachung1993-hub/living-codebase-map/actions/workflows/map-lint.yml)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-3776AB.svg)](https://www.python.org/)
 [![Core dependencies](https://img.shields.io/badge/core%20dependencies-0-brightgreen.svg)](#installation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -33,8 +33,10 @@ LCM adds a deterministic repository layer that can be committed and reviewed wit
 | `.lcm/index.json` | Stable symbol identities, current locations, language, kind, signature, and content hashes |
 | `.lcm/graph.json` | Typed relationships with source evidence and confidence scores |
 | `.lcm/constraints.json` | Structured architectural constraints and lifecycle metadata |
+| `.lcm/observations.json` | Hash-backed test, coverage, runtime, benchmark, and CI evidence |
 | `.lcm/fitness.json` | Versioned thresholds for graph, test-link, and constraint health |
 | `.lcm/cache.json` | Local, ignored file-hash cache for incremental symbol extraction |
+| `.lcm/graph-cache.json` | Local, ignored cache for safe whole or partial graph reuse |
 | `PROJECT_MAP.md` | Human-readable architecture, integrations, constraints, and feature registry |
 | `PROJECT_MAP.min.md` | Compact generated map for broad agent orientation |
 
@@ -109,9 +111,19 @@ The graph supports callers, callees, test links, routes, imports, and active con
 
 Every symbol, relationship, and structured constraint also records its knowledge type and freshness state. LCM distinguishes directly extracted facts, deterministic derivations, human declarations, runtime observations, and unverified inference instead of treating every relationship as equally authoritative.
 
-### Incremental indexing
+### Incremental indexing and graph construction
 
-`living-map update` caches file hashes and symbol records locally. Unchanged files reuse their previous extraction result while the final committed index and graph remain deterministic. Cache state is operational data and is not committed.
+`living-map update` caches file hashes and symbol records locally. When symbol resolution signatures and resolution inputs are unchanged, it can reuse the complete graph or rebuild only files whose source changed. Symbol kind/identity, manifest, or resolution-environment changes force a conservative full rebuild. Final committed artifacts remain deterministic; cache state is operational data and is not committed.
+
+### Living operational evidence
+
+`living-map observe` attaches a test, coverage, runtime, benchmark, or CI artifact to an exact Stable Symbol ID. LCM hashes the source artifact and derives evidence lifecycle without timestamps:
+
+- `FRESH` when the symbol and source hash still match;
+- `SUSPECT` when the source exists but its content changed;
+- `STALE` when the symbol or evidence source disappeared.
+
+`living-map evidence-status --strict` exposes stale or failing operational knowledge to local workflows and CI. Observations remain distinguishable from static `FACT`, deterministic `DERIVED`, and human `DECLARED` knowledge.
 
 ### Structured constraints
 
@@ -149,6 +161,8 @@ The benchmark evaluator compares observed agent runs using task success, retriev
 
 Benchmark templates are not product-performance evidence by themselves. Meaningful claims require recorded runs on representative repositories and tasks.
 
+`scripts/proof_campaign.py` rejects campaign runs without repository identity, execution identity, and a retained transcript digest. `scripts/scale_benchmark.py` records cold and warm engine measurements with repository commits and a source hash of the LCM tool. The checked-in [v3.34 scale evidence](benchmarks/results/scale-v3.34.json) covers clean public Python, JavaScript, and Go repositories; it measures engine behavior, not agent task quality.
+
 ## CLI reference
 
 | Command | Purpose |
@@ -169,6 +183,8 @@ Benchmark templates are not product-performance evidence by themselves. Meaningf
 | `living-map context` | Compile task-specific context under a token budget |
 | `living-map calm-export` | Export an optional CALM 1.2 projection from LCM evidence |
 | `living-map calm-reconcile` | Detect drift between declared CALM architecture and observed code |
+| `living-map observe` | Attach hash-backed operational evidence to a Stable Symbol ID |
+| `living-map evidence-status` | Report fresh, suspect, stale, and failed observed evidence |
 | `living-map explain` | Explain a symbol, its relationships, routes, tests, and constraints |
 | `living-map why` | Show Git history and active constraints for a symbol |
 | `living-map rollback` | Inspect or restore generated-map checkpoints |
@@ -178,7 +194,7 @@ Run `living-map <command> --help` for command-specific options.
 
 ## MCP integration
 
-The optional MCP server exposes 16 tools so compatible clients can use the same model without parsing terminal output.
+The optional MCP server exposes 18 tools so compatible clients can use the same model without parsing terminal output.
 
 | Workflow | MCP tools |
 |---|---|
@@ -188,6 +204,7 @@ The optional MCP server exposes 16 tools so compatible clients can use the same 
 | Health and coverage | `fitness_report`, `test_gap_hotspots` |
 | Symbol understanding | `explain_symbol`, `explain_symbol_history` |
 | Repository knowledge | `register_feature`, `register_constraint` |
+| Operational evidence | `record_observation`, `evidence_status` |
 | Architecture interoperability | `export_calm_architecture`, `reconcile_calm_architecture` |
 
 Start the server with:
@@ -219,6 +236,8 @@ PHP, HTML, and Vue files can contribute stable map and symbol information, but t
 - LCM performs static repository analysis with the Python standard library; it is not a compiler, type checker, or language server.
 - Framework detection is pattern-based and intentionally conservative.
 - A linked test is evidence of coverage, not proof that the relevant behavior is asserted.
+- An observation proves only what its retained source artifact establishes; source changes deliberately make it suspect.
+- Partial graph rebuilding is used only while symbol resolution signatures and resolution inputs remain unchanged; other changes rebuild the full graph.
 - Git history features require the repository and relevant commits to be available locally.
 - CALM export is a conservative component-level projection; it does not replace architecture review or claim that every runtime dependency is observable from source.
 - Large polyglot repositories should tune fitness and guard thresholds to their architecture rather than treating the defaults as universal.
@@ -244,8 +263,10 @@ After editing code:
 
 ```text
 living-codebase-map/
-├── scripts/living_map.py        # CLI entry point and core workflows
-├── scripts/lcm_core/            # Schemas, evidence, cache, semantics, and adapters
+├── scripts/living_map.py        # CLI, language extraction, and compatibility surface
+├── scripts/lcm_core/            # Engine, context, schemas, evidence, caches, and adapters
+├── scripts/proof_campaign.py    # Auditable multi-repository agent-run campaigns
+├── scripts/scale_benchmark.py   # Reproducible repository engine measurements
 ├── tests/                       # Unit and integration tests
 ├── benchmarks/                  # Benchmark tasks, schemas, and evaluator
 ├── .github/workflows/           # CI and release automation
