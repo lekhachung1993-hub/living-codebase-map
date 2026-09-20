@@ -33,6 +33,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -61,6 +63,19 @@ jobs:
             python .agents/skills/living-codebase-map/scripts/living_map.py fitness --strict
           elif [ -f "tools/living_map.py" ]; then
             python tools/living_map.py fitness --strict
+          else
+            echo "❌ Error: living_map.py not found"
+            exit 1
+          fi
+
+      - name: Guard Risky Changed Symbols
+        run: |
+          if [ -f "scripts/living_map.py" ]; then
+            python scripts/living_map.py guard --base HEAD^ --fail-on high
+          elif [ -f ".agents/skills/living-codebase-map/scripts/living_map.py" ]; then
+            python .agents/skills/living-codebase-map/scripts/living_map.py guard --base HEAD^ --fail-on high
+          elif [ -f "tools/living_map.py" ]; then
+            python tools/living_map.py guard --base HEAD^ --fail-on high
           else
             echo "❌ Error: living_map.py not found"
             exit 1
