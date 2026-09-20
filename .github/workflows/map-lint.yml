@@ -41,6 +41,19 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Verify Package and JSON Artifacts
+        run: |
+          python -m pip install -e . --no-deps
+          living-map --help > /dev/null
+          python -m compileall -q scripts tests
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in Path('.').rglob('*.json'):
+              if '.git' not in path.parts:
+                  json.loads(path.read_text(encoding='utf-8'))
+          PY
+
       - name: Run Living Map Smart Drift Lint (MD5)
         run: |
           echo "🔍 Checking Living Codebase Map synchronization with codebase..."
@@ -66,6 +79,12 @@ jobs:
           else
             echo "❌ Error: living_map.py not found"
             exit 1
+          fi
+
+      - name: Enforce Operational Evidence Freshness
+        run: |
+          if [ -f "scripts/living_map.py" ]; then
+            python scripts/living_map.py evidence-status --strict
           fi
 
       - name: Guard Risky Changed Symbols

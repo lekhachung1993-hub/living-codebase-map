@@ -58,23 +58,53 @@ from datetime import datetime
 
 try:
     from .lcm_core.calm_adapter import export_calm, reconcile_calm
+    from .lcm_core.context import analyze_graph_impact, build_change_plan, compile_task_context
+    from .lcm_core.engine import RepositoryEngine
     from .lcm_core.evidence import make_provenance, validate_provenance
     from .lcm_core.incremental import build_incremental_records
+    from .lcm_core.observations import (
+        OBSERVATION_KINDS,
+        OBSERVATION_RESULTS,
+        apply_observations,
+        file_sha256,
+        load_observations,
+        observation_id,
+        observation_summary,
+        repository_evidence_path,
+        validate_observations,
+        write_observations,
+    )
     from .lcm_core.schema import (
         CONSTRAINT_SCHEMA_VERSION,
         GRAPH_SCHEMA_VERSION,
         INDEX_SCHEMA_VERSION,
+        OBSERVATION_SCHEMA_VERSION,
         migrate_constraints,
     )
     from .lcm_core.semantics import validate_markdown_semantics
 except ImportError:  # Direct execution: python scripts/living_map.py
     from lcm_core.calm_adapter import export_calm, reconcile_calm
+    from lcm_core.context import analyze_graph_impact, build_change_plan, compile_task_context
+    from lcm_core.engine import RepositoryEngine
     from lcm_core.evidence import make_provenance, validate_provenance
     from lcm_core.incremental import build_incremental_records
+    from lcm_core.observations import (
+        OBSERVATION_KINDS,
+        OBSERVATION_RESULTS,
+        apply_observations,
+        file_sha256,
+        load_observations,
+        observation_id,
+        observation_summary,
+        repository_evidence_path,
+        validate_observations,
+        write_observations,
+    )
     from lcm_core.schema import (
         CONSTRAINT_SCHEMA_VERSION,
         GRAPH_SCHEMA_VERSION,
         INDEX_SCHEMA_VERSION,
+        OBSERVATION_SCHEMA_VERSION,
         migrate_constraints,
     )
     from lcm_core.semantics import validate_markdown_semantics
@@ -101,6 +131,8 @@ GRAPH_FILENAME = 'graph.json'
 CONSTRAINT_FILENAME = 'constraints.json'
 FITNESS_FILENAME = 'fitness.json'
 CACHE_FILENAME = 'cache.json'
+GRAPH_CACHE_FILENAME = 'graph-cache.json'
+OBSERVATION_FILENAME = 'observations.json'
 
 def find_project_root():
     """Locates the project root directory reliably."""
@@ -139,6 +171,8 @@ GRAPH_PATH = os.path.join(ROOT, LCM_DIRNAME, GRAPH_FILENAME)
 CONSTRAINT_PATH = os.path.join(ROOT, LCM_DIRNAME, CONSTRAINT_FILENAME)
 FITNESS_PATH = os.path.join(ROOT, LCM_DIRNAME, FITNESS_FILENAME)
 CACHE_PATH = os.path.join(ROOT, LCM_DIRNAME, CACHE_FILENAME)
+GRAPH_CACHE_PATH = os.path.join(ROOT, LCM_DIRNAME, GRAPH_CACHE_FILENAME)
+OBSERVATION_PATH = os.path.join(ROOT, LCM_DIRNAME, OBSERVATION_FILENAME)
 
 FITNESS_DEFAULTS = {
     'schema_version': FITNESS_SCHEMA_VERSION,
@@ -1444,7 +1478,7 @@ def _rust_import_bindings(source, masked, importer_path, known_paths, by_path_qu
     return direct, namespaces
 
 
-def build_dependency_graph(index, root_dir=ROOT):
+def build_dependency_graph(index, root_dir=ROOT, source_paths=None):
     """Build a confidence-scored dependency graph from a symbol index.
 
     Python uses the standard-library AST. JavaScript and TypeScript use a
@@ -1514,11 +1548,14 @@ def build_dependency_graph(index, root_dir=ROOT):
             return candidates[0], 0.9
         return None, 0.0
 
+    selected_paths = set(source_paths) if source_paths is not None else None
     for file_info in index.get('files', []):
         language = file_info.get('language')
         if language not in {'py', 'js', 'ts', 'vue', 'go', 'rust', 'csharp', 'java'}:
             continue
         rel_path = file_info['path']
+        if selected_paths is not None and rel_path not in selected_paths:
+            continue
         full_path = os.path.join(root_dir, rel_path)
         if language == 'java':
             try:
@@ -2254,8 +2291,15 @@ def build_dependency_graph(index, root_dir=ROOT):
     return {
         'schema_version': GRAPH_SCHEMA_VERSION,
         'source_hash': index.get('source_hash', calculate_codebase_hash(root_dir)),
-        'nodes': nodes,
-        'edges': edges,
+        'nodes': sorted(nodes, key=lambda item: item['id']),
+        'edges': sorted(
+            edges,
+            key=lambda item: (
+                item['source'], item['target'], item['relation'],
+                item.get('evidence', {}).get('path', ''),
+                item.get('evidence', {}).get('line', 0),
+            ),
+        ),
     }
 
 
@@ -2402,8 +2446,24 @@ def validate_machine_state(root_dir=ROOT, index_path=INDEX_PATH, graph_path=GRAP
     except (OSError, ValueError) as exc:
         constraints = {'schema_version': CONSTRAINT_SCHEMA_VERSION, 'constraints': []}
         issues.append(f"invalid constraints JSON: {exc}")
-    expected_graph = apply_constraints_to_graph(
-        build_dependency_graph(expected_index, root_dir), constraints
+    observation_path = os.path.join(root_dir, LCM_DIRNAME, OBSERVATION_FILENAME)
+    if not os.path.exists(observation_path):
+        issues.append(f"missing {LCM_DIRNAME}/{OBSERVATION_FILENAME}")
+    try:
+        observations = load_observations(observation_path)
+        issues.extend(validate_observations(observations, expected_index, root_dir))
+    except (OSError, ValueError) as exc:
+        observations = {
+            'schema_version': OBSERVATION_SCHEMA_VERSION,
+            'observations': [],
+        }
+        issues.append(f"invalid observations JSON: {exc}")
+    expected_graph = apply_observations(
+        apply_constraints_to_graph(
+            build_dependency_graph(expected_index, root_dir), constraints
+        ),
+        observations,
+        root_dir,
     )
     current_hash = expected_index['source_hash']
 
@@ -2573,105 +2633,6 @@ def analyze_graph_fitness(graph, constraint_issues=None, config=None):
         'checks': evaluated,
         'hubs': ranked_hubs,
         'constraint_issue_details': list(constraint_issues or []),
-    }
-
-
-def analyze_graph_impact(query, graph, max_depth=2):
-    """Traverse incoming and outgoing dependency edges from matching symbols."""
-    q = query.strip().lower()
-    nodes = {node['id']: node for node in graph.get('nodes', [])}
-    seeds = [
-        node['id'] for node in nodes.values()
-        if q == node['id'].lower()
-        or q == node.get('qualified_name', '').lower()
-        or q == node.get('name', '').lower()
-    ]
-    if not seeds:
-        return {'seeds': [], 'nodes': [], 'edges': []}
-
-    traversable = {'CALLS', 'TESTED_BY', 'HANDLES', 'TRIGGERS', 'READS', 'WRITES', 'CONSTRAINED_BY'}
-    visited = set(seeds)
-    frontier = set(seeds)
-    selected_edges = []
-    for _ in range(max(0, max_depth)):
-        next_frontier = set()
-        for edge in graph.get('edges', []):
-            if edge.get('relation') not in traversable:
-                continue
-            if edge['source'] in frontier or edge['target'] in frontier:
-                selected_edges.append(edge)
-                other = edge['target'] if edge['source'] in frontier else edge['source']
-                if other not in visited:
-                    visited.add(other)
-                    next_frontier.add(other)
-        frontier = next_frontier
-        if not frontier:
-            break
-
-    unique_edges = []
-    seen_edges = set()
-    for edge in selected_edges:
-        key = (edge['source'], edge['target'], edge['relation'])
-        if key not in seen_edges:
-            seen_edges.add(key)
-            unique_edges.append(edge)
-    return {
-        'seeds': seeds,
-        'nodes': [nodes[node_id] for node_id in visited if node_id in nodes],
-        'edges': unique_edges,
-    }
-
-
-def build_change_plan(task, graph):
-    """Compile a task-focused change plan and explainable risk score."""
-    tokens = {token for token in re.findall(r'[A-Za-z0-9_/-]{3,}', task.lower())}
-    candidates = []
-    for node in graph.get('nodes', []):
-        haystack = ' '.join(str(node.get(key, '')) for key in ('id', 'name', 'qualified_name', 'path')).lower()
-        score = sum(1 for token in tokens if token in haystack)
-        if score:
-            candidates.append((score, node))
-    candidates.sort(key=lambda item: (-item[0], item[1]['id']))
-    seeds = [node['id'] for _, node in candidates[:8]]
-    selected_nodes = {node['id']: node for _, node in candidates[:8]}
-    selected_edges = []
-    for seed in seeds:
-        impact = analyze_graph_impact(seed, graph, max_depth=2)
-        selected_nodes.update({node['id']: node for node in impact['nodes']})
-        selected_edges.extend(impact['edges'])
-
-    unique_edges = {(e['source'], e['target'], e['relation']): e for e in selected_edges}
-    reasons = []
-    risk = 0
-    if any(node.get('type') == 'api' for node in selected_nodes.values()):
-        risk += 25
-        reasons.append(('+25', 'public API or route'))
-    constraints = [node for node in selected_nodes.values() if node.get('type') == 'constraint']
-    if any(node.get('severity') == 'critical' for node in constraints):
-        risk += 25
-        reasons.append(('+25', 'critical constraint'))
-    elif any(node.get('severity') == 'high' for node in constraints):
-        risk += 15
-        reasons.append(('+15', 'high constraint'))
-    dependent_count = max(0, len(selected_nodes) - len(seeds))
-    if dependent_count > 10:
-        risk += 20
-        reasons.append(('+20', f'{dependent_count} related nodes'))
-    elif dependent_count > 3:
-        risk += 10
-        reasons.append(('+10', f'{dependent_count} related nodes'))
-    if any(edge.get('confidence', 1) < 0.95 for edge in unique_edges.values()):
-        risk += 10
-        reasons.append(('+10', 'inferred dependency'))
-    has_tests = any(edge.get('relation') == 'TESTED_BY' for edge in unique_edges.values())
-    if seeds and not has_tests:
-        risk += 15
-        reasons.append(('+15', 'no linked tests'))
-    level = 'RED' if risk >= 60 else ('YELLOW' if risk >= 30 else 'GREEN')
-    return {
-        'task': task, 'risk_score': risk, 'risk_level': level,
-        'reasons': reasons, 'seeds': seeds,
-        'nodes': list(selected_nodes.values()), 'edges': list(unique_edges.values()),
     }
 
 
@@ -2901,70 +2862,6 @@ def explain_graph_symbol(query, graph):
     incoming = [edge for edge in graph.get('edges', []) if edge.get('target') == node['id']]
     outgoing = [edge for edge in graph.get('edges', []) if edge.get('source') == node['id']]
     return {'match': node, 'candidates': [], 'incoming': incoming, 'outgoing': outgoing}
-
-
-def compile_task_context(task, graph, budget=500):
-    """Compile hierarchical, risk-weighted context within an approximate budget."""
-    plan = build_change_plan(task, graph)
-    node_by_id = {node['id']: node for node in plan['nodes']}
-    lines = [
-        'LCM TASK CONTEXT',
-        f"Task: {task}",
-        f"Risk: {plan['risk_level']} ({plan['risk_score']})",
-    ]
-    if plan['reasons']:
-        lines.append('Risk reasons: ' + ', '.join(f"{p} {r}" for p, r in plan['reasons']))
-    hierarchy = {}
-    for node in plan['nodes']:
-        path = node.get('path', '')
-        parts = [part for part in path.split('/') if part]
-        component = parts[0] if len(parts) > 1 else 'root'
-        module = '/'.join(parts[:-1]) if len(parts) > 1 else (parts[0] if parts else 'declared-knowledge')
-        hierarchy.setdefault(component, set()).add(module)
-    if hierarchy:
-        lines.append('Architecture scope:')
-        for component in sorted(hierarchy):
-            modules = ', '.join(sorted(hierarchy[component]))
-            lines.append(f"- {component}: {modules}")
-    lines.append('Relevant nodes:')
-    type_priority = {'constraint': 0, 'api': 1, 'symbol': 2}
-    for node in sorted(
-        plan['nodes'],
-        key=lambda item: (type_priority.get(item.get('type'), 3), item['id']),
-    ):
-        detail = node.get('path') or node.get('rule') or ''
-        evidence_state = f"{node.get('knowledge_type', 'UNKNOWN')}/{node.get('staleness', 'UNKNOWN')}"
-        lines.append(
-            f"- [{node.get('type', 'node')} {evidence_state}] {node['id']} {detail}".rstrip()
-        )
-    if plan['edges']:
-        lines.append('Relationships:')
-        for edge in plan['edges']:
-            source = node_by_id.get(edge['source'], {}).get('name', edge['source'])
-            target = node_by_id.get(edge['target'], {}).get('name', edge['target'])
-            evidence = edge.get('evidence', {})
-            evidence_ref = evidence.get('path', '?')
-            if evidence.get('line'):
-                evidence_ref += f":{evidence['line']}"
-            lines.append(
-                f"- {source} --{edge['relation']}--> {target} "
-                f"({edge['confidence']:.2f}, {edge.get('knowledge_type', 'UNKNOWN')}, {evidence_ref})"
-            )
-
-    max_chars = max(200, int(budget) * 4)
-    selected = []
-    used = 0
-    for line in lines:
-        cost = len(line) + 1
-        if selected and used + cost > max_chars:
-            break
-        selected.append(line[:max_chars] if not selected else line)
-        used += min(cost, max_chars)
-    omitted = len(lines) - len(selected)
-    if omitted and used + 40 <= max_chars:
-        selected.append(f"... {omitted} context lines omitted by budget")
-    text = '\n'.join(selected)
-    return {'text': text, 'estimated_tokens': (len(text) + 3) // 4, 'omitted_lines': omitted, 'plan': plan}
 
 
 def parse_symbol_git_history(raw_log):
@@ -3300,7 +3197,11 @@ def cmd_update(args):
         content = f.read()
 
     print(f"[SCAN] Indexing symbols across codebase ({ROOT})...")
-    symbol_index, incremental_stats = build_symbol_index_incremental(ROOT, CACHE_PATH)
+    engine_result = RepositoryEngine(
+        build_symbol_index_incremental, build_dependency_graph,
+    ).build(ROOT, CACHE_PATH, GRAPH_CACHE_PATH)
+    symbol_index = engine_result.index
+    incremental_stats = engine_result.index_stats
     file_map, symbol_lookup = build_symbol_database_from_index(symbol_index)
     try:
         constraints = load_constraints(CONSTRAINT_PATH)
@@ -3313,8 +3214,21 @@ def cmd_update(args):
         for issue in constraint_issues:
             print(f"  - {issue}")
         return 1
-    dependency_graph = apply_constraints_to_graph(
-        build_dependency_graph(symbol_index, ROOT), constraints
+    try:
+        observations = load_observations(OBSERVATION_PATH)
+    except (OSError, ValueError) as exc:
+        print(f"[ERR] Invalid {LCM_DIRNAME}/{OBSERVATION_FILENAME}: {exc}")
+        return 1
+    observation_issues = validate_observations(observations, symbol_index, ROOT)
+    if observation_issues:
+        print("[ERR] Observation validation failed:")
+        for issue in observation_issues:
+            print(f"  - {issue}")
+        return 1
+    raw_graph = engine_result.graph
+    graph_stats = engine_result.graph_stats
+    dependency_graph = apply_observations(
+        apply_constraints_to_graph(raw_graph, constraints), observations, ROOT,
     )
     total_syms = len(symbol_index['symbols'])
     total_edges = len(dependency_graph['edges'])
@@ -3324,6 +3238,10 @@ def cmd_update(args):
         f"{incremental_stats['scanned']} scanned, "
         f"{incremental_stats['reused']} reused, "
         f"{incremental_stats['removed']} removed."
+    )
+    print(
+        "       Graph build: "
+        f"{graph_stats['mode']} ({graph_stats['files_recomputed']} files recomputed)."
     )
 
     # 1. Update line numbers
@@ -3340,7 +3258,7 @@ def cmd_update(args):
     if args.dry_run:
         print(f"[DRY-RUN] Would write {total_syms} symbols to {LCM_DIRNAME}/{INDEX_FILENAME}.")
         print(f"[DRY-RUN] Would write {total_edges} dependency edges to {LCM_DIRNAME}/{GRAPH_FILENAME}.")
-        print("[DRY-RUN] Changes preview complete. No files modified.")
+        print("[DRY-RUN] No committed artifacts modified; ignored local caches may refresh.")
         return 0
 
     # Write backup and file
@@ -3358,6 +3276,12 @@ def cmd_update(args):
     print(f"[GRAPH] Wrote {LCM_DIRNAME}/{GRAPH_FILENAME} (schema v{GRAPH_SCHEMA_VERSION}, {total_edges} edges).")
     write_constraints(constraints)
     print(f"[CONSTRAINTS] Wrote {LCM_DIRNAME}/{CONSTRAINT_FILENAME} (schema v{CONSTRAINT_SCHEMA_VERSION}).")
+    write_observations(observations, OBSERVATION_PATH)
+    print(
+        f"[EVIDENCE] Wrote {LCM_DIRNAME}/{OBSERVATION_FILENAME} "
+        f"(schema v{OBSERVATION_SCHEMA_VERSION}, "
+        f"{len(observations.get('observations', []))} observations)."
+    )
     if not os.path.exists(FITNESS_PATH):
         write_fitness_config()
         print(f"[FITNESS] Initialized {LCM_DIRNAME}/{FITNESS_FILENAME}.")
@@ -3424,12 +3348,15 @@ def cmd_check(args):
         try:
             constraints = load_constraints(CONSTRAINT_PATH)
             constraint_issues = validate_constraints(constraints, expected_index)
+            observations = load_observations(OBSERVATION_PATH)
+            observation_issues = validate_observations(observations, expected_index, ROOT)
         except (OSError, ValueError) as exc:
-            print(f"[ERR] Constraints require manual repair: {exc}")
+            print(f"[ERR] Structured knowledge requires manual repair: {exc}")
             return 2
-        if constraint_issues:
-            print("[ERR] Constraints require manual repair before generated state can be rebuilt:")
-            for issue in constraint_issues:
+        knowledge_issues = constraint_issues + observation_issues
+        if knowledge_issues:
+            print("[ERR] Structured knowledge requires manual repair before generated state can be rebuilt:")
+            for issue in knowledge_issues:
                 print(f"  - {issue}")
             return 2
         print("\n[AUTO-FIX] Rebuilding Markdown and machine state...")
@@ -3441,6 +3368,7 @@ def cmd_check(args):
         write_symbol_index(expected_index)
         write_dependency_graph(expected_graph)
         write_constraints(constraints)
+        write_observations(observations, OBSERVATION_PATH)
         generate_min_map(MAP_PATH, MIN_MAP_PATH)
         print(
             f"✅ [REPAIRED] Updated {MAP_FILENAME}, {MIN_MAP_FILENAME}, "
@@ -4078,6 +4006,109 @@ def cmd_calm_reconcile(args):
     return 0 if report['in_sync'] or not getattr(args, 'strict', False) else 2
 
 
+def cmd_observe(args):
+    """Record deterministic operational evidence for one stable symbol."""
+    try:
+        with open(INDEX_PATH, 'r', encoding='utf-8') as handle:
+            index = json.load(handle)
+    except (OSError, ValueError) as exc:
+        print(f"[ERR] Could not read symbol index: {exc}")
+        return 1
+    symbols = {symbol['id'] for symbol in index.get('symbols', [])}
+    if args.symbol not in symbols:
+        print('[ERR] Observation symbol must be an exact Stable Symbol ID present in the index.')
+        return 2
+    absolute_source = repository_evidence_path(ROOT, args.source)
+    if not absolute_source:
+        print('[ERR] Observation source must be inside the repository.')
+        return 2
+    relative_source = os.path.relpath(absolute_source, ROOT).replace('\\', '/')
+    source_hash = file_sha256(absolute_source)
+    if not source_hash:
+        print(f"[ERR] Observation source does not exist or cannot be read: {relative_source}")
+        return 2
+    try:
+        payload = load_observations(OBSERVATION_PATH)
+    except (OSError, ValueError) as exc:
+        print(f"[ERR] Could not read observations: {exc}")
+        return 1
+    oid = args.id or observation_id(args.symbol, args.kind, relative_source)
+    existing = next(
+        (item for item in payload.get('observations', []) if item.get('id') == oid),
+        None,
+    )
+    if existing and (
+        existing.get('symbol'), existing.get('kind'), existing.get('source', {}).get('path')
+    ) != (args.symbol, args.kind, relative_source):
+        print('[ERR] Observation ID already belongs to different evidence.')
+        return 2
+    record = {
+        'id': oid,
+        'symbol': args.symbol,
+        'kind': args.kind,
+        'result': args.result,
+        'source': {'path': relative_source},
+        'source_hash': source_hash,
+        'knowledge_type': 'OBSERVED',
+    }
+    if args.line:
+        record['line'] = args.line
+    if args.note:
+        record['note'] = args.note
+    records = [
+        item for item in payload.get('observations', [])
+        if item.get('id') != oid
+    ]
+    records.append(record)
+    candidate = {
+        'schema_version': OBSERVATION_SCHEMA_VERSION,
+        'observations': sorted(records, key=lambda item: item['id']),
+    }
+    issues = validate_observations(candidate, index, ROOT)
+    if issues:
+        print('[ERR] Observation validation failed:')
+        for issue in issues:
+            print(f'  - {issue}')
+        return 2
+    write_observations(candidate, OBSERVATION_PATH)
+    print(f"[OK] Recorded {oid}: {args.kind}/{args.result} for {args.symbol}")
+    return cmd_update(argparse.Namespace(dry_run=False, auto_commit=False))
+
+
+def cmd_evidence_status(args):
+    """Report freshness and result state for OBSERVED evidence."""
+    try:
+        with open(GRAPH_PATH, 'r', encoding='utf-8') as handle:
+            graph = json.load(handle)
+    except (OSError, ValueError) as exc:
+        print(f"[ERR] Could not read dependency graph: {exc}")
+        return 1
+    summary = observation_summary(graph)
+    if getattr(args, 'json', False):
+        print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        print('LCM EVIDENCE STATUS')
+        print(f"Observations: {summary['total']}")
+        print(
+            'Freshness: ' + ', '.join(
+                f"{state.lower()}={summary['staleness'].get(state, 0)}"
+                for state in ('FRESH', 'SUSPECT', 'STALE')
+            )
+        )
+        if summary['results']:
+            print(
+                'Results: ' + ', '.join(
+                    f"{key}={value}" for key, value in sorted(summary['results'].items())
+                )
+            )
+    unhealthy = (
+        summary['staleness'].get('SUSPECT', 0)
+        + summary['staleness'].get('STALE', 0)
+        + summary['results'].get('fail', 0)
+    )
+    return 2 if getattr(args, 'strict', False) and unhealthy else 0
+
+
 def cmd_explain(args):
     """Explain one graph symbol, including callers, callees, tests, and constraints."""
     if not os.path.exists(GRAPH_PATH):
@@ -4315,6 +4346,31 @@ def build_mcp_server():
         )
 
     @server.tool()
+    def record_observation(
+        symbol: str,
+        kind: str,
+        source: str,
+        result: str = "pass",
+        note: str = "",
+    ) -> str:
+        """Attach hash-backed test, coverage, runtime, benchmark, or CI evidence."""
+        return capture_mcp_command(
+            cmd_observe,
+            argparse.Namespace(
+                symbol=symbol, kind=kind, source=source, result=result,
+                note=note, id=None, line=None,
+            ),
+        )
+
+    @server.tool()
+    def evidence_status(strict: bool = False) -> str:
+        """Report fresh, suspect, stale, and failing observed evidence."""
+        return capture_mcp_command(
+            cmd_evidence_status,
+            argparse.Namespace(json=False, strict=strict),
+        )
+
+    @server.tool()
     def register_feature(prompt: str, auto_commit: bool = False) -> str:
         """
         Auto-parse a feature from natural language prompt and register into Module 5.
@@ -4506,6 +4562,25 @@ def main():
     p_calm_reconcile.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     p_calm_reconcile.add_argument("--strict", action="store_true", help="Fail when drift is present")
 
+    p_observe = subparsers.add_parser(
+        "observe",
+        help="Attach hash-backed test, coverage, runtime, benchmark, or CI evidence",
+    )
+    p_observe.add_argument("symbol", help="Exact Stable Symbol ID")
+    p_observe.add_argument("--kind", choices=sorted(OBSERVATION_KINDS), required=True)
+    p_observe.add_argument("--source", required=True, help="Repository-relative evidence file")
+    p_observe.add_argument("--result", choices=sorted(OBSERVATION_RESULTS), default="pass")
+    p_observe.add_argument("--id", help="Stable observation ID (default: deterministic)")
+    p_observe.add_argument("--line", type=int, help="Evidence line within the source")
+    p_observe.add_argument("--note", help="Short evidence explanation")
+
+    p_evidence = subparsers.add_parser(
+        "evidence-status",
+        help="Report freshness and result state for observed evidence",
+    )
+    p_evidence.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    p_evidence.add_argument("--strict", action="store_true", help="Fail on suspect, stale, or failed evidence")
+
     p_explain = subparsers.add_parser("explain", help="Explain one symbol and its one-hop relationships")
     p_explain.add_argument("symbol", help="Symbol name, qualified name, or Stable Symbol ID")
 
@@ -4548,6 +4623,8 @@ def main():
         "context": cmd_context,
         "calm-export": cmd_calm_export,
         "calm-reconcile": cmd_calm_reconcile,
+        "observe": cmd_observe,
+        "evidence-status": cmd_evidence_status,
         "explain": cmd_explain,
         "why": cmd_why,
         "rollback": cmd_rollback,

@@ -3,9 +3,12 @@
   "name": "replace-with-run-name",
   "metadata": {
     "repository_commit": "REQUIRED",
+    "repository_url": "REQUIRED_FOR_PROOF_CAMPAIGNS",
     "model": "REQUIRED",
     "configuration": "baseline-or-lcm",
-    "timeout_seconds": 900
+    "timeout_seconds": 900,
+    "execution_id": "REQUIRED_FOR_PROOF_CAMPAIGNS",
+    "transcript_sha256": "REQUIRED_FOR_PROOF_CAMPAIGNS"
   },
   "results": [
     {"task_id": "context-budget", "success": false, "files_read": [], "symbols_selected": [], "dependencies_found": [], "tests_found": [], "constraints_found": [], "tokens": 0, "tool_calls": 0, "duration_seconds": 0},

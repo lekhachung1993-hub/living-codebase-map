@@ -6,7 +6,7 @@
   "resources": [],
   "serverInfo": {
     "name": "living-codebase-map",
-    "version": "3.30.0"
+    "version": "3.34.0"
   },
   "tools": [
     {
@@ -139,6 +139,29 @@
         "type": "object"
       },
       "name": "reconcile_calm_architecture"
+    },
+    {
+      "description": "Attach hash-backed test, coverage, runtime, benchmark, or CI evidence to a stable symbol.",
+      "inputSchema": {
+        "properties": {
+          "kind": {"enum": ["benchmark", "ci", "coverage", "runtime", "test"], "type": "string"},
+          "note": {"type": "string"},
+          "result": {"enum": ["absent", "fail", "pass", "present", "unknown"], "type": "string"},
+          "source": {"type": "string"},
+          "symbol": {"type": "string"}
+        },
+        "required": ["symbol", "kind", "source"],
+        "type": "object"
+      },
+      "name": "record_observation"
+    },
+    {
+      "description": "Report fresh, suspect, stale, and failing observed evidence.",
+      "inputSchema": {
+        "properties": {"strict": {"type": "boolean"}},
+        "type": "object"
+      },
+      "name": "evidence_status"
     },
     {
       "description": "Register a feature in the human-readable traceability projection.",

@@ -32,6 +32,8 @@ LCM distinguishes:
 
 Each knowledge item should carry provenance and a freshness state. Unknown and ambiguous relationships are omitted or marked explicitly; they are never presented as confirmed facts.
 
+Operational observations use content-addressed evidence rather than elapsed time alone. A changed artifact becomes suspect and a missing symbol or artifact becomes stale, keeping lifecycle decisions deterministic and reviewable.
+
 ## Roadmap guardrail
 
 Language breadth, UI, hosting, and enterprise features remain secondary to:

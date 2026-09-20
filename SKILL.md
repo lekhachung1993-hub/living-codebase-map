@@ -40,6 +40,8 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 | `map context "<task>" --budget 500` | Compile only task-relevant nodes and edges within the requested context budget. |
 | `map calm-export` | Optionally project observed LCM evidence into a CALM 1.2 architecture document. |
 | `map calm-reconcile <file>` | Compare declared CALM architecture with components and relationships observed by LCM. |
+| `map observe <stable-id> --kind test --source <file>` | Attach hash-backed test, coverage, runtime, benchmark, or CI evidence. |
+| `map evidence-status --strict` | Fail when operational evidence is suspect, stale, or reports failure. |
 | `map explain <symbol>` | Explain one exact symbol; require a Stable Symbol ID when a short name is ambiguous. |
 | `map why <symbol>` | Retrieve Git-backed temporal context and constraints explaining why a symbol exists. |
 | `map fitness` | Measure graph coverage, confidence, hubs, linked tests, and constraint health; use `--strict` as a quality gate. |
@@ -219,7 +221,7 @@ Once changes are in place and local tests pass:
 
 ## STEP 5: ATOMIC GIT CHECKPOINT (CODE & MAP IN LOCKSTEP)
 
-**The Golden Rule:** When a code change affects the map, commit code, `.lcm/index.json`, `.lcm/graph.json`, `.lcm/constraints.json`, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` together. `map update` itself must not create a commit.
+**The Golden Rule:** When a code change affects the map, commit code, `.lcm/index.json`, `.lcm/graph.json`, `.lcm/constraints.json`, `.lcm/observations.json`, `PROJECT_MAP.md`, and `PROJECT_MAP.min.md` together. `map update` itself must not create a commit.
 
 - **Option A (Automated via CLI):**
   ```bash
@@ -288,6 +290,8 @@ Once changes are in place and local tests pass:
 | Install Git Pre-Commit Hook | `python scripts/living_map.py install-hook` |
 | Update and auto-commit to Git | `python scripts/living_map.py update --auto-commit` |
 | Add newly discovered constraint | `python scripts/living_map.py add-constraint "description"` |
+| Attach operational evidence | `python scripts/living_map.py observe <stable-id> --kind test --source <file>` |
+| Enforce evidence freshness | `python scripts/living_map.py evidence-status --strict` |
 | View commit history of map | `python scripts/living_map.py rollback` |
 | Safe Rollback Lock (source code 100% untouched) | `python scripts/living_map.py rollback --to <HASH>` |
 | Run as Model Context Protocol (MCP) Server | `python scripts/living_map.py mcp` |
@@ -311,4 +315,4 @@ Living Codebase Map can be connected to any MCP-compliant AI coding assistant (A
   }
 }
 ```
-Exposes 16 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `plan_change`, `fitness_report`, `test_gap_hotspots`, `guard_change`, `verify_change`, `compile_context`, `explain_symbol`, `explain_symbol_history`, `export_calm_architecture`, `reconcile_calm_architecture`, `register_feature`, `register_constraint`, and `get_map_summary`.
+Exposes 18 Native Tools: `update_map`, `check_drift`, `analyze_code_impact`, `plan_change`, `fitness_report`, `test_gap_hotspots`, `guard_change`, `verify_change`, `compile_context`, `explain_symbol`, `explain_symbol_history`, `export_calm_architecture`, `reconcile_calm_architecture`, `record_observation`, `evidence_status`, `register_feature`, `register_constraint`, and `get_map_summary`.

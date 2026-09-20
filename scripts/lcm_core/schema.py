@@ -1,9 +1,11 @@
 """Versioned LCM artifact schemas and deterministic migrations."""
 
 INDEX_SCHEMA_VERSION = 4
-GRAPH_SCHEMA_VERSION = 2
+GRAPH_SCHEMA_VERSION = 3
 CONSTRAINT_SCHEMA_VERSION = 2
 CACHE_SCHEMA_VERSION = 1
+GRAPH_CACHE_SCHEMA_VERSION = 1
+OBSERVATION_SCHEMA_VERSION = 1
 
 
 def migrate_constraints(payload):

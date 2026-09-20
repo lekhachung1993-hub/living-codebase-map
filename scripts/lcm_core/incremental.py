@@ -37,7 +37,10 @@ def build_incremental_records(root_dir, code_extensions, ignored_dirs, scan, cac
     current = {}
     files = []
     symbols = []
-    stats = {'scanned': 0, 'reused': 0, 'removed': 0}
+    stats = {
+        'scanned': 0, 'reused': 0, 'removed': 0,
+        'changed_paths': [], 'removed_paths': [],
+    }
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames[:] = sorted(name for name in dirnames if name not in ignored_dirs)
         for filename in sorted(filenames):
@@ -58,10 +61,13 @@ def build_incremental_records(root_dir, code_extensions, ignored_dirs, scan, cac
             else:
                 records = scan(absolute, relative)
                 stats['scanned'] += 1
+                stats['changed_paths'].append(relative)
             files.append({'path': relative, 'language': code_extensions[extension], 'sha256': digest})
             symbols.extend(records)
             current[relative] = {'sha256': digest, 'symbols': records}
-    stats['removed'] = len(set(previous.get('files', {})) - set(current))
+    stats['removed_paths'] = sorted(set(previous.get('files', {})) - set(current))
+    stats['removed'] = len(stats['removed_paths'])
+    stats['changed_paths'].sort()
     payload = {
         'schema_version': CACHE_SCHEMA_VERSION,
         'extractor_version': EXTRACTOR_VERSION,

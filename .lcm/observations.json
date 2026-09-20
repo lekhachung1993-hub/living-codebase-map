@@ -1,0 +1,17 @@
+{
+  "observations": [
+    {
+      "id": "OC2335D4B3927",
+      "kind": "benchmark",
+      "knowledge_type": "OBSERVED",
+      "note": "Clean commit-pinned public repositories; cold and warm engine measurements; target code not executed.",
+      "result": "pass",
+      "source": {
+        "path": "benchmarks/results/scale-v3.34.json"
+      },
+      "source_hash": "1f6e0140d47f6198450ec8f86b8b3c1fb540c5e0e9f6aa22eb22f67eaac2c3a3",
+      "symbol": "py:scripts/scale_benchmark.py::measure_repository"
+    }
+  ],
+  "schema_version": 1
+}

@@ -12,7 +12,7 @@
 | Primary Storage | `.lcm/index.json`, `.lcm/graph.json`, plus Markdown projections |
 | Package Spec | `pyproject.toml`, `manifest.json` (MCPB Bundle), `smithery.yaml` |
 | Current Branch | `main` |
-| Codebase-MD5 | `45e5b3fc6484516c1ae89756c0193385` |
+| Codebase-MD5 | `ecb4dad9f11451736ead05d30f72c0e1` |
 
 ---
 
@@ -24,6 +24,13 @@
 - **scripts/lcm_core/incremental.py:** `build_incremental_records()`
 - **scripts/lcm_core/semantics.py:** `validate_markdown_semantics()`
 - **scripts/lcm_core/calm_adapter.py:** `export_calm()`, `reconcile_calm()`
+- **scripts/lcm_core/engine.py:** `RepositoryEngine`
+- **scripts/lcm_core/context.py:** `analyze_graph_impact()`, `build_change_plan()`, `compile_task_context()`
+- **scripts/lcm_core/observations.py:** `evaluate_staleness()`, `validate_observations()`, `apply_observations()`
+- **scripts/lcm_core/graph_cache.py:** `build_incremental_graph()`
+- **scripts/proof_campaign.py:** `evaluate_campaign()`
+- **scripts/benchmark.py:** `evaluate_run()`, `compare_runs()`, `render_markdown()`, `evaluate_files()`
+- **scripts/scale_benchmark.py:** `measure_repository()`
 
 ## MODULE 4: ARCHITECTURAL CONSTRAINTS & INVARIANTS
 > Read BEFORE modifying code. Zero tolerance for regression.
@@ -40,24 +47,30 @@
 
 | Feature ID | Description | Source Code | Command / Tool |
 |---|---|---|---|
-| F001 | Smart Drift Check (MD5) | `scripts/living_map.py:L126` | `living-map check` / `check_drift` |
-| F002 | Token-Efficient Compact Map | `scripts/living_map.py:L159` | `living-map update` / `get_map_summary` |
-| F003 | Cross-Layer Blast Radius Analysis | `scripts/living_map.py:L255` | `living-map impact` / `analyze_code_impact` |
-| F004 | Native Model Context Protocol Server | `scripts/living_map.py:L1292` | `living-map mcp` |
-| F005 | Smart Feature Auto-Parsing | `scripts/living_map.py:L1114` | `living-map add-feature` / `register_feature` |
-| F006 | Safe Map Rollback Lock | `scripts/living_map.py:L451` | `living-map rollback` |
-| F007 | Stable Symbol Identity | `scripts/living_map.py:L1022` | `living-map update` |
-| F008 | Evidence-Backed Dependency Graph | `scripts/living_map.py:L1388` | `living-map impact` / `analyze_code_impact` |
-| F009 | Structured Constraint Lifecycle | `scripts/living_map.py:L2207` | `living-map add-constraint` / `register_constraint` |
-| F010 | Graph-Backed Change Planning | `scripts/living_map.py:L3833` | `living-map plan` / `plan_change` |
-| F011 | Change Evidence Verification | `scripts/living_map.py:L3858` | `living-map verify-change` / `verify_change` |
-| F012 | Hierarchical Context Compiler | `scripts/living_map.py:L2833` | `living-map context` / `compile_context` |
-| F013 | Symbol Explanation and History | `scripts/living_map.py:L3893` | `living-map explain` / `living-map why` |
-| F014 | Codebase Fitness Gates | `scripts/living_map.py:L2417` | `living-map fitness` / `fitness_report` |
-| F015 | Risk-Aware Diff Guard | `scripts/living_map.py:L2734` | `living-map guard` / `guard_change` |
-| F016 | Test-Gap Prioritization | `scripts/living_map.py:L2679` | `living-map test-gaps` / `test_gap_hotspots` |
+| F001 | Smart Drift Check (MD5) | `scripts/living_map.py::cmd_check` | `living-map check` / `check_drift` |
+| F002 | Token-Efficient Compact Map | `scripts/living_map.py::generate_min_map` | `living-map update` / `get_map_summary` |
+| F003 | Cross-Layer Blast Radius Analysis | `scripts/lcm_core/context.py::analyze_graph_impact` | `living-map impact` / `analyze_code_impact` |
+| F004 | Native Model Context Protocol Server | `scripts/living_map.py::build_mcp_server` | `living-map mcp` |
+| F005 | Smart Feature Auto-Parsing | `scripts/living_map.py::cmd_add_feature` | `living-map add-feature` / `register_feature` |
+| F006 | Safe Map Rollback Lock | `scripts/living_map.py::git_rollback_map` | `living-map rollback` |
+| F007 | Stable Symbol Identity | `scripts/living_map.py::scan_file_symbol_records` | `living-map update` |
+| F008 | Evidence-Backed Dependency Graph | `scripts/living_map.py::build_dependency_graph` | `living-map impact` / `analyze_code_impact` |
+| F009 | Structured Constraint Lifecycle | `scripts/living_map.py::validate_constraints` | `living-map add-constraint` / `register_constraint` |
+| F010 | Graph-Backed Change Planning | `scripts/lcm_core/context.py::build_change_plan` | `living-map plan` / `plan_change` |
+| F011 | Change Evidence Verification | `scripts/living_map.py::verify_changed_files` | `living-map verify-change` / `verify_change` |
+| F012 | Hierarchical Context Compiler | `scripts/lcm_core/context.py::compile_task_context` | `living-map context` / `compile_context` |
+| F013 | Symbol Explanation and History | `scripts/living_map.py::get_symbol_history` | `living-map explain` / `living-map why` |
+| F014 | Codebase Fitness Gates | `scripts/living_map.py::analyze_graph_fitness` | `living-map fitness` / `fitness_report` |
+| F015 | Risk-Aware Diff Guard | `scripts/living_map.py::analyze_diff_guard` | `living-map guard` / `guard_change` |
+| F016 | Test-Gap Prioritization | `scripts/living_map.py::rank_test_gaps` | `living-map test-gaps` / `test_gap_hotspots` |
 | F017 | Incremental File-Hash Indexing | `scripts/lcm_core/incremental.py` | `living-map update` |
 | F018 | Knowledge Evidence and Staleness | `scripts/lcm_core/evidence.py` | generated index and graph artifacts |
 | F019 | Optional CALM Projection | `scripts/lcm_core/calm_adapter.py` | `living-map calm-export` / `export_calm_architecture` |
 | F020 | Architecture Reconciliation | `scripts/lcm_core/calm_adapter.py` | `living-map calm-reconcile` / `reconcile_calm_architecture` |
 | F021 | Benchmark Regression Gates | `scripts/benchmark.py` | `python scripts/benchmark.py` |
+| F022 | Auditable External Proof Campaigns | `scripts/proof_campaign.py` | `python scripts/proof_campaign.py` |
+| F023 | Reusable Repository Engine | `scripts/lcm_core/engine.py` | library contract used by update and scale measurement |
+| F024 | Hash-Backed Operational Evidence | `scripts/lcm_core/observations.py` | `living-map observe` / `record_observation` |
+| F025 | Evidence Lifecycle Gate | `scripts/lcm_core/observations.py` | `living-map evidence-status` / `evidence_status` |
+| F026 | Safe Incremental Graph Rebuild | `scripts/lcm_core/graph_cache.py` | `living-map update` |
+| F027 | Commit-Pinned Scale Measurements | `scripts/scale_benchmark.py` | `python scripts/scale_benchmark.py` |
