@@ -66,6 +66,33 @@ class BenchmarkTests(unittest.TestCase):
         self.assertIn('| lcm | 100.0%', rendered)
         self.assertIn('## Missed ground truth', rendered)
 
+    def test_compare_runs_detects_quality_and_token_regressions(self):
+        baseline = {'name': 'baseline', 'metadata': {
+            'repository_commit': 'abc', 'model': 'same', 'timeout_seconds': 60,
+        }, 'aggregate': {
+            'success_rate': 1.0, 'total_tokens': 100,
+            'total_tool_calls': 4, 'total_duration_seconds': 10,
+            'files_recall': 1.0, 'symbols_recall': 1.0,
+            'dependencies_recall': 0.8, 'tests_recall': 1.0,
+            'constraints_recall': None,
+        }}
+        candidate = {'name': 'candidate', 'metadata': {
+            'repository_commit': 'abc', 'model': 'different', 'timeout_seconds': 60,
+        }, 'aggregate': {
+            'success_rate': 0.8, 'total_tokens': 130,
+            'total_tool_calls': 3, 'total_duration_seconds': 8,
+            'files_recall': 1.0, 'symbols_recall': 0.9,
+            'dependencies_recall': 0.8, 'tests_recall': 1.0,
+            'constraints_recall': None,
+        }}
+        comparison = benchmark.compare_runs(baseline, candidate, 0.10)
+        self.assertFalse(comparison['passed'])
+        self.assertIn('success rate regressed', comparison['violations'])
+        self.assertIn('symbols recall regressed', comparison['violations'])
+        self.assertIn('metadata mismatch: model', comparison['violations'])
+        self.assertTrue(any('tokens increased' in item for item in comparison['violations']))
+        self.assertEqual(comparison['total_tool_calls_delta_pct'], -0.25)
+
 
 if __name__ == '__main__':
     unittest.main()

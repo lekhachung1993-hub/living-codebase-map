@@ -24,6 +24,10 @@ Usage:
   # Fast Smart Drift Lint (compares the stored MD5):
   python living_map.py check [--full] [--fix]
 
+  # Gate exact changed symbols and prioritize missing tests:
+  python living_map.py guard --base HEAD --fail-on high
+  python living_map.py test-gaps --limit 10
+
   # Install Git Pre-Commit / Pre-Push hook:
   python living_map.py install-hook [--hook pre-commit|pre-push]
 
@@ -121,7 +125,7 @@ FITNESS_DEFAULTS = {
         'min_edge_coverage': 0.50,
         'min_resolved_edge_ratio': 0.70,
         'max_hub_concentration': 0.15,
-        'min_test_link_rate': 0.15,
+        'min_test_link_rate': 0.25,
         'max_constraint_issues': 0,
     },
 }
@@ -272,7 +276,7 @@ def generate_min_map(full_map_path=MAP_PATH, min_map_path=MIN_MAP_PATH):
 
     full_size = len(full_content)
     min_size = len(min_content)
-    saved_pct = int((1 - min_size / max(full_size, 1)) * 100)
+    saved_pct = max(0, int((1 - min_size / max(full_size, 1)) * 100))
     print(f"  [COMPACT] Generated {MIN_MAP_FILENAME} ({min_size} chars, saved {saved_pct}% tokens).")
     return min_map_path
 
@@ -2389,6 +2393,27 @@ def write_fitness_config(config=None, path=FITNESS_PATH):
         handle.write('\n')
 
 
+def _nested_local_symbol_ids(symbol_nodes):
+    """Identify implementation-local functions that cannot be tested as public units."""
+    local_ids = set()
+    values = list(symbol_nodes.values())
+    for child in values:
+        child_path = child.get('path')
+        child_start = child.get('line', 0)
+        child_end = child.get('end_line', child_start)
+        for parent in values:
+            if parent['id'] == child['id'] or parent.get('path') != child_path:
+                continue
+            if parent.get('kind') not in {'function', 'method'}:
+                continue
+            parent_start = parent.get('line', 0)
+            parent_end = parent.get('end_line', parent_start)
+            if parent_start < child_start and parent_end >= child_end:
+                local_ids.add(child['id'])
+                break
+    return local_ids
+
+
 def analyze_graph_fitness(graph, constraint_issues=None, config=None):
     """Measure graph coverage, confidence, hubs, tests, and constraint health."""
     config = config or FITNESS_DEFAULTS
@@ -2397,6 +2422,7 @@ def analyze_graph_fitness(graph, constraint_issues=None, config=None):
         node['id']: node for node in graph.get('nodes', [])
         if node.get('type') == 'symbol'
     }
+    local_ids = _nested_local_symbol_ids(symbol_nodes)
     structural_relations = {'CALLS', 'HANDLES', 'TRIGGERS', 'READS', 'WRITES'}
     structural_edges = [
         edge for edge in graph.get('edges', [])
@@ -2414,7 +2440,7 @@ def analyze_graph_fitness(graph, constraint_issues=None, config=None):
             incoming[edge['target']] = incoming.get(edge['target'], 0) + 1
     hubs = {
         node_id for node_id, count in incoming.items()
-        if count >= config['hub_min_incoming']
+        if count >= config['hub_min_incoming'] and node_id not in local_ids
     }
     test_linked = {
         edge['source'] for edge in graph.get('edges', [])
@@ -2422,7 +2448,7 @@ def analyze_graph_fitness(graph, constraint_issues=None, config=None):
     }
     production = {
         node_id for node_id, node in symbol_nodes.items()
-        if not _is_test_path(node.get('path', ''))
+        if node_id not in local_ids and not _is_test_path(node.get('path', ''))
     }
 
     def ratio(numerator, denominator):
@@ -2438,7 +2464,7 @@ def analyze_graph_fitness(graph, constraint_issues=None, config=None):
             len(structural_edges),
         ),
         'hub_count': len(hubs),
-        'hub_concentration': ratio(len(hubs), len(symbol_nodes)),
+        'hub_concentration': ratio(len(hubs), len(symbol_nodes) - len(local_ids)),
         'test_link_rate': ratio(len(production & test_linked), len(production)),
         'untested_hub_count': len(hubs - test_linked),
         'constraint_issues': len(constraint_issues or []),
@@ -2606,6 +2632,184 @@ def verify_changed_files(changed_files, graph):
         'related_edges': related_edges,
         'missing_tests': sorted(set(missing_tests)),
         'constraints': list({node['id']: node for node in constraints}.values()),
+    }
+
+
+def parse_unified_diff(diff_text):
+    """Extract changed new-file line ranges from a zero-context unified diff."""
+    ranges = {}
+    current_path = None
+    for line in diff_text.splitlines():
+        if line.startswith('+++ '):
+            path = line[4:].strip()
+            current_path = None if path == '/dev/null' else re.sub(r'^b/', '', path)
+            if current_path:
+                ranges.setdefault(current_path, [])
+            continue
+        if current_path and line.startswith('@@'):
+            match = re.search(r'\+(\d+)(?:,(\d+))?', line)
+            if not match:
+                continue
+            start = int(match.group(1))
+            count = int(match.group(2) or 1)
+            end = start + max(count, 1) - 1
+            ranges[current_path].append((start, end))
+    return ranges
+
+
+def _changed_symbol_ids(changed_ranges, changed_files, nodes):
+    """Match diff hunks to current symbol ranges, with file fallback for renames."""
+    changed_files = {path.replace('\\', '/') for path in changed_files}
+    selected = set()
+    for node_id, node in nodes.items():
+        path = node.get('path', '').replace('\\', '/')
+        if path not in changed_files:
+            continue
+        ranges = changed_ranges.get(path, [])
+        if not ranges:
+            selected.add(node_id)
+            continue
+        start = node.get('line', 0)
+        end = node.get('end_line', start)
+        if any(start <= changed_end and end >= changed_start for changed_start, changed_end in ranges):
+            selected.add(node_id)
+    return selected
+
+
+def rank_test_gaps(graph, hub_min_incoming=3):
+    """Rank production symbols where linked-test evidence has the highest leverage."""
+    nodes = {
+        node['id']: node for node in graph.get('nodes', [])
+        if node.get('type') == 'symbol'
+    }
+    local_ids = _nested_local_symbol_ids(nodes)
+    incoming = {}
+    outgoing = {}
+    api_symbols = set()
+    constrained = {}
+    tested = set()
+    for edge in graph.get('edges', []):
+        source, target = edge.get('source'), edge.get('target')
+        relation = edge.get('relation')
+        if relation in {'CALLS', 'HANDLES', 'TRIGGERS', 'READS', 'WRITES'}:
+            if target in nodes:
+                incoming[target] = incoming.get(target, 0) + 1
+            if source in nodes:
+                outgoing[source] = outgoing.get(source, 0) + 1
+        if relation == 'HANDLES':
+            api_symbols.update(node_id for node_id in (source, target) if node_id in nodes)
+        elif relation == 'TESTED_BY' and source in nodes:
+            tested.add(source)
+        elif relation == 'CONSTRAINED_BY' and source in nodes:
+            constraint = next((n for n in graph.get('nodes', []) if n.get('id') == target), {})
+            constrained[source] = constraint.get('severity', 'medium')
+
+    severity_points = {'low': 2, 'medium': 5, 'high': 10, 'critical': 20}
+    gaps = []
+    for node_id, node in nodes.items():
+        fan_in = incoming.get(node_id, 0)
+        if (
+            node_id in local_ids or node_id in tested
+            or _is_test_path(node.get('path', '')) or fan_in < hub_min_incoming
+        ):
+            continue
+        fan_out = outgoing.get(node_id, 0)
+        severity = constrained.get(node_id)
+        score = fan_in * 10 + min(fan_out, 10) * 2
+        score += 20 if node_id in api_symbols else 0
+        score += severity_points.get(severity, 0)
+        gaps.append({
+            'id': node_id,
+            'path': node.get('path', ''),
+            'line': node.get('line', 0),
+            'fan_in': fan_in,
+            'fan_out': fan_out,
+            'api': node_id in api_symbols,
+            'constraint_severity': severity,
+            'priority_score': score,
+        })
+    return sorted(gaps, key=lambda item: (-item['priority_score'], item['id']))
+
+
+def analyze_diff_guard(changed_ranges, changed_files, graph):
+    """Score changed symbols and require test evidence for high-risk edits."""
+    nodes = {node['id']: node for node in graph.get('nodes', [])}
+    symbol_nodes = {node_id: node for node_id, node in nodes.items() if node.get('type') == 'symbol'}
+    changed_ids = _changed_symbol_ids(changed_ranges, changed_files, symbol_nodes)
+    changed_ids -= _nested_local_symbol_ids(symbol_nodes)
+    changed_paths = {path.replace('\\', '/') for path in changed_files}
+    incoming = {}
+    incident = {node_id: [] for node_id in changed_ids}
+    linked_tests = {node_id: [] for node_id in changed_ids}
+    constraints = {node_id: [] for node_id in changed_ids}
+    api_symbols = set()
+    structural = {'CALLS', 'HANDLES', 'TRIGGERS', 'READS', 'WRITES'}
+    for edge in graph.get('edges', []):
+        source, target = edge.get('source'), edge.get('target')
+        if edge.get('relation') in structural and target in symbol_nodes:
+            incoming[target] = incoming.get(target, 0) + 1
+        for node_id in changed_ids & {source, target}:
+            incident[node_id].append(edge)
+        if edge.get('relation') == 'HANDLES':
+            api_symbols.update(node_id for node_id in (source, target) if node_id in symbol_nodes)
+        elif edge.get('relation') == 'TESTED_BY' and source in changed_ids:
+            test_path = nodes.get(target, {}).get('path')
+            if test_path:
+                linked_tests[source].append(test_path)
+        elif edge.get('relation') == 'CONSTRAINED_BY' and source in changed_ids:
+            constraints[source].append(nodes.get(target, {}))
+
+    assessments = []
+    for node_id in sorted(changed_ids):
+        score = 0
+        reasons = []
+        fan_in = incoming.get(node_id, 0)
+        if fan_in >= 8:
+            score += 40
+            reasons.append(f'high fan-in ({fan_in})')
+        elif fan_in >= 3:
+            score += 25
+            reasons.append(f'hub fan-in ({fan_in})')
+        if node_id in api_symbols:
+            score += 30
+            reasons.append('public API handler')
+        severities = {item.get('severity') for item in constraints[node_id]}
+        if 'critical' in severities:
+            score += 40
+            reasons.append('critical constraint')
+        elif 'high' in severities:
+            score += 30
+            reasons.append('high constraint')
+        if any(edge.get('confidence', 1) < 0.95 for edge in incident[node_id]):
+            score += 10
+            reasons.append('inferred dependency')
+        tests = sorted(set(linked_tests[node_id]))
+        changed_tests = sorted(path for path in tests if path in changed_paths)
+        if not tests:
+            score += 15
+            reasons.append('no linked test evidence')
+        elif not changed_tests:
+            score += 20
+            reasons.append('linked tests unchanged')
+        score = min(score, 100)
+        level = 'high' if score >= 60 else ('medium' if score >= 30 else 'low')
+        assessments.append({
+            'id': node_id, 'path': symbol_nodes[node_id].get('path', ''),
+            'line': symbol_nodes[node_id].get('line', 0), 'score': score,
+            'level': level, 'reasons': reasons, 'linked_tests': tests,
+            'changed_tests': changed_tests,
+        })
+    rank = {'low': 0, 'medium': 1, 'high': 2}
+    overall = max((item['level'] for item in assessments), key=rank.get, default='low')
+    return {
+        'risk_level': overall,
+        'changed_files': sorted(changed_paths),
+        'changed_symbols': assessments,
+        'summary': {
+            'low': sum(item['level'] == 'low' for item in assessments),
+            'medium': sum(item['level'] == 'medium' for item in assessments),
+            'high': sum(item['level'] == 'high' for item in assessments),
+        },
     }
 
 
@@ -3558,6 +3762,74 @@ def cmd_fitness(args):
     return 2 if getattr(args, 'strict', False) and not report['passed'] else 0
 
 
+def cmd_test_gaps(args):
+    """Rank untested hubs where additional test evidence has the highest value."""
+    try:
+        with open(GRAPH_PATH, 'r', encoding='utf-8') as handle:
+            graph = json.load(handle)
+        gaps = rank_test_gaps(graph, max(1, getattr(args, 'hub_min_incoming', 3)))
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"[ERR] Could not rank test gaps: {exc}")
+        return 1
+    limit = max(1, getattr(args, 'limit', 10))
+    selected = gaps[:limit]
+    if getattr(args, 'json', False):
+        print(json.dumps({'count': len(gaps), 'gaps': selected}, indent=2, sort_keys=True))
+    else:
+        print(f"TEST GAP HOTSPOTS | {len(gaps)} untested hubs")
+        for index, item in enumerate(selected, 1):
+            details = [f"fan-in {item['fan_in']}", f"fan-out {item['fan_out']}"]
+            if item['api']:
+                details.append('API')
+            if item['constraint_severity']:
+                details.append(f"{item['constraint_severity']} constraint")
+            print(
+                f"  {index}. {item['id']} | priority {item['priority_score']} | "
+                + ', '.join(details)
+            )
+    return 0
+
+
+def cmd_guard(args):
+    """Gate a Git diff using symbol-level graph risk and linked-test evidence."""
+    code, diff_text, err = _git(['diff', '--unified=0', '--no-color', args.base, '--'])
+    if code != 0:
+        print(f"[ERR] Could not read git diff: {err}")
+        return 1
+    code, names_text, err = _git(['diff', '--name-only', args.base, '--'])
+    if code != 0:
+        print(f"[ERR] Could not read changed files: {err}")
+        return 1
+    try:
+        with open(GRAPH_PATH, 'r', encoding='utf-8') as handle:
+            graph = json.load(handle)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"[ERR] Could not read dependency graph: {exc}")
+        return 1
+    changed_files = [line.strip() for line in names_text.splitlines() if line.strip()]
+    report = analyze_diff_guard(parse_unified_diff(diff_text), changed_files, graph)
+    report['base'] = args.base
+    if getattr(args, 'json', False):
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        print(f"CHANGE GUARD | Risk: {report['risk_level'].upper()} | Base: {args.base}")
+        print(
+            f"Changed: {len(report['changed_files'])} files / "
+            f"{len(report['changed_symbols'])} symbols"
+        )
+        summary = report['summary']
+        print(f"Risk mix: {summary['high']} high / {summary['medium']} medium / {summary['low']} low")
+        for item in sorted(report['changed_symbols'], key=lambda row: (-row['score'], row['id']))[:10]:
+            reason = ', '.join(item['reasons']) or 'localized change'
+            print(f"  - [{item['level'].upper()} {item['score']}] {item['id']}: {reason}")
+    levels = {'low': 0, 'medium': 1, 'high': 2}
+    fail_on = getattr(args, 'fail_on', 'high')
+    blocked = fail_on != 'none' and levels[report['risk_level']] >= levels[fail_on]
+    if blocked and not getattr(args, 'json', False):
+        print(f"[BLOCKED] Diff risk reached configured fail level: {fail_on}.")
+    return 2 if blocked else 0
+
+
 def cmd_plan(args):
     """Create a graph-backed pre-flight plan for a requested change."""
     if not os.path.exists(GRAPH_PATH):
@@ -3787,6 +4059,24 @@ def build_mcp_server():
         )
 
     @server.tool()
+    def test_gap_hotspots(limit: int = 10) -> str:
+        """Rank untested graph hubs where test-writing effort has the highest leverage."""
+        return capture_mcp_command(
+            cmd_test_gaps,
+            argparse.Namespace(limit=max(1, limit), hub_min_incoming=3, json=False),
+        )
+
+    @server.tool()
+    def guard_change(base: str = "HEAD", fail_on: str = "high") -> str:
+        """Gate a Git diff using changed-symbol risk and linked-test evidence."""
+        if fail_on not in {'medium', 'high', 'none'}:
+            return "[ERROR exit=1]\nfail_on must be medium, high, or none"
+        return capture_mcp_command(
+            cmd_guard,
+            argparse.Namespace(base=base, fail_on=fail_on, json=False),
+        )
+
+    @server.tool()
     def verify_change(base: str = "HEAD", strict: bool = False) -> str:
         """Check the current Git diff against graph-linked tests and constraints."""
         return capture_mcp_command(
@@ -3926,6 +4216,16 @@ def main():
     p_fit.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     p_fit.add_argument("--strict", action="store_true", help="Exit non-zero when a configured threshold fails")
 
+    p_gaps = subparsers.add_parser("test-gaps", help="Rank high-leverage untested graph hubs")
+    p_gaps.add_argument("--limit", type=int, default=10, help="Maximum hotspots to show")
+    p_gaps.add_argument("--hub-min-incoming", type=int, default=3, help="Minimum incoming structural edges")
+    p_gaps.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
+    p_guard = subparsers.add_parser("guard", help="Gate a Git diff using graph risk and linked-test evidence")
+    p_guard.add_argument("--base", default="HEAD", help="Git revision used as diff base (default: HEAD)")
+    p_guard.add_argument("--fail-on", choices=["medium", "high", "none"], default="high")
+    p_guard.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     # impact (Blast Radius Analysis - Lean Mode by Default)
     p_imp = subparsers.add_parser("impact", help="Quick cross-layer blast radius analysis (Lean mode by default)")
     p_imp.add_argument("target", help="Symbol name, DOM ID, or keyword to trace across layers")
@@ -4011,6 +4311,8 @@ def main():
         "update": cmd_update,
         "check": cmd_check,
         "fitness": cmd_fitness,
+        "test-gaps": cmd_test_gaps,
+        "guard": cmd_guard,
         "impact": cmd_impact,
         "deep-impact": cmd_deep_impact,
         "install-hook": cmd_install_hook,

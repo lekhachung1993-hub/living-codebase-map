@@ -145,9 +145,60 @@ def evaluate_run(suite, run, name=None):
     }
 
 
+def compare_runs(baseline, candidate, max_token_increase_pct=None):
+    """Compute candidate deltas and quality-first regression violations."""
+    base = baseline['aggregate']
+    current = candidate['aggregate']
+
+    def delta(key):
+        left, right = base.get(key), current.get(key)
+        return None if left is None or right is None else right - left
+
+    def percent_change(key):
+        left, right = base.get(key), current.get(key)
+        if left in (None, 0) or right is None:
+            return None
+        return (right - left) / left
+
+    recall_keys = [f'{label}_recall' for label, _, _ in RETRIEVAL_FIELDS]
+    violations = []
+    for key in ('repository_commit', 'model', 'timeout_seconds'):
+        if baseline.get('metadata', {}).get(key) != candidate.get('metadata', {}).get(key):
+            violations.append(f'metadata mismatch: {key}')
+    if current['success_rate'] < base['success_rate']:
+        violations.append('success rate regressed')
+    for key in recall_keys:
+        change = delta(key)
+        if change is not None and change < -0.01:
+            violations.append(key.replace('_', ' ') + ' regressed')
+    token_change = percent_change('total_tokens')
+    if (
+        max_token_increase_pct is not None
+        and token_change is not None
+        and token_change > max_token_increase_pct
+    ):
+        violations.append(
+            f'tokens increased {token_change:.1%} (limit {max_token_increase_pct:.1%})'
+        )
+    return {
+        'baseline': baseline['name'],
+        'candidate': candidate['name'],
+        'passed': not violations,
+        'violations': violations,
+        'success_rate_delta': delta('success_rate'),
+        'total_tokens_delta_pct': token_change,
+        'total_tool_calls_delta_pct': percent_change('total_tool_calls'),
+        'total_duration_delta_pct': percent_change('total_duration_seconds'),
+        'recall_deltas': {key: delta(key) for key in recall_keys},
+    }
+
+
 def render_markdown(report):
     def percent(value):
         return 'n/a' if value is None else f'{value:.1%}'
+
+    def signed_percent(value):
+        return 'n/a' if value is None else f'{value:+.1%}'
 
     lines = [
         '# LCM Benchmark Report', '',
@@ -177,30 +228,64 @@ def render_markdown(report):
         lines.append(f"### {run['name']}")
         lines.extend(misses or ['- None'])
         lines.append('')
+    if report.get('comparisons'):
+        lines.extend(['## Baseline comparisons', ''])
+        lines.extend([
+            '| Candidate | Gate | Success Δ | Tokens Δ | Tool calls Δ | Duration Δ |',
+            '|---|---:|---:|---:|---:|---:|',
+        ])
+        violations = []
+        for comparison in report['comparisons']:
+            lines.append(
+                f"| {comparison['candidate']} | {'PASS' if comparison['passed'] else 'FAIL'} | "
+                f"{signed_percent(comparison['success_rate_delta'])} | "
+                f"{signed_percent(comparison['total_tokens_delta_pct'])} | "
+                f"{signed_percent(comparison['total_tool_calls_delta_pct'])} | "
+                f"{signed_percent(comparison['total_duration_delta_pct'])} |"
+            )
+            for violation in comparison['violations']:
+                violations.append(f"- `{comparison['candidate']}`: {violation}")
+        lines.extend([''] + violations + ([''] if violations else []))
     return '\n'.join(lines).rstrip() + '\n'
 
 
-def evaluate_files(suite_path, run_specs):
+def evaluate_files(suite_path, run_specs, baseline_name=None, max_token_increase_pct=None):
     suite = load_json(suite_path)
     issues = validate_suite(suite)
     if issues:
         raise ValueError('; '.join(issues))
     task_ids = {task['id'] for task in suite['tasks']}
     evaluated = []
+    names = set()
     for spec in run_specs:
         if '=' not in spec:
             raise ValueError(f'run must use NAME=PATH: {spec}')
         name, path = spec.split('=', 1)
+        if not name or name in names:
+            raise ValueError(f'run name must be non-empty and unique: {name}')
+        names.add(name)
         run = load_json(path)
         run_issues = validate_run(run, task_ids)
         if run_issues:
             raise ValueError(f'{name}: ' + '; '.join(run_issues))
         evaluated.append(evaluate_run(suite, run, name))
+    if baseline_name:
+        matches = [run for run in evaluated if run['name'] == baseline_name]
+        if len(matches) != 1:
+            raise ValueError(f'baseline run not found or duplicated: {baseline_name}')
+        baseline = matches[0]
+    else:
+        baseline = evaluated[0]
+    comparisons = [
+        compare_runs(baseline, run, max_token_increase_pct)
+        for run in evaluated if run is not baseline
+    ]
     return {
         'schema_version': SCHEMA_VERSION,
         'suite': suite.get('name', os.path.basename(suite_path)),
         'task_count': len(task_ids),
         'runs': evaluated,
+        'comparisons': comparisons,
     }
 
 
@@ -210,9 +295,19 @@ def main(argv=None):
     parser.add_argument('--run', action='append', required=True, help='Run input as NAME=PATH; repeat to compare')
     parser.add_argument('--json-output', help='Write machine-readable report')
     parser.add_argument('--markdown-output', help='Write human-readable report')
+    parser.add_argument('--baseline', help='Named run used as the comparison baseline (default: first run)')
+    parser.add_argument('--gate', action='store_true', help='Exit non-zero on success/recall regression')
+    parser.add_argument(
+        '--max-token-increase-pct', type=float,
+        help='Optional token increase limit as a decimal ratio (for example 0.10)',
+    )
     args = parser.parse_args(argv)
+    if args.max_token_increase_pct is not None and args.max_token_increase_pct < 0:
+        parser.error('--max-token-increase-pct must be non-negative')
     try:
-        report = evaluate_files(args.suite, args.run)
+        report = evaluate_files(
+            args.suite, args.run, args.baseline, args.max_token_increase_pct,
+        )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f'[BENCHMARK ERROR] {exc}', file=sys.stderr)
         return 2
@@ -226,6 +321,8 @@ def main(argv=None):
             handle.write(rendered)
     if not args.json_output and not args.markdown_output:
         print(rendered, end='')
+    if args.gate and any(not item['passed'] for item in report['comparisons']):
+        return 3
     return 0
 
 

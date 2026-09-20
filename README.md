@@ -31,6 +31,8 @@
 | 🔌 **MCP Capability Parity** | Planning, verification, context compilation, symbol explanation, and temporal history are available as native MCP tools, not only CLI commands. |
 | 📊 **Measurable Agent Value** | A versioned benchmark suite compares success, retrieval precision/recall, tokens, tool calls, duration, and missed dependencies/tests/constraints. |
 | 🩺 **Codebase Fitness Gates** | `map fitness` measures graph coverage, resolved edges, hub concentration, linked-test evidence, and constraint health against versioned thresholds. |
+| 🚧 **Risk-Aware Diff Guard** | `map guard` maps exact Git diff hunks to symbols and blocks configured risk levels using fan-in, APIs, constraints, edge confidence, and linked tests. |
+| 🧪 **Test-Gap Prioritization** | `map test-gaps` ranks untested hubs by fan-in, fan-out, API exposure, and constraint severity. |
 | 💸 **Compact Context** | AI can read the Mini Map (`PROJECT_MAP.min.md`) instead of loading broad source context on every turn. Measure savings on your own repository. |
 | 🧠 **Permanent Working Memory** | Preserves implicit business traps and hard-learned constraints (Module 4). Even across context compactions and new sessions, AI never forgets. |
 | 💬 **Chat-Native (Zero Terminal)** | No need to open terminals or run Python commands. Type `map update`, `map impact`... directly inside Claude, Cursor, Antigravity, or Copilot chat. |
@@ -217,9 +219,10 @@ Constraints use `ACTIVE`, `SUSPECT`, `STALE`, or `SUPERSEDED`. Active constraint
 python scripts/living_map.py plan "change order creation API"
 # edit code and tests
 python scripts/living_map.py verify-change --base HEAD --strict
+python scripts/living_map.py guard --base HEAD --fail-on high
 ```
 
-Risk scores explain their inputs: API exposure, constraint severity, graph blast radius, inferred dependencies, and missing linked tests. `verify-change` is advisory by default and becomes a failing quality gate with `--strict`.
+Risk scores explain their inputs: API exposure, constraint severity, graph blast radius, inferred dependencies, and missing linked tests. `verify-change` checks changed files; `guard` narrows the decision to symbols intersecting exact diff hunks and becomes a CI gate at the configured `medium` or `high` level.
 
 ### Dynamic context
 
@@ -245,11 +248,13 @@ python scripts/benchmark.py \
   --suite benchmarks/suites/lcm-self.json \
   --run baseline=/path/to/baseline.json \
   --run lcm=/path/to/lcm.json \
+  --baseline baseline \
+  --gate --max-token-increase-pct 0.10 \
   --markdown-output benchmark-report.md \
   --json-output benchmark-report.json
 ```
 
-The bundled suite contains ten repository-maintenance tasks. Compare runs only when they use the same repository commit, model, prompt, permissions, timeout, and acceptance checks. Template values are never product results; record observable agent runs before drawing conclusions.
+The bundled suite contains ten repository-maintenance tasks. Comparison reports include success, recall, token, tool-call, and duration deltas. `--gate` rejects success or recall regression; the optional token limit is enforced only after quality. Compare runs only when they use the same repository commit, model, prompt, permissions, timeout, and acceptance checks. Template values are never product results; record observable agent runs before drawing conclusions.
 
 ### Codebase fitness
 
@@ -260,6 +265,12 @@ python scripts/living_map.py fitness --strict
 ```
 
 The report turns `.lcm/graph.json` and structured constraints into five reproducible health checks: structural-edge coverage, resolved-edge ratio, hub concentration, linked-test rate, and constraint validity. Thresholds live in `.lcm/fitness.json`; `--strict` exits non-zero when any gate fails, making the same policy usable by agents, local hooks, and CI. Hub and test-link metrics are graph evidence—not a substitute for runtime coverage.
+
+```bash
+python scripts/living_map.py test-gaps --limit 10
+```
+
+Use the ranked hotspots to add direct regression tests where graph fan-in makes failures most expensive.
 
 <details>
 <summary><h3>📁 Repository Structure</h3></summary>

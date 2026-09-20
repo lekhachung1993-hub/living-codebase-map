@@ -18,8 +18,12 @@ python scripts/benchmark.py \
   --suite benchmarks/suites/lcm-self.json \
   --run baseline=/path/to/baseline.json \
   --run lcm=/path/to/lcm.json \
+  --baseline baseline \
+  --gate --max-token-increase-pct 0.10 \
   --markdown-output benchmark-report.md \
   --json-output benchmark-report.json
 ```
 
 Copy `benchmarks/run-template.json` for each recorded configuration. Empty ground-truth categories are excluded from aggregate precision and recall and appear as `n/a` in reports.
+
+The first run is the default baseline, or select one with `--baseline NAME`. Comparison deltas are emitted for success, recall, tokens, tool calls, and duration. `--gate` exits `3` when success or applicable recall regresses; `--max-token-increase-pct` adds an explicit efficiency ceiling without allowing lower token use to excuse lower correctness.

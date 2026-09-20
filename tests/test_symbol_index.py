@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 import tempfile
 import types
@@ -16,6 +17,16 @@ class StableSymbolIndexTests(unittest.TestCase):
         with open(path, 'w', encoding='utf-8') as handle:
             handle.write(content)
         return path
+
+    def test_release_versions_stay_in_sync(self):
+        root = os.path.dirname(os.path.dirname(__file__))
+        with open(os.path.join(root, 'manifest.json'), 'r', encoding='utf-8') as handle:
+            manifest_version = json.load(handle)['version']
+        with open(os.path.join(root, 'pyproject.toml'), 'r', encoding='utf-8') as handle:
+            pyproject_version = re.search(r'^version = "([^"]+)"', handle.read(), re.MULTILINE).group(1)
+        with open(os.path.join(root, 'PROJECT_MAP.md'), 'r', encoding='utf-8') as handle:
+            map_version = re.search(r'v(\d+\.\d+\.\d+)', handle.readline()).group(1)
+        self.assertEqual({manifest_version, pyproject_version, map_version}, {'3.23.0'})
 
     def test_python_ids_are_qualified_and_line_independent(self):
         with tempfile.TemporaryDirectory() as root:
@@ -1082,6 +1093,122 @@ class StableSymbolIndexTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'must define exactly'):
                 living_map.load_fitness_config(path)
 
+    def test_parse_diff_and_guard_score_changed_symbol_only(self):
+        diff = (
+            'diff --git a/src/service.py b/src/service.py\n'
+            '--- a/src/service.py\n+++ b/src/service.py\n'
+            '@@ -11 +11,2 @@\n-old\n+new\n+line\n'
+        )
+        ranges = living_map.parse_unified_diff(diff)
+        self.assertEqual(ranges, {'src/service.py': [(11, 12)]})
+        nodes = [
+            {'id': 'service', 'type': 'symbol', 'path': 'src/service.py', 'line': 10, 'end_line': 20},
+            {'id': 'other', 'type': 'symbol', 'path': 'src/service.py', 'line': 30, 'end_line': 40},
+            {'id': 'test', 'type': 'symbol', 'path': 'tests/test_service.py', 'line': 1, 'end_line': 8},
+        ]
+        callers = [
+            {'id': f'caller{i}', 'type': 'symbol', 'path': f'src/c{i}.py', 'line': 1, 'end_line': 2}
+            for i in range(3)
+        ]
+        graph = {'nodes': nodes + callers, 'edges': [
+            *[
+                {'source': f'caller{i}', 'target': 'service', 'relation': 'CALLS', 'confidence': 1.0}
+                for i in range(3)
+            ],
+            {'source': 'service', 'target': 'test', 'relation': 'TESTED_BY', 'confidence': 1.0},
+        ]}
+        report = living_map.analyze_diff_guard(
+            ranges, ['src/service.py'], graph,
+        )
+        self.assertEqual([item['id'] for item in report['changed_symbols']], ['service'])
+        self.assertEqual(report['risk_level'], 'medium')
+        self.assertIn('linked tests unchanged', report['changed_symbols'][0]['reasons'])
+
+    def test_test_gap_ranking_prioritizes_untested_hub(self):
+        nodes = [
+            {'id': 'hub', 'type': 'symbol', 'path': 'src/hub.py', 'line': 1},
+            {'id': 'tested', 'type': 'symbol', 'path': 'src/tested.py', 'line': 1},
+            {'id': 'test', 'type': 'symbol', 'path': 'tests/test_tested.py', 'line': 1},
+            {'id': 'parent', 'type': 'symbol', 'kind': 'function', 'path': 'src/local.py', 'line': 10, 'end_line': 30},
+            {'id': 'nested', 'type': 'symbol', 'kind': 'method', 'path': 'src/local.py', 'line': 15, 'end_line': 20},
+        ] + [
+            {'id': f'caller{i}', 'type': 'symbol', 'path': f'src/c{i}.py', 'line': 1}
+            for i in range(3)
+        ]
+        edges = []
+        for index in range(3):
+            edges.append({'source': f'caller{index}', 'target': 'hub', 'relation': 'CALLS', 'confidence': 1.0})
+            edges.append({'source': f'caller{index}', 'target': 'tested', 'relation': 'CALLS', 'confidence': 1.0})
+            edges.append({'source': f'caller{index}', 'target': 'nested', 'relation': 'CALLS', 'confidence': 1.0})
+        edges.append({'source': 'tested', 'target': 'test', 'relation': 'TESTED_BY', 'confidence': 1.0})
+        gaps = living_map.rank_test_gaps({'nodes': nodes, 'edges': edges}, 3)
+        self.assertEqual([item['id'] for item in gaps], ['hub'])
+        self.assertEqual(gaps[0]['priority_score'], 30)
+        symbol_nodes = {node['id']: node for node in nodes if node.get('type') == 'symbol'}
+        self.assertEqual(living_map._nested_local_symbol_ids(symbol_nodes), {'nested'})
+
+    def test_high_fan_in_helpers_have_direct_regression_coverage(self):
+        masked = living_map._strip_javascript_noncode(
+            'function run() { return "}"; /* ignored */ }'
+        )
+        opening = masked.index('{')
+        self.assertEqual(
+            living_map._matching_delimiter(masked, opening, '{', '}'),
+            masked.rindex('}'),
+        )
+        self.assertEqual(
+            living_map._symbol_fingerprint('function', 'run', 'function  run()'),
+            living_map._symbol_fingerprint('function', 'run', 'function run()'),
+        )
+        self.assertTrue(living_map._is_test_path('src/service_test.go'))
+        self.assertFalse(living_map._is_test_path('src/service.go'))
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, 'app.py', 'def run():\n    return 1\n')
+            first = living_map.calculate_codebase_hash(root)
+            self._write(root, 'ignored/readme.txt', 'not source')
+            self.assertEqual(first, living_map.calculate_codebase_hash(root))
+
+    def test_high_leverage_io_helpers_have_direct_regression_coverage(self):
+        code, output, error = living_map._git(['rev-parse', '--is-inside-work-tree'])
+        self.assertEqual((code, output, error), (0, 'true', ''))
+        with mock.patch.object(
+            living_map, 'git_get_head_info', return_value=('abc1234', '', ''),
+        ):
+            updated = living_map.update_map_header(
+                '> **Last Updated:** old | Commit: old\nCodebase-MD5: ' + '0' * 32,
+                '1' * 32,
+            )
+        self.assertIn('Commit: abc1234', updated)
+        self.assertIn('Codebase-MD5: ' + '1' * 32, updated)
+        with tempfile.TemporaryDirectory() as root:
+            source = self._write(root, 'PROJECT_MAP.md', '## MODULE 0: META\n| Key | Value |\n')
+            compact = os.path.join(root, 'PROJECT_MAP.min.md')
+            self.assertEqual(living_map.generate_min_map(source, compact), compact)
+            constraint_path = self._write(
+                root, '.lcm/constraints.json',
+                json.dumps({'schema_version': 1, 'constraints': []}),
+            )
+            self.assertEqual(living_map.load_constraints(constraint_path)['constraints'], [])
+
+    def test_remaining_hub_helpers_have_direct_regression_coverage(self):
+        with mock.patch.object(
+            living_map, '_git', return_value=(0, 'abc1234|' + 'a' * 40 + '|2026-09-20 01:02:03', ''),
+        ):
+            self.assertEqual(
+                living_map.git_get_head_info(),
+                ('abc1234', 'a' * 40, '2026-09-20'),
+            )
+        with mock.patch.object(living_map, '_git', side_effect=[
+            (0, '', ''), (0, 'committed', ''), (0, 'abc1234', ''),
+        ]):
+            self.assertTrue(living_map.git_commit_map('test map commit'))
+        with tempfile.TemporaryDirectory() as root:
+            path = os.path.join(root, '.lcm', 'constraints.json')
+            payload = {'schema_version': 1, 'constraints': []}
+            living_map.write_constraints(payload, path)
+            with open(path, 'r', encoding='utf-8') as handle:
+                self.assertEqual(json.load(handle), payload)
+
     def test_mcp_server_registers_cli_parity_tools(self):
         class FakeFastMCP:
             def __init__(self, name):
@@ -1110,7 +1237,8 @@ class StableSymbolIndexTests(unittest.TestCase):
 
         self.assertEqual(set(server.tools), {
             'update_map', 'check_drift', 'analyze_code_impact',
-            'plan_change', 'fitness_report', 'verify_change', 'compile_context',
+            'plan_change', 'fitness_report', 'test_gap_hotspots', 'guard_change',
+            'verify_change', 'compile_context',
             'explain_symbol', 'explain_symbol_history',
             'register_feature', 'register_constraint', 'get_map_summary',
         })

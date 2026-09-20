@@ -42,6 +42,8 @@ Users **DO NOT NEED to open a terminal or locate python files**. When a user typ
 | `map explain <symbol>` | Explain one exact symbol; require a Stable Symbol ID when a short name is ambiguous. |
 | `map why <symbol>` | Retrieve Git-backed temporal context and constraints explaining why a symbol exists. |
 | `map fitness` | Measure graph coverage, confidence, hubs, linked tests, and constraint health; use `--strict` as a quality gate. |
+| `map test-gaps` | Rank untested hubs by graph leverage so test work targets the highest-risk symbols first. |
+| `map guard` | Map Git diff hunks to changed symbols and block configured risk levels before merge. |
 | `map check` | Deterministically verify Markdown, symbol index, and dependency graph synchronization; rebuild every generated artifact with `--fix`. |
 | `map constraint <text>` | Register implicit business rule into Module 4, assign next `[Cx]` ID, and resync mini map. |
 | `map rollback [hash]` | Inspect map commit history or safely restore map checkpoint (source code is never touched). |
